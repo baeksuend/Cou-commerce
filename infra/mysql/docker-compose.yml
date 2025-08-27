@@ -1,0 +1,37 @@
+name: cou-commerce-mysql
+
+services:
+  mysql:
+    image: mysql:8.4        # LTS(장기지원) 라인 권장
+    container_name: mysql   # 공유 네트워크에서 호스트명으로 사용 (개발 편의)
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-coucommercedb}
+      MYSQL_USER: ${MYSQL_USER:-app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-app-secret}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-secret}
+      TZ: Asia/Seoul
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+09:00
+      - --max_connections=200
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - cou-commerce-net
+
+volumes:
+  mysql-data:
+
+networks:
+  cou-commerce-net:
+    external: true

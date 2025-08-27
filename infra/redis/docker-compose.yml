@@ -1,0 +1,27 @@
+name: cou-commerce-redis
+
+services:
+  redis:
+    image: redis:7.4        # 최신 7.4 계열 권장
+    container_name: redis   # 공유 네트워크에서 호스트명으로 사용 (개발 편의)
+    command: ["sh","-c","exec redis-server --appendonly ${REDIS_AOF:-yes}"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - cou-commerce-net
+
+volumes:
+  redis-data:
+
+networks:
+  cou-commerce-net:
+    external: true
