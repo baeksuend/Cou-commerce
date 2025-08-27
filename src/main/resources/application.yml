@@ -44,8 +44,3 @@ springdoc:
     path: /swagger-ui.html
   override-with-generic-response: false
   use-fqn: true
-
-management:
-  health:
-    redis:
-      enabled: false
