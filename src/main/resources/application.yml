@@ -1,0 +1,38 @@
+spring:
+  profiles:
+    active: dev
+  application:
+    name: wecare
+  jpa:
+    open-in-view: false
+    show-sql: true
+    properties:
+      hibernate:
+        highlight_sql: true
+        use_sql_comments: true
+        format_sql: true
+  security:
+    user:
+      name: admin
+      password: password
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+server:
+  port: 8080
+
+logging:
+  level:
+    org.hibernate.type.descriptor.sql.BasicBinder: trace
+    org.springframework.core.env: DEBUG
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+  override-with-generic-response: false
+  use-fqn: true
