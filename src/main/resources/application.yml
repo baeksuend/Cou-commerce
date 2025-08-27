@@ -3,6 +3,7 @@ spring:
     active: dev
   application:
     name: cou-commerce
+
   jpa:
     open-in-view: false
     show-sql: true
@@ -11,15 +12,19 @@ spring:
         highlight_sql: true
         use_sql_comments: true
         format_sql: true
+
   security:
     user:
       name: admin
       password: password
+
   jackson:
     deserialization:
       fail-on-unknown-properties: true
+
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
+
 server:
   port: 8080
 
@@ -36,3 +41,8 @@ springdoc:
     path: /swagger-ui.html
   override-with-generic-response: false
   use-fqn: true
+
+management:
+  health:
+    redis:
+      enabled: false
