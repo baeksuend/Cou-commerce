@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/cou_commerce?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: username
+    password: password
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+server:
+  port: 8080
+
+jwt:
+  secret: key
+  refresh-token-expiration-time: 360000
+  access-token-expiration-time: 3600000
