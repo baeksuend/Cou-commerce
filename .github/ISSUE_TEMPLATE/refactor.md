@@ -1,7 +1,7 @@
 ---
 name: 리팩토링 / 기술 부채 (Refactoring / Tech Debt)
 about: 코드 품질 개선, 리팩토링, 기술 부채 해결을 위한 이슈입니다.
-title: "[#이슈번호][REFACTOR] "
+title: "[#이슈번호] refactor: "
 labels: refactor, tech-debt
 assignees: ''
 ---

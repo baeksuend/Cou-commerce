@@ -1,7 +1,7 @@
 ---
 name: 문서 개선 (Documentation Improvement)
 about: 문서의 오류, 누락, 개선 사항을 보고합니다.
-title: "[#이슈번호][DOCS] "
+title: "[#이슈번호] docs: "
 labels: documentation
 assignees: ''
 ---
