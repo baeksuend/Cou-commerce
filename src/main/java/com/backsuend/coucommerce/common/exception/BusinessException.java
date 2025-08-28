@@ -4,7 +4,6 @@ package com.backsuend.coucommerce.common.exception;
  * @author rua
  */
 
-
 import java.util.Map;
 
 /**
@@ -14,27 +13,32 @@ import java.util.Map;
  */
 public class BusinessException extends RuntimeException {
 
-    private final ErrorCode errorCode;
-    private final Map<String, Object> details;
+	private final ErrorCode errorCode;
+	private final Map<String, Object> details;
 
-    public BusinessException(ErrorCode errorCode) {
-        super(errorCode.defaultMessage());
-        this.errorCode = errorCode;
-        this.details = null;
-    }
+	public BusinessException(ErrorCode errorCode) {
+		super(errorCode.defaultMessage());
+		this.errorCode = errorCode;
+		this.details = null;
+	}
 
-    public BusinessException(ErrorCode errorCode, String message) {
-        super(message);
-        this.errorCode = errorCode;
-        this.details = null;
-    }
+	public BusinessException(ErrorCode errorCode, String message) {
+		super(message);
+		this.errorCode = errorCode;
+		this.details = null;
+	}
 
-    public BusinessException(ErrorCode errorCode, String message, Map<String, Object> details) {
-        super(message);
-        this.errorCode = errorCode;
-        this.details = details;
-    }
+	public BusinessException(ErrorCode errorCode, String message, Map<String, Object> details) {
+		super(message);
+		this.errorCode = errorCode;
+		this.details = details;
+	}
 
-    public ErrorCode errorCode() { return errorCode; }
-    public Map<String, Object> details() { return details; }
+	public ErrorCode errorCode() {
+		return errorCode;
+	}
+
+	public Map<String, Object> details() {
+		return details;
+	}
 }

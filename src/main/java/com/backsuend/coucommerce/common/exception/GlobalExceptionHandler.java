@@ -1,9 +1,13 @@
 package com.backsuend.coucommerce.common.exception;
 
-import com.backsuend.coucommerce.common.dto.ApiResponse;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.NoSuchElementException;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+
 import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
@@ -16,9 +20,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import com.backsuend.coucommerce.common.dto.ApiResponse;
 
 /**
  * @author rua
@@ -27,120 +29,122 @@ import java.util.NoSuchElementException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /* ======= BusinessException ======= */
-    @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ApiResponse<ApiErrorPayload>> handleBusiness(
-            BusinessException ex, HttpServletRequest req) {
+	private static String safe(String s) {
+		return (s == null || s.isBlank()) ? null : s;
+	}
 
-        ErrorCode code = ex.errorCode();
-        return build(code, ex.getMessage(), ex.details(), req);
-    }
+	/* ======= BusinessException ======= */
+	@ExceptionHandler(BusinessException.class)
+	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleBusiness(
+		BusinessException ex, HttpServletRequest req) {
 
-    /* ======= Validation (@Valid/@Validated) ======= */
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<ApiErrorPayload>> handleMethodArgumentNotValid(
-            MethodArgumentNotValidException ex, HttpServletRequest req) {
+		ErrorCode code = ex.errorCode();
+		return build(code, ex.getMessage(), ex.details(), req);
+	}
 
-        Map<String, String> fieldErrors = new LinkedHashMap<>();
-        ex.getBindingResult().getFieldErrors()
-                .forEach(fe -> fieldErrors.put(fe.getField(), fe.getDefaultMessage()));
+	/* ======= Validation (@Valid/@Validated) ======= */
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleMethodArgumentNotValid(
+		MethodArgumentNotValidException ex, HttpServletRequest req) {
 
-        return build(ErrorCode.VALIDATION_FAILED, "요청 본문 검증 실패", fieldErrors, req);
-    }
+		Map<String, String> fieldErrors = new LinkedHashMap<>();
+		ex.getBindingResult().getFieldErrors()
+			.forEach(fe -> fieldErrors.put(fe.getField(), fe.getDefaultMessage()));
 
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ApiResponse<ApiErrorPayload>> handleConstraintViolation(
-            ConstraintViolationException ex, HttpServletRequest req) {
+		return build(ErrorCode.VALIDATION_FAILED, "요청 본문 검증 실패", fieldErrors, req);
+	}
 
-        Map<String, String> paramErrors = new LinkedHashMap<>();
-        for (ConstraintViolation<?> v : ex.getConstraintViolations()) {
-            paramErrors.put(v.getPropertyPath().toString(), v.getMessage());
-        }
-        return build(ErrorCode.VALIDATION_FAILED, "요청 파라미터 검증 실패", paramErrors, req);
-    }
+	@ExceptionHandler(ConstraintViolationException.class)
+	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleConstraintViolation(
+		ConstraintViolationException ex, HttpServletRequest req) {
 
-    /* ======= HTTP 스펙 관련 ======= */
-    @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<ApiResponse<ApiErrorPayload>> handleMissingParam(
-            MissingServletRequestParameterException ex, HttpServletRequest req) {
+		Map<String, String> paramErrors = new LinkedHashMap<>();
+		for (ConstraintViolation<?> v : ex.getConstraintViolations()) {
+			paramErrors.put(v.getPropertyPath().toString(), v.getMessage());
+		}
+		return build(ErrorCode.VALIDATION_FAILED, "요청 파라미터 검증 실패", paramErrors, req);
+	}
 
-        Map<String, String> detail = Map.of(ex.getParameterName(), "required");
-        return build(ErrorCode.INVALID_INPUT, ex.getMessage(), detail, req);
-    }
+	/* ======= HTTP 스펙 관련 ======= */
+	@ExceptionHandler(MissingServletRequestParameterException.class)
+	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleMissingParam(
+		MissingServletRequestParameterException ex, HttpServletRequest req) {
 
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ApiResponse<ApiErrorPayload>> handleNotReadable(
-            HttpMessageNotReadableException ex, HttpServletRequest req) {
+		Map<String, String> detail = Map.of(ex.getParameterName(), "required");
+		return build(ErrorCode.INVALID_INPUT, ex.getMessage(), detail, req);
+	}
 
-        return build(ErrorCode.PAYLOAD_MALFORMED, "유효하지 않은 JSON 본문입니다.", null, req);
-    }
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleNotReadable(
+		HttpMessageNotReadableException ex, HttpServletRequest req) {
 
-    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<ApiResponse<ApiErrorPayload>> handleMethodNotAllowed(
-            HttpRequestMethodNotSupportedException ex, HttpServletRequest req) {
+		return build(ErrorCode.PAYLOAD_MALFORMED, "유효하지 않은 JSON 본문입니다.", null, req);
+	}
 
-        return build(ErrorCode.METHOD_NOT_ALLOWED, ex.getMessage(), null, req);
-    }
+	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleMethodNotAllowed(
+		HttpRequestMethodNotSupportedException ex, HttpServletRequest req) {
 
-    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
-    public ResponseEntity<ApiResponse<ApiErrorPayload>> handleUnsupportedMediaType(
-            HttpMediaTypeNotSupportedException ex, HttpServletRequest req) {
+		return build(ErrorCode.METHOD_NOT_ALLOWED, ex.getMessage(), null, req);
+	}
 
-        return build(ErrorCode.UNSUPPORTED_MEDIA_TYPE, ex.getMessage(), null, req);
-    }
+	@ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleUnsupportedMediaType(
+		HttpMediaTypeNotSupportedException ex, HttpServletRequest req) {
 
-    /* ======= 보안 관련 ======= */
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<ApiErrorPayload>> handleAccessDenied(
-            AccessDeniedException ex, HttpServletRequest req) {
+		return build(ErrorCode.UNSUPPORTED_MEDIA_TYPE, ex.getMessage(), null, req);
+	}
 
-        return build(ErrorCode.ACCESS_DENIED, ex.getMessage(), null, req);
-    }
+	/* ======= 보안 관련 ======= */
+	@ExceptionHandler(AccessDeniedException.class)
+	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleAccessDenied(
+		AccessDeniedException ex, HttpServletRequest req) {
 
-    /* ======= 데이터/리소스 ======= */
-    @ExceptionHandler({NoSuchElementException.class})
-    public ResponseEntity<ApiResponse<ApiErrorPayload>> handleNotFound(
-            RuntimeException ex, HttpServletRequest req) {
+		return build(ErrorCode.ACCESS_DENIED, ex.getMessage(), null, req);
+	}
 
-        return build(ErrorCode.NOT_FOUND, ex.getMessage(), null, req);
-    }
+	/* ======= 데이터/리소스 ======= */
+	@ExceptionHandler({NoSuchElementException.class})
+	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleNotFound(
+		RuntimeException ex, HttpServletRequest req) {
 
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ApiResponse<ApiErrorPayload>> handleDataIntegrity(
-            DataIntegrityViolationException ex, HttpServletRequest req) {
+		return build(ErrorCode.NOT_FOUND, ex.getMessage(), null, req);
+	}
 
-        return build(ErrorCode.DATA_INTEGRITY_VIOLATION, "데이터 제약조건 위반", null, req);
-    }
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleDataIntegrity(
+		DataIntegrityViolationException ex, HttpServletRequest req) {
 
-    /* ======= Fallback ======= */
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<ApiErrorPayload>> handleUnknown(
-            Exception ex, HttpServletRequest req) {
+		return build(ErrorCode.DATA_INTEGRITY_VIOLATION, "데이터 제약조건 위반", null, req);
+	}
 
-        return build(ErrorCode.INTERNAL_ERROR, "예상치 못한 오류가 발생했습니다.", null, req);
-    }
+	/* ======= Fallback ======= */
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleUnknown(
+		Exception ex, HttpServletRequest req) {
 
-    /* ======= 공통 빌더 ======= */
-    private ResponseEntity<ApiResponse<ApiErrorPayload>> build(
-            ErrorCode code, String message, Object errors, HttpServletRequest req) {
+		return build(ErrorCode.INTERNAL_ERROR, "예상치 못한 오류가 발생했습니다.", null, req);
+	}
 
-        String traceId = safe(MDC.get("traceId"));         // 로깅 필터에서 넣어두면 추적 가능
-        String path = req != null ? req.getRequestURI() : null;
+	/* ======= 공통 빌더 ======= */
+	private ResponseEntity<ApiResponse<ApiErrorPayload>> build(
+		ErrorCode code, String message, Object errors, HttpServletRequest req) {
 
-        ApiErrorPayload payload = new ApiErrorPayload(
-                code.code(),
-                message != null ? message : code.defaultMessage(),
-                traceId,
-                path,
-                errors
-        );
+		String traceId = safe(MDC.get("traceId"));         // 로깅 필터에서 넣어두면 추적 가능
+		String path = req != null ? req.getRequestURI() : null;
 
-        // 상위 ApiResponse의 message에는 "표준 에러 코드"를 올려 클라이언트 분기를 단순화
-        ApiResponse<ApiErrorPayload> body =
-                ApiResponse.of(false, code.status(), code.code(), payload);
+		ApiErrorPayload payload = new ApiErrorPayload(
+			code.code(),
+			message != null ? message : code.defaultMessage(),
+			traceId,
+			path,
+			errors
+		);
 
-        return body.toResponseEntity();
-    }
+		// 상위 ApiResponse의 message에는 "표준 에러 코드"를 올려 클라이언트 분기를 단순화
+		ApiResponse<ApiErrorPayload> body =
+			ApiResponse.of(false, code.status(), code.code(), payload);
 
-    private static String safe(String s) { return (s == null || s.isBlank()) ? null : s; }
+		return body.toResponseEntity();
+	}
 }
