@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: dev
+    default: dev
   application:
     name: cou-commerce
 
@@ -12,6 +12,9 @@ spring:
         highlight_sql: true
         use_sql_comments: true
         format_sql: true
+        show_sql: true
+    hibernate:
+      ddl-auto: update
 
   security:
     user:
