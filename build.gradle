@@ -17,7 +17,7 @@ java {
 
 checkstyle {
     toolVersion = '11.0.0'
-    configFile = rootProject.file('/src/main/resources/convention/Naver-CheckStyle-Rules.xml')
+    configFile = rootProject.file('src/main/resources/convention/Naver-CheckStyle-Rules.xml')
     ignoreFailures = false
     showViolations = true
 }
