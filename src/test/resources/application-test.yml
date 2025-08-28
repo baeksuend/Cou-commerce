@@ -1,0 +1,43 @@
+spring:
+  # --- Database (MySQL on Docker) ---
+  datasource:
+    url: jdbc:mysql://localhost:3306/coucommercedb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: app
+    password: app-secret
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # --- JPA ---
+  jpa:
+    hibernate:
+      # 테스트 실행 시 스키마를 모두 지우고 다시 생성하여 독립성을 보장합니다.
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        # MySQL 8 버전용 방언을 사용합니다.
+        dialect: org.hibernate.dialect.MySQLDialect
+    # SQL 쿼리를 보고 싶을 경우, 아래 값을 true로 변경하세요.
+    show-sql: false
+
+  # --- Redis (Redis on Docker) ---
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+
+# --- Spring Core Settings ---
+  main:
+    allow-bean-definition-overriding: true
+
+# --- Logging Settings ---
+logging:
+  level:
+    root: INFO
+
+# --- Etc. ---
+# 테스트 환경에서 Swagger UI 비활성화
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

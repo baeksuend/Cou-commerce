@@ -1,7 +1,7 @@
 ---
 name: 버그 리포트 (Bug Report)
 about: 버그를 보고하여 개선에 기여해주세요.
-title: "[#이슈번호][BUG] "
+title: "[#이슈번호] bug: "
 labels: bug
 assignees: ''
 ---

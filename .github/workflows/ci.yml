@@ -1,0 +1,121 @@
+name: CI for Cou-commerce
+
+on:
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    env:
+      HEALTHCHECK_TIMEOUT: 120
+      HEALTHCHECK_INTERVAL: 3
+      HEALTHCHECK_RETRIES: 3
+      SERVICES_TO_CHECK: "mysql redis"
+
+    steps:
+      # --------------------------
+      #  체크아웃
+      # --------------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # --------------------------
+      #  Docker 네트워크 생성 (옵션)
+      # --------------------------
+      - name: Create Docker network
+        run: docker network create cou-commerce-net || echo "Network already exists"
+
+      # --------------------------
+      #  MySQL 컨테이너 시작
+      # --------------------------
+      - name: Start MySQL service
+        run: |
+          cd $GITHUB_WORKSPACE/infra/mysql
+          docker compose up -d
+          # MySQL 포트 확인
+          echo "Waiting for MySQL port 3306..."
+          until mysqladmin ping -h 127.0.0.1 -u app -papp-secret --silent; do
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+
+      # --------------------------
+      #  Redis 컨테이너 시작
+      # --------------------------
+      - name: Start Redis service
+        run: |
+          cd $GITHUB_WORKSPACE/infra/redis
+          docker compose up -d
+          # Redis 헬스체크
+          end=$((SECONDS + 30))
+          while [ $SECONDS -lt $end ]; do
+            if redis-cli -h 127.0.0.1 ping | grep -q PONG; then
+              echo "Redis is ready!"
+              break
+            fi
+            echo "Waiting for Redis..."
+            sleep 2
+          done
+
+      # --------------------------
+      #  JDK 및 Gradle 설정
+      # --------------------------
+      - name: Set up JDK 24
+        uses: actions/setup-java@v4
+        with:
+          java-version: '24'
+          distribution: 'temurin'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-java-24-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-java-24-gradle-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      # --------------------------
+      #  Gradle 빌드 & 테스트
+      # --------------------------
+      - name: Build and Test with Gradle
+        env:
+          SPRING_PROFILES_ACTIVE: test
+          SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/coucommercedb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+          SPRING_DATASOURCE_USERNAME: app
+          SPRING_DATASOURCE_PASSWORD: app-secret
+        run: ./gradlew build
+
+      # --------------------------
+      #  보고서 업로드
+      # --------------------------
+      - name: Upload Checkstyle Report on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkstyle-report
+          path: build/reports/checkstyle/*.html
+          if-no-files-found: warn
+
+      - name: Upload Test Report on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: build/reports/tests/test/
+          if-no-files-found: warn
+
+      # --------------------------
+      #  컨테이너 종료
+      # --------------------------
+      - name: Tear down MySQL and Redis
+        if: always()
+        run: |
+          cd $GITHUB_WORKSPACE/infra/mysql && docker compose down
+          cd $GITHUB_WORKSPACE/infra/redis && docker compose down
