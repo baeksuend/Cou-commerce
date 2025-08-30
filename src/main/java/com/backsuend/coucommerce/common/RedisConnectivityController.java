@@ -3,17 +3,20 @@ package com.backsuend.coucommerce.common;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
  * @author rua
  */
 @RestController
+@RequestMapping("/api/v1")
 public class RedisConnectivityController {
 
 	private final StringRedisTemplate redis;
@@ -27,7 +30,7 @@ public class RedisConnectivityController {
 		Map<String, Object> res = new LinkedHashMap<>();
 
 		// 1) PING
-		String pong = redis.getConnectionFactory().getConnection().ping();
+		String pong = Objects.requireNonNull(redis.getConnectionFactory()).getConnection().ping();
 
 		// 2) SET with TTL
 		String key = "ping:" + UUID.randomUUID();
