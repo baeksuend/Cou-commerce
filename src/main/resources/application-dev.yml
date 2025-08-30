@@ -1,4 +1,10 @@
 spring:
+  jpa:
+    hibernate:
+      naming:
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/coucommercedb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
@@ -15,6 +21,6 @@ server:
   port: 8080
 
 jwt:
-  secret: rYc3wyeAhG3i5pHYlMKLy23xAT7wxlxWEgRIw891deXjDobnv+ayPwS5qlxtjcb1M5Eb9T3WKfAD3Rn/eV5tBA==
-  refresh-token-expiration-time: 360000
-  access-token-expiration-time: 3600000
+  secret: VGVzdFNlY3JldEtleUZvckpXVEF1dGhlbnRpY2F0aW9uVGVzdFNlY3JldEtleUZvckpXVEF1dGhlbnRpY2F0aW9u
+  access-token-expiration-time: 3600000 # 1시간
+  refresh-token-expiration-time: 86400000 # 24시간
