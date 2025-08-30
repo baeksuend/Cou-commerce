@@ -29,6 +29,10 @@ import com.backsuend.coucommerce.common.dto.ApiResponse;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+	/**
+	 * 문자열이 null이거나 비어있는 경우 null을 반환하고, 그렇지 않으면 원본 문자열을 반환한다.
+	 * 주로 MDC(Mapped Diagnostic Context)에서 traceId를 안전하게 가져올 때 사용된다.
+	 */
 	private static String safe(String s) {
 		return (s == null || s.isBlank()) ? null : s;
 	}
@@ -103,6 +107,20 @@ public class GlobalExceptionHandler {
 		return build(ErrorCode.ACCESS_DENIED, ex.getMessage(), null, req);
 	}
 
+	@ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleAuthentication(
+		org.springframework.security.core.AuthenticationException ex, HttpServletRequest req) {
+
+		return build(ErrorCode.UNAUTHORIZED, "인증에 실패했습니다.", null, req);
+	}
+
+	@ExceptionHandler(io.jsonwebtoken.ExpiredJwtException.class)
+	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleExpiredJwt(
+		io.jsonwebtoken.ExpiredJwtException ex, HttpServletRequest req) {
+
+		return build(ErrorCode.TOKEN_EXPIRED, "인증 토큰이 만료되었습니다.", null, req);
+	}
+
 	/* ======= 데이터/리소스 ======= */
 	@ExceptionHandler({NoSuchElementException.class})
 	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleNotFound(
@@ -127,6 +145,11 @@ public class GlobalExceptionHandler {
 	}
 
 	/* ======= 공통 빌더 ======= */
+
+	/**
+	 * 공통 에러 응답 페이로드(ApiErrorPayload)를 생성하고, 이를 ApiResponse로 감싸 ResponseEntity를 반환한다.
+	 * MDC에 설정된 traceId와 요청 경로를 포함하여 에러 추적을 용이하게 한다.
+	 */
 	private ResponseEntity<ApiResponse<ApiErrorPayload>> build(
 		ErrorCode code, String message, Object errors, HttpServletRequest req) {
 
