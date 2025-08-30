@@ -12,6 +12,11 @@ import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 
+/**
+ * OpenAPI 3.0 (Swagger) 문서 생성을 위한 설정 클래스.
+ * API 서버 정보, 보안 스키마(JWT Access Token, Refresh Token) 등을 정의하여
+ * API 문서의 정확성과 사용 편의성을 높인다.
+ */
 @OpenAPIDefinition(
 	servers = {
 		@Server(url = "http://localhost:8080", description = "로컬 서버")
@@ -22,14 +27,14 @@ import io.swagger.v3.oas.models.info.Info;
 	type = SecuritySchemeType.HTTP,
 	scheme = "bearer",
 	bearerFormat = "JWT",
-	description = "토큰 원본 사용 (Bearer 없이)"
+	description = "JWT Access Token"
 )
 @SecurityScheme(
 	name = "Refresh-Token",
 	type = SecuritySchemeType.APIKEY,
 	in = SecuritySchemeIn.HEADER,
 	paramName = "Refresh-Token",
-	description = "접미사로 \"Bearer \" 추가해야 함 (공백 주의)"
+	description = "액세스 토큰 재발급을 위한 Refresh Token"
 )
 public class SwaggerConfig {
 	@Bean

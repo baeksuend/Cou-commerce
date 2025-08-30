@@ -15,11 +15,21 @@ import jakarta.validation.constraints.Size;
 
 import com.backsuend.coucommerce.common.entity.BaseTimeEntity;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 /**
  * @author rua
  */
 
 @Entity
+@Getter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @Table(name = "address", indexes = @Index(name = "idx_address_member", columnList = "member_id", unique = true))
 public class Address extends BaseTimeEntity {
 	@Id
@@ -45,4 +55,10 @@ public class Address extends BaseTimeEntity {
 	@Size(max = 50)
 	@Column(name = "detail", nullable = false, length = 50)
 	private String detail;
+
+	public void updateAddress(String postalCode, String roadName, String detail) {
+		this.postalCode = postalCode;
+		this.roadName = roadName;
+		this.detail = detail;
+	}
 }

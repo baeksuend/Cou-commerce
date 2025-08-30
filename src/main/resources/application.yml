@@ -44,3 +44,6 @@ springdoc:
     path: /swagger-ui.html
   override-with-generic-response: false
   use-fqn: true
+
+cors:
+  allowed-origins: http://localhost:3000

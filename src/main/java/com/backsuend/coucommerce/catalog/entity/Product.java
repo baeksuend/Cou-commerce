@@ -1,5 +1,7 @@
 package com.backsuend.coucommerce.catalog.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -20,9 +22,14 @@ import jakarta.validation.constraints.Size;
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.common.entity.BaseTimeEntity;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * @author rua
  */
+@Getter
+@Setter
 @Entity
 @Table(name = "product",
 	indexes = {
@@ -38,8 +45,8 @@ public class Product extends BaseTimeEntity {
 
 	// SELLER 소유자
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "member_id", nullable = false)
-	private Member seller;
+	@JoinColumn(name = "member_id", nullable = false, updatable = false)
+	private Member member;
 
 	@NotBlank
 	@Size(max = 50)
@@ -67,4 +74,22 @@ public class Product extends BaseTimeEntity {
 	@Column(name = "is_status", nullable = false)
 	private boolean visible = true;
 
+	public Product(Long id, Member member, String name, String detail, int stock, int price, Category category,
+		boolean visible, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt) {
+		this.id = id;
+		this.member = member;
+		this.name = name;
+		this.detail = detail;
+		this.stock = stock;
+		this.price = price;
+		this.category = category;
+		this.visible = visible;
+		this.createdAt = createdAt;
+		this.updatedAt = updatedAt;
+		this.deletedAt = deletedAt;
+	}
+
+	public Product() {
+
+	}
 }
