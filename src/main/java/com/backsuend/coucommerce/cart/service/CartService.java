@@ -21,6 +21,11 @@ import lombok.RequiredArgsConstructor;
 /**
  * @author rua
  */
+
+/**
+ * ToDo
+ * 1. 현재 add 및 update 할 시에 접근하는 항목에만 장바구니의 데이터들의 ttl이 7일로 다시 설정됨. 전부 설정하고 싶으면 변경 필요.
+ * */
 @Service
 @RequiredArgsConstructor
 public class CartService {
@@ -52,19 +57,20 @@ public class CartService {
 	}
 
 	/** 상품 추가(없으면 추가, 있으면 덮어쓰기) */
-	public void addItem(Long memberId, CartItem item) {
+	public CartResponse addItem(Long memberId, CartItem item) {
 		String key = getCartKey(memberId);
 		String field = item.getProductId().toString();
 		try {
-			boolean isNewKey = Boolean.FALSE.equals(cartRedisTemplate.hasKey(key));
+			boolean isNewKey = !cartRedisTemplate.hasKey(key);
 			cartRedisTemplate.opsForHash().put(key, field, item);
 
 			// TTL: 최초 생성시에만 설정(7일)
 			if (isNewKey) {
 				cartRedisTemplate.expire(key, Duration.ofDays(7));
 			}
-			// 접근 시마다 TTL 갱신하고 싶다면:
-			// redisTemplate.expire(key, Duration.ofDays(7));
+			// 접근 시마다 TTL 갱신하고 싶으면 여기 추가 : cartRedisTemplate.expire(key, Duration.ofDays(7));
+
+			return getCart(memberId);
 		} catch (DataAccessException dae) {
 			throw new BusinessException(
 				ErrorCode.INTERNAL_ERROR, "장바구니 저장 실패",
@@ -73,7 +79,7 @@ public class CartService {
 	}
 
 	/** 상품 수정(존재 확인 후 덮어쓰기) */
-	public void updateItem(Long memberId, CartItem item) {
+	public CartResponse updateItem(Long memberId, CartItem item) {
 		String key = getCartKey(memberId);
 		String field = item.getProductId().toString();
 
@@ -86,9 +92,9 @@ public class CartService {
 					Map.of("memberId", memberId, "productId", item.getProductId()));
 			}
 			hashOps.put(key, field, item);
-
 			// 필요시 TTL 갱신 정책 선택
 			cartRedisTemplate.expire(key, Duration.ofDays(7));
+			return getCart(memberId);
 		} catch (DataAccessException dae) {
 			throw new BusinessException(
 				ErrorCode.INTERNAL_ERROR, "장바구니 수정 실패",
@@ -97,7 +103,7 @@ public class CartService {
 	}
 
 	/** 상품 삭제 */
-	public void removeItem(Long memberId, Long productId) {
+	public CartResponse removeItem(Long memberId, Long productId) {
 		String key = getCartKey(memberId);
 		String field = productId.toString();
 		try {
@@ -107,6 +113,7 @@ public class CartService {
 					ErrorCode.NOT_FOUND, "장바구니에 해당 상품이 없습니다.",
 					Map.of("memberId", memberId, "productId", productId));
 			}
+			return getCart(memberId);
 		} catch (DataAccessException dae) {
 			throw new BusinessException(
 				ErrorCode.INTERNAL_ERROR, "장바구니 삭제 실패",

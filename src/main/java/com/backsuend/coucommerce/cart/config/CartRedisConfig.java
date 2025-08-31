@@ -13,7 +13,7 @@ import com.backsuend.coucommerce.cart.dto.CartItem;
  * @author rua
  */
 @Configuration
-public class RedisConfig {
+public class CartRedisConfig {
 
 	@Bean(name = "cartRedisTemplate")
 	public RedisTemplate<String, CartItem> cartRedisTemplate(RedisConnectionFactory cf) {
