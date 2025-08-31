@@ -1,4 +1,4 @@
-package com.backsuend.coucommerce.catalog.entity;
+package com.backsuend.coucommerce.review.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,6 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import com.backsuend.coucommerce.auth.entity.Member;
+import com.backsuend.coucommerce.catalog.entity.Product;
 import com.backsuend.coucommerce.common.entity.BaseTimeEntity;
 
 /**

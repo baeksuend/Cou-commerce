@@ -81,8 +81,15 @@ public class AuthService {
 			.findFirst()
 			.map(org.springframework.security.core.GrantedAuthority::getAuthority)
 			.orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_ERROR, "사용자 권한 정보를 찾을 수 없습니다."));
+
+		//String accessToken = jwtProvider.createAccessToken(userDetails.getUsername(),
+		//	Role.valueOf(roleName));
+
+		//********* 권한 문제로 수정 / 권한 앞에 ROLE_ 붙음 ******
 		String accessToken = jwtProvider.createAccessToken(userDetails.getUsername(),
-			Role.valueOf(roleName));
+			Role.from(roleName));
+		//****************************************************
+
 		String refreshToken = refreshTokenService.createRefreshToken(userDetails.getUsername(), userDetails.getId());
 
 		return new AuthResponse(accessToken, refreshToken);

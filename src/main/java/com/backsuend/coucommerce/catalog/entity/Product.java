@@ -20,9 +20,13 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 import com.backsuend.coucommerce.auth.entity.Member;
+import com.backsuend.coucommerce.catalog.enums.Category;
 import com.backsuend.coucommerce.common.entity.BaseTimeEntity;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -31,6 +35,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "product",
 	indexes = {
 		@Index(name = "idx_product_member", columnList = "member_id"),
@@ -72,24 +79,17 @@ public class Product extends BaseTimeEntity {
 
 	/** 공개 여부 (is_status) */
 	@Column(name = "is_status", nullable = false)
-	private boolean visible = true;
+	private boolean visible;
 
-	public Product(Long id, Member member, String name, String detail, int stock, int price, Category category,
-		boolean visible, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt) {
-		this.id = id;
-		this.member = member;
-		this.name = name;
-		this.detail = detail;
-		this.stock = stock;
-		this.price = price;
-		this.category = category;
-		this.visible = visible;
-		this.createdAt = createdAt;
-		this.updatedAt = updatedAt;
-		this.deletedAt = deletedAt;
+	/** 삭제처리 **/
+	public void delete() {
+		this.deletedAt = LocalDateTime.now();
 	}
 
-	public Product() {
+	/** 삭제복구 처리 **/
+	public void restore() {
+		this.deletedAt = null;
 
 	}
+
 }

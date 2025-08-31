@@ -1,4 +1,4 @@
-package com.backsuend.coucommerce.catalog.entity;
+package com.backsuend.coucommerce.catalog.enums;
 
 /**
  * @author rua

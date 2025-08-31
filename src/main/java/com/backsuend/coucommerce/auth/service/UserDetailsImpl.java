@@ -2,6 +2,7 @@ package com.backsuend.coucommerce.auth.service;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -56,7 +57,14 @@ public class UserDetailsImpl implements UserDetails {
 
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-		return authorities;
+		//return authorities;
+
+		//********* 권한 문제로 수정 / 권한 앞에 ROLE_ 붙음 ******
+		return authorities.stream()
+			.map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+			.collect(Collectors.toList());
+		//****************************************************
+
 	}
 
 	@Override

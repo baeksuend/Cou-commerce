@@ -10,6 +10,7 @@ import jakarta.validation.ConstraintViolationException;
 
 import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -170,4 +171,37 @@ public class GlobalExceptionHandler {
 
 		return body.toResponseEntity();
 	}
+
+	/**
+	 * service에서 잘못입력된 부분을 400번 에러로 처리한다.
+	 */
+	@ExceptionHandler(CustomValidationException.class)
+	public ResponseEntity<ApiResponse<Object>> CustomValidationException(CustomValidationException ex,
+		HttpServletRequest req) {
+
+		ApiResponse<Object> error = ApiResponse.error(
+			HttpStatus.BAD_REQUEST,
+			ex.getMessage()
+		);
+
+		return ResponseEntity.badRequest().body(error);
+	}
+
+	/**
+	 * service에서 리소스 찾을수 없을때 404 에러 출력
+	 */
+	@ExceptionHandler({
+		NotFoundException.class})
+	public ResponseEntity<ApiResponse<Object>> handlerNotFoundException(NotFoundException ex,
+		HttpServletRequest req) {
+
+		ApiResponse<Object> error = ApiResponse.error(
+			HttpStatus.NOT_FOUND,
+			ex.getMessage()
+		);
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+
+	}
+
+
 }
