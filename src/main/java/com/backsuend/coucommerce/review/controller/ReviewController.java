@@ -146,7 +146,7 @@ public class ReviewController {
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
 		reviewService.deleteReview(product_id, review_id, userDetails.getId());
-		return ResponseEntity.ok().body(ApiResponse.noContent());
+		return ResponseEntity.noContent().build();
 	}
 
 	@Operation(summary = "[리뷰] 사용자 자식리뷰 삭제", description = "제품의 자식리뷰를 삭제합니다, 대댓글이 있을 경우 댓글 내용이 삭제된 댓글입니다로 변경 됨.")
@@ -165,7 +165,7 @@ public class ReviewController {
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
 		reviewService.deleteChildReview(product_id, review_id, childReviewId, userDetails.getId());
-		return ResponseEntity.ok().body(ApiResponse.noContent());
+		return ResponseEntity.noContent().build();
 	}
 
 }
