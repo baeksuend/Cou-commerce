@@ -15,14 +15,23 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.common.entity.BaseTimeEntity;
 
-/**
- * @author rua
- */
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 @Entity
+@Getter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @Table(name = "seller",
 	uniqueConstraints = @UniqueConstraint(name = "uk_seller_member", columnNames = "member_id"),
 	indexes = {
@@ -40,16 +49,39 @@ public class Seller extends BaseTimeEntity {
 	@JoinColumn(name = "member_id", nullable = false, unique = true)
 	private Member member;
 
+	@NotBlank
+	@Size(max = 100)
+	@Column(name = "store_name", nullable = false, length = 100)
+	private String storeName;
+
+	@NotBlank
+	@Size(max = 50)
+	@Column(name = "business_registration_number", nullable = false, length = 50)
+	private String businessRegistrationNumber;
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, length = 20)
+	@Builder.Default
 	private SellerStatus status = SellerStatus.APPLIED;
 
 	/** 승인한 관리자(Member) – null 허용 */
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "approved_member_id")
+	@JoinColumn(name = "approved_by_member_id")
 	private Member approvedBy;
 
 	@Lob
 	@Column(name = "reason")
 	private String reason;
+
+	public void approve(Member admin) {
+		this.status = SellerStatus.APPROVED;
+		this.approvedBy = admin;
+		this.reason = null;
+	}
+
+	public void reject(Member admin, String reason) {
+		this.status = SellerStatus.REJECTED;
+		this.approvedBy = admin;
+		this.reason = reason;
+	}
 }

@@ -69,6 +69,7 @@ public class Payment extends BaseTimeEntity {
 	/** 결제 상태 (PENDING → APPROVED/FAILED/REFUNDED) */
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, length = 20)
+	@Builder.Default
 	private PaymentStatus status = PaymentStatus.PENDING;
 
 	/** 외부 PG사 트랜잭션 번호 (Mock일 경우 가짜 ID 발급) */

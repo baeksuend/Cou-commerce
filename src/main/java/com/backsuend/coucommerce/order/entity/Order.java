@@ -79,6 +79,7 @@ public class Order extends BaseTimeEntity {
 	private OrderStatus status = OrderStatus.PLACED;
 
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+	@Builder.Default
 	private List<OrderProduct> items = new ArrayList<>();
 
 	@OneToOne(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
