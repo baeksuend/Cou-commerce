@@ -4,15 +4,19 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
+
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
  * @author rua
  */
 
 @MappedSuperclass
+@EntityListeners(AuditingEntityListener.class)
 public abstract class BaseTimeEntity {
 	@Column(name = "createdAt", nullable = false)
 	protected LocalDateTime createdAt;

@@ -1,0 +1,13 @@
+package com.backsuend.coucommerce.catalog.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.backsuend.coucommerce.catalog.entity.Product;
+
+/**
+ * @author rua
+ */
+@Repository
+public interface ProductRepository extends JpaRepository<Product, Long> {
+}

@@ -15,6 +15,12 @@ import jakarta.validation.constraints.Min;
 import com.backsuend.coucommerce.catalog.entity.Product;
 import com.backsuend.coucommerce.common.entity.BaseTimeEntity;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 /**
  * @author rua
  */
@@ -25,6 +31,11 @@ import com.backsuend.coucommerce.common.entity.BaseTimeEntity;
 		@Index(name = "idx_order_product_order", columnList = "order_id"),
 		@Index(name = "idx_order_product_product", columnList = "product_id")
 	})
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class OrderProduct extends BaseTimeEntity {
 
 	@Id
@@ -43,7 +54,7 @@ public class OrderProduct extends BaseTimeEntity {
 	@Column(name = "quantity", nullable = false)
 	private int quantity;
 
-	public void setOrder(Order order) {
-		this.order = order;
-	}
+	@Column(name = "price_snapshot", nullable = false)
+	private int priceSnapshot; // 주문 당시 가격 스냅샷
 }
+
