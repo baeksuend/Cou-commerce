@@ -26,6 +26,8 @@ public class QSeller extends EntityPathBase<Seller> {
 
     public final com.backsuend.coucommerce.auth.entity.QMember approvedBy;
 
+    public final StringPath businessRegistrationNumber = createString("businessRegistrationNumber");
+
     //inherited
     public final DateTimePath<java.time.LocalDateTime> createdAt = _super.createdAt;
 
@@ -39,6 +41,8 @@ public class QSeller extends EntityPathBase<Seller> {
     public final StringPath reason = createString("reason");
 
     public final EnumPath<SellerStatus> status = createEnum("status", SellerStatus.class);
+
+    public final StringPath storeName = createString("storeName");
 
     //inherited
     public final DateTimePath<java.time.LocalDateTime> updatedAt = _super.updatedAt;

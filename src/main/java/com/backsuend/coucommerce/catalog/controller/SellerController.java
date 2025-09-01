@@ -144,11 +144,7 @@ public class SellerController {
 
 		long memberId = userDetails.getId();
 		ProductResponse productResponse = productService.getEdit(id, dto, memberId);
-		return ApiResponse.of(true,
-				HttpStatus.valueOf(200),
-				"상품수정 완료",
-				productResponse)
-			.toResponseEntity();
+		return ResponseEntity.ok().body(ApiResponse.ok(productResponse));
 	}
 
 	@Operation(
@@ -159,7 +155,7 @@ public class SellerController {
 		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 상태 값"),
 		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
 		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음"),
-		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "리소스를 찾을수 없음")
+		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "해당 회원을 찾을 수 없음")
 	})
 	@SecurityRequirement(name = "Authorization")
 	@PreAuthorize("hasRole('ROLE_SELLER') or hasRole('ROLE_ADMIN')")

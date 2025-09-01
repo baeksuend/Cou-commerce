@@ -16,27 +16,42 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.common.entity.BaseTimeEntity;
+import com.backsuend.coucommerce.payment.entity.Payment;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * @author rua
  */
 @Entity
-@Table(name = "orders", // 예약어 회피를 위해 orders 권장
+@Table(name = "orders",
 	indexes = {
 		@Index(name = "idx_orders_member", columnList = "member_id"),
-		@Index(name = "idx_orders_status", columnList = "status")
+		@Index(name = "idx_orders_status", columnList = "status"),
+		@Index(name = "idx_orders_created", columnList = "createdAt"),
+		@Index(name = "idx_orders_member_status", columnList = "member_id,status")
 	})
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Order extends BaseTimeEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@ManyToOne(fetch = FetchType.LAZY) // BUYER
+	@ManyToOne(fetch = FetchType.LAZY) // Buyer
 	@JoinColumn(name = "member_id", nullable = false)
 	private Member buyer;
 
@@ -59,19 +74,25 @@ public class Order extends BaseTimeEntity {
 	private String receiverPostalCode;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "status", nullable = false, length = 10)
-	private OrderStatus status = OrderStatus.READY;
-
-	/** 스키마 상 존재하는 payment_id(FK). 양방향 원하면 Payment 쪽에도 order_id 매핑. */
-	@Column(name = "payment_id")
-	private Long paymentId;
+	@Column(name = "status", nullable = false, length = 20)
+	@Builder.Default
+	private OrderStatus status = OrderStatus.PLACED;
 
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+	@Builder.Default
 	private List<OrderProduct> items = new ArrayList<>();
+
+	@OneToOne(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	private Payment payment;
 
 	// 편의 메서드
 	public void addItem(OrderProduct item) {
 		items.add(item);
 		item.setOrder(this);
+	}
+
+	public void setPayment(Payment payment) {
+		this.payment = payment;
+		payment.setOrder(this);
 	}
 }

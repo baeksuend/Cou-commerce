@@ -24,7 +24,9 @@ public class QPayment extends EntityPathBase<Payment> {
 
     public final com.backsuend.coucommerce.common.entity.QBaseTimeEntity _super = new com.backsuend.coucommerce.common.entity.QBaseTimeEntity(this);
 
-    public final EnumPath<CardBrand> cardId = createEnum("cardId", CardBrand.class);
+    public final NumberPath<Integer> amount = createNumber("amount", Integer.class);
+
+    public final EnumPath<CardBrand> cardBrand = createEnum("cardBrand", CardBrand.class);
 
     //inherited
     public final DateTimePath<java.time.LocalDateTime> createdAt = _super.createdAt;
@@ -36,7 +38,9 @@ public class QPayment extends EntityPathBase<Payment> {
 
     public final com.backsuend.coucommerce.order.entity.QOrder order;
 
-    public final NumberPath<Integer> totalPrice = createNumber("totalPrice", Integer.class);
+    public final EnumPath<PaymentStatus> status = createEnum("status", PaymentStatus.class);
+
+    public final StringPath transactionId = createString("transactionId");
 
     //inherited
     public final DateTimePath<java.time.LocalDateTime> updatedAt = _super.updatedAt;

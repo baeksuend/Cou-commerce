@@ -34,6 +34,8 @@ public class QOrderProduct extends EntityPathBase<OrderProduct> {
 
     public final QOrder order;
 
+    public final NumberPath<Integer> priceSnapshot = createNumber("priceSnapshot", Integer.class);
+
     public final com.backsuend.coucommerce.catalog.entity.QProduct product;
 
     public final NumberPath<Integer> quantity = createNumber("quantity", Integer.class);

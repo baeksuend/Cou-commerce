@@ -32,6 +32,7 @@ import lombok.Setter;
 /**
  * @author rua
  */
+
 @Getter
 @Setter
 @Entity

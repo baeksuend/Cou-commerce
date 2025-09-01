@@ -43,7 +43,7 @@ public class UserDetailsImpl implements UserDetails {
 	 * Member의 역할(Role)은 권한(GrantedAuthority)으로, 상태(MemberStatus)는 계정 활성화/잠금 상태로 매핑된다.
 	 */
 	public static UserDetailsImpl build(Member member) {
-		List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(member.getRole().name()));
+		List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + member.getRole().name()));
 
 		return new UserDetailsImpl(
 			member.getId(),
@@ -57,14 +57,7 @@ public class UserDetailsImpl implements UserDetails {
 
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-		//return authorities;
-
-		//********* 권한 문제로 수정 / 권한 앞에 ROLE_ 붙음 ******
-		return authorities.stream()
-			.map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-			.collect(Collectors.toList());
-		//****************************************************
-
+		return authorities;
 	}
 
 	@Override
