@@ -81,8 +81,12 @@ public class AuthService {
 			.findFirst()
 			.map(org.springframework.security.core.GrantedAuthority::getAuthority)
 			.orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_ERROR, "사용자 권한 정보를 찾을 수 없습니다."));
+
+		// "ROLE_BUYER" -> "BUYER"
+		String roleEnumName = roleName.startsWith("ROLE_") ? roleName.substring(5) : roleName;
+
 		String accessToken = jwtProvider.createAccessToken(userDetails.getUsername(),
-			Role.valueOf(roleName));
+			Role.valueOf(roleEnumName));
 		String refreshToken = refreshTokenService.createRefreshToken(userDetails.getUsername(), userDetails.getId());
 
 		return new AuthResponse(accessToken, refreshToken);
