@@ -23,10 +23,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.backsuend.coucommerce.common.dto.ApiResponse;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author rua
  */
-
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -141,6 +143,8 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleUnknown(
 		Exception ex, HttpServletRequest req) {
+
+		System.out.println("Unhandled exception occurred: "+ex);
 
 		return build(ErrorCode.INTERNAL_ERROR, "예상치 못한 오류가 발생했습니다.", null, req);
 	}

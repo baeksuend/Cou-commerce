@@ -12,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,8 @@ import com.backsuend.coucommerce.catalog.service.ProductServiceImpl;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+@ActiveProfiles("test")
+@Transactional
 @SpringBootTest
 @AutoConfigureMockMvc
 @DisplayName("Product 통합테스트")
@@ -64,8 +67,7 @@ public class ProductIntegrationTest {
 	void setUp() throws Exception {
 
 		String password = "12345678";
-		String email = "\"hofngheeheeedagu@naver.com"
-		member = Member.builder().email()
+		member = Member.builder().email("hofngheeheeedagu@naver.com")
 			.password(password)
 			.phone("010-222-3333")
 			.name("홍길동")

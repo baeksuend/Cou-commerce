@@ -19,11 +19,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.backsuend.coucommerce.BaseIntegrationTest;
 import com.backsuend.coucommerce.auth.dto.LoginRequest;
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.auth.entity.MemberStatus;
@@ -38,11 +40,13 @@ import com.backsuend.coucommerce.catalog.service.ProductServiceImpl;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+//@ActiveProfiles("test")
+//@Transactional
+//@SpringBootTest
+//@AutoConfigureMockMvc
 @DisplayName("Seller 통합테스트")
 @WithMockUser(roles = "SELLER")
-public class SellerIntegrationTest {
+public class SellerIntegrationTest extends BaseIntegrationTest {
 
 	@Autowired
 	MockMvc mockMvc;
@@ -71,17 +75,16 @@ public class SellerIntegrationTest {
 	@BeforeEach
 	void setUp() throws Exception {
 
-		String password = "12345678";
-		member = Member.builder().email("hongheeheeedagu@naver.com")
-			.password(passwordEncoder.encode(password))
-			.phone("010-222-3333")
-			.name("홍길동")
-			.role(Role.SELLER)
-			.status(MemberStatus.ACTIVE)
-			.build();
-		memberRepository.save(member);
-		Member member2 = memberRepository.save(member);
-		member_id = member2.getId();
+		String password = "1234567890";
+		String email = "hongheehdagu@naver.com";
+		String name = "홍길동";
+		String phone = "010-222-3333";
+
+		//가입, 로그인
+		member = createMember(email, password, Role.SELLER);
+		member_id = member.getId();
+
+		accessToken = login(email, password);
 
 		product = Product.builder()
 			.member(member)
@@ -95,9 +98,6 @@ public class SellerIntegrationTest {
 		Product savedProduct = productRepository.save(product);
 		product_id = savedProduct.getId();
 
-		//로그인
-		accessToken = login(member.getEmail(), password);
-
 		//authentication 부여
 		List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(Role.SELLER.name()));
 		testUserDetails = new UserDetailsImpl(member_id, member.getEmail(), member.getPassword(), authorities, true,
@@ -106,38 +106,19 @@ public class SellerIntegrationTest {
 
 	}
 
-	//로그인
-	protected String login(String email, String password) throws Exception {
-		LoginRequest loginRequest = new LoginRequest(email, password);
-		MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(loginRequest)))
-			.andReturn();
-		String responseString = result.getResponse().getContentAsString();
-
-		System.out.println("===========> email=" + responseString);
-		System.out.println("===========> password=" + password);
-		System.out.println("===========> responseString" + responseString);
-
-		return objectMapper.readTree(responseString).get("data").get("accessToken").asText();
-	}
 
 	@AfterEach
 	void tearDown() {
-		productRepository.deleteById(product_id);
-		memberRepository.deleteById(member_id);
 	}
 
 	@Test
+	@WithMockUser(roles="SELLER")
 	@Transactional
 	@DisplayName("셀러 제품 목록 조회 성공")
 	void ProductList() throws Exception {
 
 		//given
 		Long userId = testUserDetails.getId();
-
-		System.out.println("accessToken=" + accessToken);
-		System.out.println("userId=" + userId);
 
 		//when
 		ResultActions resultActions = mockMvc.perform(
@@ -178,7 +159,7 @@ public class SellerIntegrationTest {
 
 	@Test
 	@Transactional
-	@DisplayName("셀러 등록 성공")
+	@DisplayName("셀러 상품등록 성공")
 	void ProductCreate() throws Exception {
 
 		//given
@@ -204,7 +185,7 @@ public class SellerIntegrationTest {
 
 	@Test
 	@Transactional
-	@DisplayName("셀러 수정 성공")
+	@DisplayName("셀러 상품수정 성공")
 	void ProductEdit() throws Exception {
 
 		//given
@@ -230,7 +211,7 @@ public class SellerIntegrationTest {
 
 	@Test
 	@Transactional
-	@DisplayName("셀러 삭제 성공")
+	@DisplayName("셀러 상품삭제 성공")
 	void ProductDelete() throws Exception {
 
 		//givenq

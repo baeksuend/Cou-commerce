@@ -57,14 +57,7 @@ public class UserDetailsImpl implements UserDetails {
 
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-		//return authorities;
-
-		//********* 권한 문제로 수정 / 권한 앞에 ROLE_ 붙음 ******
-		return authorities.stream()
-			.map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-			.collect(Collectors.toList());
-		//****************************************************
-
+		return authorities;
 	}
 
 	@Override
