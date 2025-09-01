@@ -25,7 +25,7 @@ spring:
       port: 6379
       timeout: 2000ms
 
-# --- Spring Core Settings ---
+  # --- Spring Core Settings ---
   main:
     allow-bean-definition-overriding: true
 
