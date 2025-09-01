@@ -40,7 +40,7 @@ public class QOrder extends EntityPathBase<Order> {
 
     public final ListPath<OrderProduct, QOrderProduct> items = this.<OrderProduct, QOrderProduct>createList("items", OrderProduct.class, QOrderProduct.class, PathInits.DIRECT2);
 
-    public final NumberPath<Long> paymentId = createNumber("paymentId", Long.class);
+    public final com.backsuend.coucommerce.payment.entity.QPayment payment;
 
     public final StringPath receiverName = createString("receiverName");
 
@@ -74,6 +74,7 @@ public class QOrder extends EntityPathBase<Order> {
     public QOrder(Class<? extends Order> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
         this.buyer = inits.isInitialized("buyer") ? new com.backsuend.coucommerce.auth.entity.QMember(forProperty("buyer")) : null;
+        this.payment = inits.isInitialized("payment") ? new com.backsuend.coucommerce.payment.entity.QPayment(forProperty("payment"), inits.get("payment")) : null;
     }
 
 }

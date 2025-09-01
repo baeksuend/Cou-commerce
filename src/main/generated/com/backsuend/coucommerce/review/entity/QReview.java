@@ -66,6 +66,7 @@ public class QReview extends EntityPathBase<Review> {
     public QReview(Class<? extends Review> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
         this.member = inits.isInitialized("member") ? new com.backsuend.coucommerce.auth.entity.QMember(forProperty("member")) : null;
+        this.parentReview = inits.isInitialized("parentReview") ? new QReview(forProperty("parentReview"), inits.get("parentReview")) : null;
         this.product = inits.isInitialized("product") ? new com.backsuend.coucommerce.catalog.entity.QProduct(forProperty("product"), inits.get("product")) : null;
     }
 
