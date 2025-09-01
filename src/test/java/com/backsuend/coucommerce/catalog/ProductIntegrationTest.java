@@ -64,14 +64,17 @@ public class ProductIntegrationTest {
 	void setUp() throws Exception {
 
 		String password = "12345678";
-		member = Member.builder().email("hofngheeheeedagu@naver.com")
+		String email = "\"hofngheeheeedagu@naver.com"
+		member = Member.builder().email()
 			.password(password)
 			.phone("010-222-3333")
 			.name("홍길동")
 			.role(Role.SELLER)
 			.status(MemberStatus.ACTIVE)
 			.build();
+
 		Member member2 = memberRepository.save(member);
+
 		member_id = member2.getId();
 
 		product = Product.builder()
