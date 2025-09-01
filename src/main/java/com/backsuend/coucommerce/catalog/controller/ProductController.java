@@ -1,6 +1,7 @@
 package com.backsuend.coucommerce.catalog.controller;
 
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -29,11 +30,11 @@ public class ProductController {
 	private final ProductServiceImpl productService;
 
 	@Operation(summary = "[비회원] 상품 목록", description = "비회원이 상품을 조회한다. 비진열, 삭제 상품은 제외한다. ")
-	@ApiResponses({
-		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "목록조회 성공 값"),
-		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 상태 값"),
-		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "해당 요청 값")
-	})
+		@ApiResponses({
+			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "목록조회 성공 값"),
+			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 상태 값"),
+			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "리소스를 찾을수 없음")
+		})
 	@GetMapping("/products")
 	public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> getProducts(
 		@ModelAttribute ProductItemSearchRequest req) {
@@ -47,15 +48,20 @@ public class ProductController {
 			req.getKeyword(),
 			req.getCate());
 		PageResponse<ProductResponse> productResponse = new PageResponse<>(pageList, req.getPageSize());
-		return ResponseEntity.ok().body(ApiResponse.ok(productResponse));
+		//return ResponseEntity.ok().body(ApiResponse.ok(productResponse));
+		return ApiResponse.of(true,
+				HttpStatus.valueOf(200),
+				"상품목록 조회 성공",
+				productResponse)
+			.toResponseEntity();
 	}
 
 	@Operation(summary = "[비회원] 카테고리별 상품 목록", description = "비회원이 상세내용을 조회한다. 비진열, 삭제 상품은 제외한다. ")
-	@ApiResponses({
-		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "목록조회 성공 값"),
-		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 상태 값"),
-		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "해당 요청 값")
-	})
+		@ApiResponses({
+			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "목록조회 성공 값"),
+			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 상태 값"),
+			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "리소스를 찾을수 없음")
+		})
 	@GetMapping("/products/category/{recate}")
 	public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> getProductsCategory(@PathVariable String recate,
 		@ModelAttribute ProductItemSearchRequest req) {
@@ -70,21 +76,31 @@ public class ProductController {
 			req.getKeyword(),
 			req.getCate());
 		PageResponse<ProductResponse> productResponse = new PageResponse<>(pageList, req.getPageSize());
-		return ResponseEntity.ok().body(ApiResponse.ok(productResponse));
+		//return ResponseEntity.ok().body(ApiResponse.ok(productResponse));
+		return ApiResponse.of(true,
+				HttpStatus.valueOf(200),
+				"상품목록 조회 성공",
+				productResponse)
+			.toResponseEntity();
 	}
 
 	@Operation(summary = "[비회원] 상품 상세내용", description = "비회원이 상세내용을 조회한다. 비진열, 삭제 상품은 제외한다. ")
-	@ApiResponses({
-		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "상세내용조회 성공 값"),
-		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 상태 값"),
-		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "해당 요청 값")
-	})
+		@ApiResponses({
+			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "상세내용조회 성공 값"),
+			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 상태 값"),
+			@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "리소스를 찾을수 없음")
+		})
 	@GetMapping("/products/{id}")
 	public ResponseEntity<ApiResponse<ProductResponse>> getProductsRead(@PathVariable int id,
 		@ModelAttribute ProductItemSearchRequest req) {
 
 		ProductResponse productResponse = productService.getRead(ProductReadType.USER_READ, id, 0L);
-		return ResponseEntity.ok().body(ApiResponse.ok(productResponse));
+		//return ResponseEntity.ok().body(ApiResponse.ok(productResponse));
+		return ApiResponse.of(true,
+				HttpStatus.valueOf(200),
+				"상품내용 조회 성공",
+				productResponse)
+			.toResponseEntity();
 
 	}
 
