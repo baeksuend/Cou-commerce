@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.ArgumentCaptor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -143,8 +144,8 @@ class AuthServiceTest {
 	class LoginTests {
 
 		@Test
-		@DisplayName("성공 - 정확한 정보로 로그인 시 토큰을 발급한다")
-		void login_withValidCredentials_shouldReturnTokens() {
+		@DisplayName("성공 - 정확한 정보로 로그인 시 'ROLE_' 접두사가 제거된 Role로 토큰을 요청한다")
+		void login_withValidCredentials_shouldRequestTokenWithCorrectRole() {
 			// Given
 			LoginRequest loginRequest = new LoginRequest("test@example.com", "password123");
 			UserDetailsImpl userDetails = UserDetailsImpl.build(member);
@@ -160,6 +161,14 @@ class AuthServiceTest {
 			AuthResponse authResponse = authService.login(loginRequest);
 
 			// Then
+			// ArgumentCaptor를 사용하여 createAccessToken에 전달된 Role 인자를 캡처
+			ArgumentCaptor<Role> roleCaptor = ArgumentCaptor.forClass(Role.class);
+			verify(jwtProvider).createAccessToken(eq(member.getEmail()), roleCaptor.capture());
+
+			// 캡처된 Role 값이 'ROLE_' 접두사가 제거된 'BUYER'가 맞는지 명시적으로 확인
+			assertThat(roleCaptor.getValue()).isEqualTo(Role.BUYER);
+
+			// 기존 응답 검증도 유지
 			assertThat(authResponse).isNotNull();
 			assertThat(authResponse.accessToken()).isEqualTo("dummyAccessToken");
 		}
