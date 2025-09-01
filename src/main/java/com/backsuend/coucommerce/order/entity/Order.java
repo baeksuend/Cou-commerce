@@ -37,7 +37,7 @@ import lombok.Setter;
 	indexes = {
 		@Index(name = "idx_orders_member", columnList = "member_id"),
 		@Index(name = "idx_orders_status", columnList = "status"),
-		@Index(name = "idx_orders_created", columnList = "created_at"),
+		@Index(name = "idx_orders_created", columnList = "createdAt"),
 		@Index(name = "idx_orders_member_status", columnList = "member_id,status")
 	})
 @Getter
@@ -75,9 +75,11 @@ public class Order extends BaseTimeEntity {
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, length = 20)
+	@Builder.Default
 	private OrderStatus status = OrderStatus.PLACED;
 
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+	@Builder.Default
 	private List<OrderProduct> items = new ArrayList<>();
 
 	@OneToOne(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
