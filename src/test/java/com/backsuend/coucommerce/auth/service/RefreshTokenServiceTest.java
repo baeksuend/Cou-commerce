@@ -22,63 +22,63 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @DisplayName("RefreshTokenService 단위 테스트")
 class RefreshTokenServiceTest {
 
-	@Mock
-	private StringRedisTemplate redisTemplate;
+    @Mock
+    private StringRedisTemplate redisTemplate;
 
-	@Mock
-	private JwtProvider jwtProvider;
+    @Mock
+    private JwtProvider jwtProvider;
 
-	@Mock
-	private ObjectMapper objectMapper;
+    @Mock
+    private ObjectMapper objectMapper;
 
-	@Mock
-	private ValueOperations<String, String> valueOperations;
+    @Mock
+    private ValueOperations<String, String> valueOperations;
 
-	@Mock
-	private SetOperations<String, String> setOperations;
+    @Mock
+    private SetOperations<String, String> setOperations;
 
-	@InjectMocks
-	private RefreshTokenService refreshTokenService;
+    @InjectMocks
+    private RefreshTokenService refreshTokenService;
 
-	@BeforeEach
-	void setUp() {
-		// Mockito가 redisTemplate.opsForValue() 등을 호출했을 때
-		// 실제 객체가 아닌 Mock 객체를 반환하도록 설정
-		when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-		when(redisTemplate.opsForSet()).thenReturn(setOperations);
-	}
+    @BeforeEach
+    void setUp() {
+        // Mockito가 redisTemplate.opsForValue() 등을 호출했을 때
+        // 실제 객체가 아닌 Mock 객체를 반환하도록 설정
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(redisTemplate.opsForSet()).thenReturn(setOperations);
+    }
 
-	@Nested
-	@DisplayName("토큰 삭제 (로그아웃)")
-	class DeleteTokenTests {
+    @Nested
+    @DisplayName("토큰 삭제 (로그아웃)")
+    class DeleteTokenTests {
 
-		@Test
-		@DisplayName("성공 - 주어진 리프레시 토큰을 저장소에서 삭제한다")
-		void deleteByToken_success() throws JsonProcessingException {
-			// Given
-			String token = "validRefreshToken";
-			String email = "test@example.com";
-			Long userId = 1L;
-			RefreshTokenService.RefreshTokenInfo info = new RefreshTokenService.RefreshTokenInfo(email, userId, false);
-			String infoJson = "{\"email\":\"test@example.com\",\"userId\":1,\"used\":false}";
+        @Test
+        @DisplayName("성공 - 주어진 리프레시 토큰을 저장소에서 삭제한다")
+        void deleteByToken_success() throws JsonProcessingException {
+            // Given
+            String token = "validRefreshToken";
+            String email = "test@example.com";
+            Long userId = 1L;
+            RefreshTokenService.RefreshTokenInfo info = new RefreshTokenService.RefreshTokenInfo(email, userId, false);
+            String infoJson = "{\"email\":\"test@example.com\",\"userId\":1,\"used\":false}";
 
-			String redisKey = "refreshToken:" + token;
-			String userTokensKey = "user-tokens:" + userId;
+            String redisKey = "refreshToken:" + token;
+            String userTokensKey = "user-tokens:" + userId;
 
-			// readTokenInfo 내부 동작 Mocking
-			when(valueOperations.get(redisKey)).thenReturn(infoJson);
-			when(objectMapper.readValue(infoJson, RefreshTokenService.RefreshTokenInfo.class)).thenReturn(info);
+            // readTokenInfo 내부 동작 Mocking
+            when(valueOperations.get(redisKey)).thenReturn(infoJson);
+            when(objectMapper.readValue(infoJson, RefreshTokenService.RefreshTokenInfo.class)).thenReturn(info);
 
-			// deleteByToken 내부 동작 Mocking
-			when(setOperations.remove(userTokensKey, token)).thenReturn(1L);
-			when(redisTemplate.delete(redisKey)).thenReturn(true);
+            // deleteByToken 내부 동작 Mocking
+            when(setOperations.remove(userTokensKey, token)).thenReturn(1L);
+            when(redisTemplate.delete(redisKey)).thenReturn(true);
 
-			// When
-			refreshTokenService.deleteByToken(token);
+            // When
+            refreshTokenService.deleteByToken(token);
 
-			// Then
-			verify(setOperations, times(1)).remove(userTokensKey, token);
-			verify(redisTemplate, times(1)).delete(redisKey);
-		}
-	}
+            // Then
+            verify(setOperations, times(1)).remove(userTokensKey, token);
+            verify(redisTemplate, times(1)).delete(redisKey);
+        }
+    }
 }
