@@ -1,4 +1,4 @@
-package com.backsuend.coucommerce.seller.entity;
+package com.backsuend.coucommerce.sellerregistration.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -32,13 +32,13 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Table(name = "seller",
+@Table(name = "seller_registration",
 	uniqueConstraints = @UniqueConstraint(name = "uk_seller_member", columnNames = "member_id"),
 	indexes = {
 		@Index(name = "idx_seller_member", columnList = "member_id"),
 		@Index(name = "idx_seller_status", columnList = "status")
 	})
-public class Seller extends BaseTimeEntity {
+public class SellerRegistration extends BaseTimeEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -62,7 +62,7 @@ public class Seller extends BaseTimeEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, length = 20)
 	@Builder.Default
-	private SellerStatus status = SellerStatus.APPLIED;
+	private SellerRegistrationStatus status = SellerRegistrationStatus.APPLIED;
 
 	/** 승인한 관리자(Member) – null 허용 */
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -74,13 +74,13 @@ public class Seller extends BaseTimeEntity {
 	private String reason;
 
 	public void approve(Member admin) {
-		this.status = SellerStatus.APPROVED;
+		this.status = SellerRegistrationStatus.APPROVED;
 		this.approvedBy = admin;
 		this.reason = null;
 	}
 
 	public void reject(Member admin, String reason) {
-		this.status = SellerStatus.REJECTED;
+		this.status = SellerRegistrationStatus.REJECTED;
 		this.approvedBy = admin;
 		this.reason = reason;
 	}
