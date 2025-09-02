@@ -92,12 +92,15 @@ public abstract class BaseIntegrationTest {
 
 	protected String login(String email, String password) throws Exception {
 		LoginRequest loginRequest = new LoginRequest(email, password);
+		System.out.println("login loginRequest="+loginRequest);
 		MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(loginRequest)))
 			.andReturn();
+		System.out.println("login 222");
 
 		String responseString = result.getResponse().getContentAsString();
+		System.out.println("login responseString =="+responseString);
 		return objectMapper.readTree(responseString).get("data").get("accessToken").asText();
 	}
 

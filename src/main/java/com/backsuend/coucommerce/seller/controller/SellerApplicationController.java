@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 
 @Tag(name = "판매자 API", description = "판매자 전환 신청 등")
 @RestController
-@RequestMapping("/api/v1/seller")
+@RequestMapping("/api/v1/seller-app")
 @RequiredArgsConstructor
 public class SellerApplicationController {
 
