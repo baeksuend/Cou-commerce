@@ -144,7 +144,7 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleUnknown(
 		Exception ex, HttpServletRequest req) {
 
-		System.out.println("Unhandled exception occurred: "+ex);
+		System.out.println("Unhandled exception occurred: " + ex);
 
 		return build(ErrorCode.INTERNAL_ERROR, "예상치 못한 오류가 발생했습니다.", null, req);
 	}
@@ -206,6 +206,5 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
 
 	}
-
 
 }

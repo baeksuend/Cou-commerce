@@ -1,4 +1,4 @@
-package com.backsuend.coucommerce.seller;
+package com.backsuend.coucommerce.sellerregistration;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -16,15 +16,16 @@ import org.springframework.test.web.servlet.ResultActions;
 
 import com.backsuend.coucommerce.BaseIntegrationTest;
 import com.backsuend.coucommerce.auth.entity.Role;
-import com.backsuend.coucommerce.seller.dto.SellerApplicationRequest;
-import com.backsuend.coucommerce.seller.entity.Seller;
-import com.backsuend.coucommerce.seller.repository.SellerRepository;
+import com.backsuend.coucommerce.sellerregistration.dto.CreateSellerRegistrationRequest;
+import com.backsuend.coucommerce.sellerregistration.entity.SellerRegistration;
+import com.backsuend.coucommerce.sellerregistration.entity.SellerRegistrationStatus;
+import com.backsuend.coucommerce.sellerregistration.repository.SellerRegistrationRepository;
 
-@DisplayName("판매자 기능 통합 테스트")
-public class SellerApplicationIntegrationTest extends BaseIntegrationTest {
+@DisplayName("SellerRegistration 기능 통합 테스트")
+public class SellerRegistrationIntegrationTest extends BaseIntegrationTest {
 
 	@Autowired
-	private SellerRepository sellerRepository;
+	private SellerRegistrationRepository sellerRegistrationRepository;
 
 	private String buyerToken;
 	private Long buyerId;
@@ -37,17 +38,17 @@ public class SellerApplicationIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Nested
-	@DisplayName("판매자 전환 신청 (/api/v1/seller-app/apply)")
+	@DisplayName("판매자 전환 신청 (POST /api/v1/seller-registrations)")
 	class ApplyForSeller {
 
 		@Test
 		@DisplayName("성공")
 		void apply_success() throws Exception {
 			// given
-			SellerApplicationRequest request = new SellerApplicationRequest("테스트 상점", "123-45-67890");
+			CreateSellerRegistrationRequest request = new CreateSellerRegistrationRequest("테스트 상점", "123-45-67890");
 
 			// when
-			ResultActions result = mockMvc.perform(post("/api/v1/seller-app/apply")
+			ResultActions result = mockMvc.perform(post("/api/v1/seller-registrations")
 				.header("Authorization", "Bearer " + buyerToken)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)));
@@ -55,25 +56,25 @@ public class SellerApplicationIntegrationTest extends BaseIntegrationTest {
 			// then
 			result.andExpect(status().isCreated());
 
-			Optional<Seller> savedApplication = sellerRepository.findByMember(findMemberInNewTransaction(buyerId));
-			assertThat(savedApplication).isPresent();
-			assertThat(savedApplication.get().getStoreName()).isEqualTo("테스트 상점");
-			assertThat(savedApplication.get().getStatus()).isEqualTo(
-				com.backsuend.coucommerce.seller.entity.SellerStatus.APPLIED);
+			Optional<SellerRegistration> savedRegistration = sellerRegistrationRepository.findByMember(
+				findMemberInNewTransaction(buyerId));
+			assertThat(savedRegistration).isPresent();
+			assertThat(savedRegistration.get().getStoreName()).isEqualTo("테스트 상점");
+			assertThat(savedRegistration.get().getStatus()).isEqualTo(
+				SellerRegistrationStatus.APPLIED);
 		}
 
 		@Test
 		@DisplayName("실패 - 인증되지 않은 사용자")
 		void apply_fail_unauthorized() throws Exception {
 			// given
-			SellerApplicationRequest request = new SellerApplicationRequest("테스트 상점", "123-45-67890");
+			CreateSellerRegistrationRequest request = new CreateSellerRegistrationRequest("테스트 상점", "123-45-67890");
 
 			// when
-			ResultActions result = mockMvc.perform(post("/api/v1/seller-app/apply")
+			ResultActions result = mockMvc.perform(post("/api/v1/seller-registrations")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)));
 
-			System.out.println("______"+result);
 			// then
 			result.andExpect(status().isUnauthorized());
 		}
@@ -83,15 +84,15 @@ public class SellerApplicationIntegrationTest extends BaseIntegrationTest {
 		void apply_fail_duplicate() throws Exception {
 			// given
 			// 첫 번째 신청
-			SellerApplicationRequest request = new SellerApplicationRequest("테스트 상점", "123-45-67890");
-			mockMvc.perform(post("/api/v1/seller-app/apply")
+			CreateSellerRegistrationRequest request = new CreateSellerRegistrationRequest("테스트 상점", "123-45-67890");
+			mockMvc.perform(post("/api/v1/seller-registrations")
 				.header("Authorization", "Bearer " + buyerToken)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)));
 
 			// when
 			// 두 번째 신청
-			ResultActions result = mockMvc.perform(post("/api/v1/seller-app/apply")
+			ResultActions result = mockMvc.perform(post("/api/v1/seller-registrations")
 				.header("Authorization", "Bearer " + buyerToken)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)));

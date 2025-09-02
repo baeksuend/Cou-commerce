@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.any;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,7 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.backsuend.coucommerce.admin.dto.SellerApplicationResponse;
+import com.backsuend.coucommerce.admin.dto.SellerRegistrationResponse;
 import com.backsuend.coucommerce.admin.dto.SellerRejectionRequest;
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.auth.entity.MemberStatus;
@@ -27,9 +26,9 @@ import com.backsuend.coucommerce.auth.service.RefreshTokenService;
 import com.backsuend.coucommerce.common.exception.BusinessException;
 import com.backsuend.coucommerce.common.exception.ErrorCode;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
-import com.backsuend.coucommerce.seller.entity.Seller;
-import com.backsuend.coucommerce.seller.entity.SellerStatus;
-import com.backsuend.coucommerce.seller.repository.SellerRepository;
+import com.backsuend.coucommerce.sellerregistration.entity.SellerRegistration;
+import com.backsuend.coucommerce.sellerregistration.entity.SellerRegistrationStatus;
+import com.backsuend.coucommerce.sellerregistration.repository.SellerRegistrationRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AdminService 단위 테스트")
@@ -42,7 +41,7 @@ class AdminServiceTest {
 	private RefreshTokenService refreshTokenService;
 
 	@Mock
-	private SellerRepository sellerRepository;
+	private SellerRegistrationRepository sellerRegistrationRepository;
 
 	@InjectMocks
 	private AdminService adminService;
@@ -209,89 +208,89 @@ class AdminServiceTest {
 	}
 
 	@Nested
-	@DisplayName("판매자 신청 관리")
-	class ManageSellerApplication {
+	@DisplayName("판매자 등록 신청 관리")
+	class ManageSellerRegistration {
 
-		private Seller application;
+		private SellerRegistration registration;
 
 		@BeforeEach
 		void setUp() {
-			application = Seller.builder()
+			registration = SellerRegistration.builder()
 				.id(1L)
 				.member(member)
 				.storeName("테스트 상점")
 				.businessRegistrationNumber("123-45-67890")
-				.status(SellerStatus.APPLIED)
+				.status(SellerRegistrationStatus.APPLIED)
 				.build();
 		}
 
 		@Test
-		@DisplayName("성공 - 판매자 신청 목록 조회")
-		void getPendingSellerApplications_success() {
+		@DisplayName("성공 - 판매자 등록 신청 목록 조회")
+		void getPendingSellerRegistrations_success() {
 			// given
-			when(sellerRepository.findByStatus(SellerStatus.APPLIED)).thenReturn(List.of(application));
+			when(sellerRegistrationRepository.findByStatus(SellerRegistrationStatus.APPLIED)).thenReturn(List.of(registration));
 
 			// when
-			List<SellerApplicationResponse> responses = adminService.getPendingSellerApplications();
+			List<SellerRegistrationResponse> responses = adminService.getPendingSellerRegistrations();
 
 			// then
 			assertThat(responses).hasSize(1);
-			SellerApplicationResponse response = responses.getFirst();
-			assertThat(response.applicationId()).isEqualTo(application.getId());
+			SellerRegistrationResponse response = responses.getFirst();
+			assertThat(response.registrationId()).isEqualTo(registration.getId());
 			assertThat(response.userEmail()).isEqualTo(member.getEmail());
-			assertThat(response.storeName()).isEqualTo(application.getStoreName());
+			assertThat(response.storeName()).isEqualTo(registration.getStoreName());
 		}
 
 		@Test
-		@DisplayName("성공 - 판매자 신청 승인")
-		void approveSellerApplication_success() {
+		@DisplayName("성공 - 판매자 등록 신청 승인")
+		void approveSellerRegistration_success() {
 			// given
-			when(sellerRepository.findById(application.getId())).thenReturn(Optional.of(application));
+			when(sellerRegistrationRepository.findById(registration.getId())).thenReturn(Optional.of(registration));
 			when(memberRepository.findById(admin.getId())).thenReturn(Optional.of(admin));
 
 			// when
-			adminService.approveSellerApplication(application.getId(), admin.getId());
+			adminService.approveSellerRegistration(registration.getId(), admin.getId());
 
 			// then
-			assertThat(application.getStatus()).isEqualTo(SellerStatus.APPROVED);
-			assertThat(application.getApprovedBy()).isEqualTo(admin);
+			assertThat(registration.getStatus()).isEqualTo(SellerRegistrationStatus.APPROVED);
+			assertThat(registration.getApprovedBy()).isEqualTo(admin);
 			assertThat(member.getRole()).isEqualTo(Role.SELLER);
-			verify(sellerRepository, times(1)).save(application);
+			verify(sellerRegistrationRepository, times(1)).save(registration);
 			verify(memberRepository, times(1)).save(member);
 		}
 
 		@Test
 		@DisplayName("실패 - 이미 처리된 신청을 승인")
-		void approveSellerApplication_fail_alreadyProcessed() {
+		void approveSellerRegistration_fail_alreadyProcessed() {
 			// given
-			application.approve(admin); // 이미 승인된 상태로 변경
-			when(sellerRepository.findById(application.getId())).thenReturn(Optional.of(application));
+			registration.approve(admin); // 이미 승인된 상태로 변경
+			when(sellerRegistrationRepository.findById(registration.getId())).thenReturn(Optional.of(registration));
 			when(memberRepository.findById(admin.getId())).thenReturn(Optional.of(admin));
 
 			// when & then
 			BusinessException exception = assertThrows(BusinessException.class, () -> {
-				adminService.approveSellerApplication(application.getId(), admin.getId());
+				adminService.approveSellerRegistration(registration.getId(), admin.getId());
 			});
 			assertThat(exception.errorCode()).isEqualTo(ErrorCode.CONFLICT);
 		}
 
 		@Test
-		@DisplayName("성공 - 판매자 신청 거절")
-		void rejectSellerApplication_success() {
+		@DisplayName("성공 - 판매자 등록 신청 거절")
+		void rejectSellerRegistration_success() {
 			// given
 			SellerRejectionRequest request = new SellerRejectionRequest("서류 미비");
-			when(sellerRepository.findById(application.getId())).thenReturn(Optional.of(application));
+			when(sellerRegistrationRepository.findById(registration.getId())).thenReturn(Optional.of(registration));
 			when(memberRepository.findById(admin.getId())).thenReturn(Optional.of(admin));
 
 			// when
-			adminService.rejectSellerApplication(application.getId(), admin.getId(), request);
+			adminService.rejectSellerRegistration(registration.getId(), admin.getId(), request);
 
 			// then
-			assertThat(application.getStatus()).isEqualTo(SellerStatus.REJECTED);
-			assertThat(application.getApprovedBy()).isEqualTo(admin);
-			assertThat(application.getReason()).isEqualTo(request.reason());
+			assertThat(registration.getStatus()).isEqualTo(SellerRegistrationStatus.REJECTED);
+			assertThat(registration.getApprovedBy()).isEqualTo(admin);
+			assertThat(registration.getReason()).isEqualTo(request.reason());
 			assertThat(member.getRole()).isEqualTo(Role.BUYER); // 역할은 변경되지 않음
-			verify(sellerRepository, times(1)).save(application);
+			verify(sellerRegistrationRepository, times(1)).save(registration);
 			verify(memberRepository, never()).save(member);
 		}
 	}

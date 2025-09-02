@@ -1,11 +1,11 @@
-package com.backsuend.coucommerce.seller.dto;
+package com.backsuend.coucommerce.sellerregistration.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-public record SellerApplicationRequest(
+public record CreateSellerRegistrationRequest(
 	@Schema(description = "상호명", example = "쿠커머스")
 	@NotBlank(message = "상호명은 필수 입력 값입니다.")
 	@Size(max = 100, message = "상호명은 100자를 초과할 수 없습니다.")

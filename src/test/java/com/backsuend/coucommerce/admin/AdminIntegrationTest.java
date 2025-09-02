@@ -21,9 +21,9 @@ import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.auth.entity.MemberStatus;
 import com.backsuend.coucommerce.auth.entity.Role;
 import com.backsuend.coucommerce.auth.service.RefreshTokenService;
-import com.backsuend.coucommerce.seller.entity.Seller;
-import com.backsuend.coucommerce.seller.entity.SellerStatus;
-import com.backsuend.coucommerce.seller.repository.SellerRepository;
+import com.backsuend.coucommerce.sellerregistration.entity.SellerRegistration;
+import com.backsuend.coucommerce.sellerregistration.entity.SellerRegistrationStatus;
+import com.backsuend.coucommerce.sellerregistration.repository.SellerRegistrationRepository;
 
 @DisplayName("관리자 기능 통합 테스트")
 public class AdminIntegrationTest extends BaseIntegrationTest {
@@ -32,7 +32,7 @@ public class AdminIntegrationTest extends BaseIntegrationTest {
 	private RefreshTokenService refreshTokenService;
 
 	@Autowired
-	private SellerRepository sellerRepository;
+	private SellerRegistrationRepository sellerRegistrationRepository;
 
 	@Nested
 	@DisplayName("회원 상태 변경 API")
@@ -150,12 +150,12 @@ public class AdminIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Nested
-	@DisplayName("판매자 신청 관리 API")
-	class SellerApplicationManagementApi {
+	@DisplayName("판매자 등록 신청 관리 API")
+	class SellerRegistrationManagementApi {
 
 		private Member applicant;
 		private String adminToken;
-		private Seller application;
+		private SellerRegistration registration;
 
 		@BeforeEach
 		void setUp() throws Exception {
@@ -168,39 +168,39 @@ public class AdminIntegrationTest extends BaseIntegrationTest {
 			applicant = createMember("applicant@example.com", "applicantpass!", Role.BUYER);
 
 			// 3. 판매자 신청 데이터 생성
-			application = Seller.builder()
+			registration = SellerRegistration.builder()
 				.member(applicant)
 				.storeName("신청자의 상점")
 				.businessRegistrationNumber("111-22-33333")
-				.status(SellerStatus.APPLIED)
+				.status(SellerRegistrationStatus.APPLIED)
 				.build();
-			sellerRepository.save(application);
+			sellerRegistrationRepository.save(registration);
 		}
 
 		@Test
-		@DisplayName("성공 - 판매자 신청 목록을 조회한다")
-		void getSellerApplications_success() throws Exception {
+		@DisplayName("성공 - 판매자 등록 신청 목록을 조회한다")
+		void getSellerRegistrations_success() throws Exception {
 			// When & Then
-			mockMvc.perform(get("/api/v1/admin/seller-applications")
+			mockMvc.perform(get("/api/v1/admin/seller-registrations")
 					.header("Authorization", "Bearer " + adminToken))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data").isArray())
-				.andExpect(jsonPath("$.data[0].applicationId").value(application.getId()))
+				.andExpect(jsonPath("$.data[0].registrationId").value(registration.getId()))
 				.andExpect(jsonPath("$.data[0].userEmail").value(applicant.getEmail()));
 		}
 
 		@Test
-		@DisplayName("성공 - 판매자 신청을 승인한다")
-		void approveSellerApplication_success() throws Exception {
+		@DisplayName("성공 - 판매자 등록 신청을 승인한다")
+		void approveSellerRegistration_success() throws Exception {
 			// When
-			mockMvc.perform(post("/api/v1/admin/seller-applications/{applicationId}/approve", application.getId())
+			mockMvc.perform(post("/api/v1/admin/seller-registrations/{registrationId}/approve", registration.getId())
 					.header("Authorization", "Bearer " + adminToken))
 				.andExpect(status().isNoContent());
 
 			// Then
 			// 1. 신청 상태가 APPROVED로 변경되었는지 확인
-			Seller approvedApplication = sellerRepository.findById(application.getId()).orElseThrow();
-			assertThat(approvedApplication.getStatus()).isEqualTo(SellerStatus.APPROVED);
+			SellerRegistration approvedRegistration = sellerRegistrationRepository.findById(registration.getId()).orElseThrow();
+			assertThat(approvedRegistration.getStatus()).isEqualTo(SellerRegistrationStatus.APPROVED);
 
 			// 2. 신청자의 역할이 SELLER로 변경되었는지 확인
 			Member sellerMember = findMemberInNewTransaction(applicant.getId());
@@ -208,13 +208,13 @@ public class AdminIntegrationTest extends BaseIntegrationTest {
 		}
 
 		@Test
-		@DisplayName("성공 - 판매자 신청을 거절한다")
-		void rejectSellerApplication_success() throws Exception {
+		@DisplayName("성공 - 판매자 등록 신청을 거절한다")
+		void rejectSellerRegistration_success() throws Exception {
 			// Given
 			SellerRejectionRequest request = new SellerRejectionRequest("서류 부족");
 
 			// When
-			mockMvc.perform(post("/api/v1/admin/seller-applications/{applicationId}/reject", application.getId())
+			mockMvc.perform(post("/api/v1/admin/seller-registrations/{registrationId}/reject", registration.getId())
 					.header("Authorization", "Bearer " + adminToken)
 					.contentType(MediaType.APPLICATION_JSON)
 					.content(objectMapper.writeValueAsString(request)))
@@ -222,9 +222,9 @@ public class AdminIntegrationTest extends BaseIntegrationTest {
 
 			// Then
 			// 1. 신청 상태가 REJECTED로 변경되었는지 확인
-			Seller rejectedApplication = sellerRepository.findById(application.getId()).orElseThrow();
-			assertThat(rejectedApplication.getStatus()).isEqualTo(SellerStatus.REJECTED);
-			assertThat(rejectedApplication.getReason()).isEqualTo("서류 부족");
+			SellerRegistration rejectedRegistration = sellerRegistrationRepository.findById(registration.getId()).orElseThrow();
+			assertThat(rejectedRegistration.getStatus()).isEqualTo(SellerRegistrationStatus.REJECTED);
+			assertThat(rejectedRegistration.getReason()).isEqualTo("서류 부족");
 
 			// 2. 신청자의 역할이 BUYER로 유지되는지 확인
 			Member buyerMember = findMemberInNewTransaction(applicant.getId());
@@ -233,14 +233,15 @@ public class AdminIntegrationTest extends BaseIntegrationTest {
 
 		@Test
 		@DisplayName("실패 - 일반 사용자는 신청 목록을 조회할 수 없다")
-		void getSellerApplications_fail_notAdmin() throws Exception {
+		void getSellerRegistrations_fail_notAdmin() throws Exception {
 			// Given
 			String buyerToken = login(applicant.getEmail(), "applicantpass!");
 
 			// When & Then
-			mockMvc.perform(get("/api/v1/admin/seller-applications")
+			mockMvc.perform(get("/api/v1/admin/seller-registrations")
 					.header("Authorization", "Bearer " + buyerToken))
 				.andExpect(status().isForbidden());
 		}
 	}
 }
+
