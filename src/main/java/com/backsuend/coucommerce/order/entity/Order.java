@@ -53,7 +53,7 @@ public class Order extends BaseTimeEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY) // Buyer
 	@JoinColumn(name = "member_id", nullable = false)
-	private Member buyer;
+	private Member member;
 
 	@Column(name = "consumer_name", nullable = false, length = 20)
 	private String consumerName;

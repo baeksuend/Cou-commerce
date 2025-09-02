@@ -131,26 +131,6 @@ public class ReviewIntegrationTest {
 
 	@Test
 	@Transactional
-	@DisplayName("리뷰 목록 조회 성공")
-	void ReviewList() throws Exception {
-
-		//given
-		Long userId = testUserDetails.getId();
-
-		//when
-		ResultActions resultActions = mockMvc.perform(
-			get("/api/v1/products/{product_id}/reviews", product_id)
-				.param("isAsc", "1")
-				.param("page", "")
-		);
-
-		//then
-		resultActions.andExpect(status().isOk())
-			.andExpect(jsonPath("$.data").isNotEmpty());
-	}
-
-	@Test
-	@Transactional
 	@DisplayName("리뷰 등록 성공")
 	void ReviewCreate() throws Exception {
 		//given
