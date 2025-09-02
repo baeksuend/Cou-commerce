@@ -21,8 +21,8 @@ import org.springframework.data.domain.Pageable;
 
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.auth.entity.Role;
-import com.backsuend.coucommerce.catalog.entity.Category;
 import com.backsuend.coucommerce.catalog.entity.Product;
+import com.backsuend.coucommerce.catalog.enums.Category;
 import com.backsuend.coucommerce.common.exception.BusinessException;
 import com.backsuend.coucommerce.order.entity.Order;
 import com.backsuend.coucommerce.order.entity.OrderProduct;

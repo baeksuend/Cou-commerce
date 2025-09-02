@@ -14,8 +14,8 @@ import org.springframework.test.web.servlet.MvcResult;
 import com.backsuend.coucommerce.BaseIntegrationTest;
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.cart.dto.CartItem;
-import com.backsuend.coucommerce.catalog.entity.Category;
 import com.backsuend.coucommerce.catalog.entity.Product;
+import com.backsuend.coucommerce.catalog.enums.Category;
 import com.backsuend.coucommerce.catalog.repository.ProductRepository;
 import com.backsuend.coucommerce.member.repository.AddressRepository;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
@@ -154,7 +154,7 @@ class OrderPaymentCartIntegrationTest extends BaseIntegrationTest {
 	void paymentFailure_Scenario() throws Exception {
 		// 테스트용 상품 새로 생성 (독립적인 데이터)
 		Product paymentTestProduct = createTestProduct("결제 테스트 상품", 10000, 10, Category.DIGITAL);
-		
+
 		// 1. 장바구니에 상품 추가
 		addToCart(paymentTestProduct.getId(), 1);
 
@@ -234,7 +234,7 @@ class OrderPaymentCartIntegrationTest extends BaseIntegrationTest {
 	void insufficientStock_Scenario() throws Exception {
 		// 테스트용 상품 새로 생성 (독립적인 데이터)
 		Product stockTestProduct = createTestProduct("재고 테스트 상품", 10000, 10, Category.DIGITAL);
-		
+
 		// 1. 재고보다 많은 수량으로 장바구니에 추가
 		addToCart(stockTestProduct.getId(), 15); // 재고는 10개
 
@@ -253,7 +253,7 @@ class OrderPaymentCartIntegrationTest extends BaseIntegrationTest {
 	void priceChange_Scenario() throws Exception {
 		// 테스트용 상품 새로 생성 (독립적인 데이터)
 		Product priceTestProduct = createTestProduct("가격 테스트 상품", 10000, 10, Category.DIGITAL);
-		
+
 		// 1. 장바구니에 상품 추가
 		addToCart(priceTestProduct.getId(), 2);
 

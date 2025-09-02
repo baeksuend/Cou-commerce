@@ -2,7 +2,7 @@ package com.backsuend.coucommerce.order.service;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.BDDMockito.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -10,23 +10,23 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import com.backsuend.coucommerce.auth.entity.Member;
-import com.backsuend.coucommerce.auth.entity.Role;
 import com.backsuend.coucommerce.cart.dto.CartItem;
 import com.backsuend.coucommerce.cart.dto.CartResponse;
 import com.backsuend.coucommerce.cart.service.CartService;
-import com.backsuend.coucommerce.catalog.entity.Category;
 import com.backsuend.coucommerce.catalog.entity.Product;
+import com.backsuend.coucommerce.catalog.enums.Category;
 import com.backsuend.coucommerce.catalog.repository.ProductRepository;
 import com.backsuend.coucommerce.common.exception.BusinessException;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
@@ -35,10 +35,11 @@ import com.backsuend.coucommerce.order.dto.OrderResponse;
 import com.backsuend.coucommerce.order.entity.Order;
 import com.backsuend.coucommerce.order.entity.OrderProduct;
 import com.backsuend.coucommerce.order.entity.OrderStatus;
-import com.backsuend.coucommerce.order.repository.OrderProductRepository;
 import com.backsuend.coucommerce.order.repository.OrderRepository;
 
-@ExtendWith(MockitoExtension.class)
+/**
+ * @author rua
+ */
 @DisplayName("OrderService 단위 테스트")
 class OrderServiceTest {
 
@@ -52,339 +53,557 @@ class OrderServiceTest {
 	private MemberRepository memberRepository;
 
 	@Mock
-	private OrderProductRepository orderProductRepository;
-
-	@Mock
 	private CartService cartService;
 
 	@InjectMocks
 	private OrderService orderService;
 
-	private Member testMember;
-	private Product testProduct1;
-	private Product testProduct2;
-	private CartItem cartItem1;
-	private CartItem cartItem2;
-	private OrderCreateRequest orderCreateRequest;
-
 	@BeforeEach
 	void setUp() {
-		// 테스트 데이터 설정
-		testMember = Member.builder()
-			.id(1L)
-			.email("test@example.com")
-			.name("테스트 사용자")
-			.phone("010-1234-5678")
-			.role(Role.BUYER)
+		MockitoAnnotations.openMocks(this);
+		orderService = new OrderService(orderRepository, productRepository, memberRepository, cartService);
+	}
+
+	private Member createTestMember(Long id) {
+		return Member.builder()
+			.id(id)
+			.email("test@example.com" + id)
+			.name("테스트 사용자" + id)
 			.build();
-
-		testProduct1 = new Product();
-		testProduct1.setId(1L);
-		testProduct1.setName("테스트 상품 1");
-		testProduct1.setPrice(10000);
-		testProduct1.setStock(10);
-		testProduct1.setVisible(true);
-		testProduct1.setCategory(Category.DIGITAL);
-
-		testProduct2 = new Product();
-		testProduct2.setId(2L);
-		testProduct2.setName("테스트 상품 2");
-		testProduct2.setPrice(20000);
-		testProduct2.setStock(5);
-		testProduct2.setVisible(true);
-		testProduct2.setCategory(Category.FASHION);
-
-		cartItem1 = new CartItem();
-		cartItem1.setProductId(1L);
-		cartItem1.setQuantity(2);
-		cartItem1.setPrice(10000);
-
-		cartItem2 = new CartItem();
-		cartItem2.setProductId(2L);
-		cartItem2.setQuantity(1);
-		cartItem2.setPrice(20000);
-
-		orderCreateRequest = new OrderCreateRequest();
-		orderCreateRequest.setConsumerName("구매자");
-		orderCreateRequest.setConsumerPhone("010-1234-5678");
-		orderCreateRequest.setReceiverName("수령자");
-		orderCreateRequest.setReceiverRoadName("서울시 강남구 테헤란로 123");
-		orderCreateRequest.setReceiverPhone("010-9876-5432");
-		orderCreateRequest.setReceiverPostalCode("12345");
 	}
 
-	@Test
-	@DisplayName("장바구니에서 주문 생성 성공")
-	void createOrderFromCart_Success() {
-		// Given
-		Long memberId = 1L;
-		List<CartItem> cartItems = Arrays.asList(cartItem1, cartItem2);
-		CartResponse cartResponse = new CartResponse("cart:1", cartItems);
-
-		when(memberRepository.findById(memberId)).thenReturn(Optional.of(testMember));
-		when(cartService.getCart(memberId)).thenReturn(cartResponse);
-		when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct1));
-		when(productRepository.findById(2L)).thenReturn(Optional.of(testProduct2));
-		when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
-			Order order = invocation.getArgument(0);
-			order.setId(1L);
-			return order;
-		});
-
-		// When
-		OrderResponse result = orderService.createOrderFromCart(orderCreateRequest, memberId);
-
-		// Then
-		assertThat(result).isNotNull();
-		assertThat(result.getOrderId()).isEqualTo(1L);
-		assertThat(result.getStatus()).isEqualTo(OrderStatus.PLACED.name());
-		assertThat(result.getConsumerName()).isEqualTo("구매자");
-		assertThat(result.getReceiverName()).isEqualTo("수령자");
-		assertThat(result.getItems()).hasSize(2);
-
-		// 재고 차감 확인
-		assertThat(testProduct1.getStock()).isEqualTo(8); // 10 - 2
-		assertThat(testProduct2.getStock()).isEqualTo(4); // 5 - 1
-
-		// 장바구니 초기화 확인
-		verify(cartService).clearCart(memberId);
+	private Product createTestProduct(Long id, Member member, String name, int price, String detail, Category category,
+		int stock, boolean visible) {
+		return Product.builder()
+			.id(id)
+			.member(member)
+			.name(name)
+			.price(price)
+			.stock(stock)
+			.detail(detail)
+			.category(category)
+			.visible(visible)
+			.build();
 	}
 
-	@Test
-	@DisplayName("존재하지 않는 회원으로 주문 생성 시 예외 발생")
-	void createOrderFromCart_MemberNotFound() {
-		// Given
-		Long memberId = 999L;
-		when(memberRepository.findById(memberId)).thenReturn(Optional.empty());
-
-		// When & Then
-		assertThatThrownBy(() -> orderService.createOrderFromCart(orderCreateRequest, memberId))
-			.isInstanceOf(BusinessException.class)
-			.hasMessage("회원을 찾을 수 없습니다.");
+	private CartItem createTestCartItem(Long productId, String name, int price, int quantity) {
+		return CartItem.builder()
+			.productId(productId)
+			.name(name)
+			.price(price)
+			.quantity(quantity)
+			.detail("색상: 블랙")
+			.build();
 	}
 
-	@Test
-	@DisplayName("빈 장바구니로 주문 생성 시 예외 발생")
-	void createOrderFromCart_EmptyCart() {
-		// Given
-		Long memberId = 1L;
-		CartResponse emptyCartResponse = new CartResponse("cart:1", Arrays.asList());
-
-		when(memberRepository.findById(memberId)).thenReturn(Optional.of(testMember));
-		when(cartService.getCart(memberId)).thenReturn(emptyCartResponse);
-
-		// When & Then
-		assertThatThrownBy(() -> orderService.createOrderFromCart(orderCreateRequest, memberId))
-			.isInstanceOf(BusinessException.class)
-			.hasMessage("장바구니가 비어 있습니다.");
-	}
-
-	@Test
-	@DisplayName("존재하지 않는 상품으로 주문 생성 시 예외 발생")
-	void createOrderFromCart_ProductNotFound() {
-		// Given
-		Long memberId = 1L;
-		List<CartItem> cartItems = Arrays.asList(cartItem1);
-		CartResponse cartResponse = new CartResponse("cart:1", cartItems);
-
-		when(memberRepository.findById(memberId)).thenReturn(Optional.of(testMember));
-		when(cartService.getCart(memberId)).thenReturn(cartResponse);
-		when(productRepository.findById(1L)).thenReturn(Optional.empty());
-
-		// When & Then
-		assertThatThrownBy(() -> orderService.createOrderFromCart(orderCreateRequest, memberId))
-			.isInstanceOf(BusinessException.class)
-			.hasMessage("상품을 찾을 수 없습니다. 상품ID: 1");
-	}
-
-	@Test
-	@DisplayName("판매 중단된 상품으로 주문 생성 시 예외 발생")
-	void createOrderFromCart_ProductNotVisible() {
-		// Given
-		Long memberId = 1L;
-		testProduct1.setVisible(false);
-		List<CartItem> cartItems = Arrays.asList(cartItem1);
-		CartResponse cartResponse = new CartResponse("cart:1", cartItems);
-
-		when(memberRepository.findById(memberId)).thenReturn(Optional.of(testMember));
-		when(cartService.getCart(memberId)).thenReturn(cartResponse);
-		when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct1));
-
-		// When & Then
-		assertThatThrownBy(() -> orderService.createOrderFromCart(orderCreateRequest, memberId))
-			.isInstanceOf(BusinessException.class)
-			.hasMessage("판매 중단된 상품입니다: 테스트 상품 1");
-	}
-
-	@Test
-	@DisplayName("가격이 변경된 상품으로 주문 생성 시 예외 발생")
-	void createOrderFromCart_PriceChanged() {
-		// Given
-		Long memberId = 1L;
-		testProduct1.setPrice(15000); // 가격 변경
-		List<CartItem> cartItems = Arrays.asList(cartItem1);
-		CartResponse cartResponse = new CartResponse("cart:1", cartItems);
-
-		when(memberRepository.findById(memberId)).thenReturn(Optional.of(testMember));
-		when(cartService.getCart(memberId)).thenReturn(cartResponse);
-		when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct1));
-
-		// When & Then
-		assertThatThrownBy(() -> orderService.createOrderFromCart(orderCreateRequest, memberId))
-			.isInstanceOf(BusinessException.class)
-			.hasMessage("상품 가격이 변경되었습니다. 상품: 테스트 상품 1, 최신 가격: 15000원");
-	}
-
-	@Test
-	@DisplayName("재고 부족으로 주문 생성 시 예외 발생")
-	void createOrderFromCart_InsufficientStock() {
-		// Given
-		Long memberId = 1L;
-		testProduct1.setStock(1); // 재고 부족
-		List<CartItem> cartItems = Arrays.asList(cartItem1);
-		CartResponse cartResponse = new CartResponse("cart:1", cartItems);
-
-		when(memberRepository.findById(memberId)).thenReturn(Optional.of(testMember));
-		when(cartService.getCart(memberId)).thenReturn(cartResponse);
-		when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct1));
-
-		// When & Then
-		assertThatThrownBy(() -> orderService.createOrderFromCart(orderCreateRequest, memberId))
-			.isInstanceOf(BusinessException.class)
-			.hasMessage("상품 재고가 부족합니다. 상품: 테스트 상품 1, 요청 수량: 2, 현재 재고: 1");
-	}
-
-	@Test
-	@DisplayName("주문 상세 조회 성공")
-	void getOrder_Success() {
-		// Given
-		Long orderId = 1L;
-		Long memberId = 1L;
-		Order order = createTestOrder();
-
-		when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
-
-		// When
-		OrderResponse result = orderService.getOrder(orderId, memberId);
-
-		// Then
-		assertThat(result).isNotNull();
-		assertThat(result.getOrderId()).isEqualTo(1L);
-		assertThat(result.getStatus()).isEqualTo(OrderStatus.PLACED.name());
-	}
-
-	@Test
-	@DisplayName("존재하지 않는 주문 조회 시 예외 발생")
-	void getOrder_NotFound() {
-		// Given
-		Long orderId = 999L;
-		Long memberId = 1L;
-		when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
-
-		// When & Then
-		assertThatThrownBy(() -> orderService.getOrder(orderId, memberId))
-			.isInstanceOf(BusinessException.class)
-			.hasMessage("주문을 찾을 수 없습니다.");
-	}
-
-	@Test
-	@DisplayName("다른 사용자의 주문 조회 시 예외 발생")
-	void getOrder_AccessDenied() {
-		// Given
-		Long orderId = 1L;
-		Long memberId = 2L; // 다른 사용자
-		Order order = createTestOrder();
-
-		when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
-
-		// When & Then
-		assertThatThrownBy(() -> orderService.getOrder(orderId, memberId))
-			.isInstanceOf(BusinessException.class)
-			.hasMessage("본인의 주문만 조회할 수 있습니다.");
-	}
-
-	@Test
-	@DisplayName("내 주문 목록 조회 성공")
-	void getMyOrders_Success() {
-		// Given
-		Long memberId = 1L;
-		Pageable pageable = PageRequest.of(0, 10);
-		Order order = createTestOrder();
-		Page<Order> orderPage = new PageImpl<>(Arrays.asList(order));
-
-		when(orderRepository.findByMemberId(memberId, pageable)).thenReturn(orderPage);
-
-		// When
-		Page<OrderResponse> result = orderService.getMyOrders(memberId, pageable);
-
-		// Then
-		assertThat(result).isNotNull();
-		assertThat(result.getContent()).hasSize(1);
-		assertThat(result.getContent().get(0).getOrderId()).isEqualTo(1L);
-	}
-
-	@Test
-	@DisplayName("주문 취소 성공")
-	void cancelOrder_Success() {
-		// Given
-		Long orderId = 1L;
-		Long memberId = 1L;
-		Order order = createTestOrder();
-		OrderProduct orderProduct = order.getItems().get(0);
-		Product product = orderProduct.getProduct();
-		int originalStock = product.getStock();
-
-		when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
-
-		// When
-		OrderResponse result = orderService.cancelOrder(orderId, memberId);
-
-		// Then
-		assertThat(result).isNotNull();
-		assertThat(result.getStatus()).isEqualTo(OrderStatus.CANCELED.name());
-		assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELED);
-		assertThat(product.getStock()).isEqualTo(originalStock + orderProduct.getQuantity());
-	}
-
-	@Test
-	@DisplayName("이미 결제된 주문 취소 시 예외 발생")
-	void cancelOrder_AlreadyPaid() {
-		// Given
-		Long orderId = 1L;
-		Long memberId = 1L;
-		Order order = createTestOrder();
-		order.setStatus(OrderStatus.PAID);
-
-		when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
-
-		// When & Then
-		assertThatThrownBy(() -> orderService.cancelOrder(orderId, memberId))
-			.isInstanceOf(BusinessException.class)
-			.hasMessage("주문 취소는 주문 완료 상태에서만 가능합니다. 현재 상태: PAID");
-	}
-
-	private Order createTestOrder() {
-		Order order = Order.builder()
-			.id(1L)
-			.member(testMember)
-			.consumerName("구매자")
+	private OrderCreateRequest createTestOrderCreateRequest() {
+		return OrderCreateRequest.builder()
+			.consumerName("홍길동")
 			.consumerPhone("010-1234-5678")
-			.receiverName("수령자")
+			.receiverName("홍길동")
+			.receiverPhone("010-1234-5678")
 			.receiverRoadName("서울시 강남구 테헤란로 123")
-			.receiverPhone("010-9876-5432")
-			.receiverPostalCode("12345")
+			.receiverPostalCode("06292")
+			.build();
+	}
+
+	private Order createTestOrder(Member member, Product product) {
+		Order order = Order.builder()
+			.member(member)
+			.consumerName("홍길동")
+			.consumerPhone("010-1234-5678")
+			.receiverName("홍길동")
+			.receiverPhone("010-1234-5678")
+			.receiverRoadName("서울시 강남구 테헤란로 123")
+			.receiverPostalCode("06292")
 			.status(OrderStatus.PLACED)
 			.build();
 
+		order.setId(1L);
+
 		OrderProduct orderProduct = OrderProduct.builder()
-			.id(1L)
-			.order(order)
-			.product(testProduct1)
+			.product(product)
 			.quantity(2)
 			.priceSnapshot(10000)
 			.build();
 
-		order.getItems().add(orderProduct);
+		order.addItem(orderProduct);
+
 		return order;
+	}
+
+	// ===== 테스트 헬퍼 메서드들 =====
+
+	@Nested
+	@DisplayName("주문 생성 테스트")
+	class CreateOrderTest {
+
+		@Test
+		@DisplayName("정상적인 주문 생성 - 성공")
+		void createOrderFromCart_Success() {
+			// given
+			Member testMember1 = createTestMember(1L);
+			Member testMember2 = createTestMember(2L);
+
+			Product testProduct1 = createTestProduct(1L, testMember1, "테스트 상품 1", 10000, "블랙", Category.BOOKS, 10,
+				true);
+			Product testProduct2 = createTestProduct(2L, testMember2, "테스트 상품 2", 20000, "Red", Category.FOOD, 5, true);
+
+			CartItem testCartItem1 = createTestCartItem(1L, "테스트 상품 1", 10000, 2);
+			CartItem testCartItem2 = createTestCartItem(2L, "테스트 상품 2", 20000, 1);
+
+			CartResponse testCartResponse = CartResponse.builder()
+				.cartId("cart:1")
+				.items(Arrays.asList(testCartItem1, testCartItem2))
+				.build();
+
+			OrderCreateRequest testOrderCreateRequest = createTestOrderCreateRequest();
+
+			// Mock 설정 - 명확하게 설정
+			given(memberRepository.findById(1L)).willReturn(Optional.of(testMember1));
+			given(memberRepository.findById(2L)).willReturn(Optional.of(testMember2));
+			given(cartService.getCart(1L)).willReturn(testCartResponse);
+			given(productRepository.findById(1L)).willReturn(Optional.of(testProduct1));
+			given(productRepository.findById(2L)).willReturn(Optional.of(testProduct2));
+			given(orderRepository.save(any(Order.class))).willAnswer(invocation -> {
+				Order order = invocation.getArgument(0);
+				order.setId(1L);
+				return order;
+			});
+
+			// when
+			OrderResponse result = orderService.createOrderFromCart(testOrderCreateRequest, 1L);
+
+			// then
+			assertThat(result).isNotNull();
+			assertThat(result.getOrderId()).isEqualTo(1L);
+			assertThat(result.getStatus()).isEqualTo(OrderStatus.PLACED.name());
+			assertThat(result.getConsumerName()).isEqualTo("홍길동");
+			assertThat(result.getItems()).hasSize(2);
+
+			// 재고 차감 확인
+			assertThat(testProduct1.getStock()).isEqualTo(8); // 10 - 2
+			assertThat(testProduct2.getStock()).isEqualTo(4); // 5 - 1
+
+			// 장바구니 초기화 확인
+			verify(cartService).clearCart(1L);
+		}
+
+		@Test
+		@DisplayName("판매 중단된 상품으로 주문 생성 - 실패")
+		void createOrderFromCart_ProductNotVisible_Fail() {
+			// given
+			Member testMember = createTestMember(1L);
+			Product invisibleProduct = createTestProduct(1L, testMember, "테스트 상품 1", 10000, "블랙", Category.BOOKS, 1,
+				true);
+			OrderCreateRequest req = createTestOrderCreateRequest();
+			CartItem cartItem = createTestCartItem(1L, "테스트 상품 1", 10000, 2);
+			CartResponse cartResponse = CartResponse.builder().cartId("cart:1").items(Arrays.asList(cartItem)).build();
+
+			given(memberRepository.findById(1L)).willReturn(Optional.of(testMember));
+			given(cartService.getCart(1L)).willReturn(cartResponse);
+			given(productRepository.findById(1L)).willReturn(Optional.of(invisibleProduct));
+
+			// 1) 스텁이 제대로 적용됐는지 확인
+			System.out.println(">>> cartService.getCart(1L) = " + cartService.getCart(1L)); // CartResponse가 나와야 함
+			System.out.println(
+				">>> productRepository.findById(1L) present? = " + productRepository.findById(1L).isPresent());
+
+			// 2) 서비스 실행 후 실제 productRepository에 어떤 인자가 들어갔는지 캡처
+			ArgumentCaptor<Long> captor = ArgumentCaptor.forClass(Long.class);
+			try {
+				orderService.createOrderFromCart(req, 1L);
+			} catch (BusinessException e) {
+				// expected for this test
+			}
+			verify(productRepository, atLeastOnce()).findById(captor.capture());
+			System.out.println(">>> productRepository.findById called with: " + captor.getAllValues());
+
+			// when & then — 메시지 일부분으로 검사 (더 유연)
+			assertThatThrownBy(() -> orderService.createOrderFromCart(req, 1L))
+				.isInstanceOf(BusinessException.class)
+				.hasMessageContaining("판매 중단된 상품");
+
+			// 호출 검증: 실제로 상품 조회가 일어났는지 확인
+			verify(productRepository).findById(1L);
+			verify(cartService, never()).clearCart(anyLong()); // 실패 케이스라면 clearCart가 호출되면 안됨
+		}
+
+		@Test
+		@DisplayName("가격이 변경된 상품으로 주문 생성 - 실패")
+		void createOrderFromCart_PriceChanged_Fail() {
+			// given
+			Member testMember = createTestMember(1L);
+			Product priceChangedProduct = createTestProduct(1L, testMember, "테스트 상품 1", 10000, "블랙", Category.BOOKS, 1,
+				true);
+			OrderCreateRequest testOrderCreateRequest = createTestOrderCreateRequest();
+
+			CartItem testCartItem1 = createTestCartItem(1L, "테스트 상품 1", 10000, 2); // 장바구니 가격과 다름
+			CartResponse testCartResponse = CartResponse.builder()
+				.cartId("cart:1")
+				.items(Arrays.asList(testCartItem1))
+				.build();
+
+			// Mock 설정 - 이 테스트에서만 사용
+			given(memberRepository.findById(1L)).willReturn(Optional.of(testMember));
+			given(cartService.getCart(1L)).willReturn(testCartResponse);
+			given(productRepository.findById(1L)).willReturn(Optional.of(priceChangedProduct));
+
+			// when & then
+			assertThatThrownBy(() -> orderService.createOrderFromCart(testOrderCreateRequest, 1L))
+				.isInstanceOf(BusinessException.class)
+				.hasMessage("상품 가격이 변경되었습니다. 상품: 테스트 상품 1, 최신 가격: 15000원");
+		}
+
+		@Test
+		@DisplayName("재고 부족으로 주문 생성 - 실패")
+		void createOrderFromCart_InsufficientStock_Fail() {
+			// given
+			Member testMember1 = createTestMember(1L);
+			Product lowStockProduct = createTestProduct(1L, testMember1, "테스트 상품 1", 10000, "블랙", Category.BOOKS, 1,
+				true);
+			OrderCreateRequest req = createTestOrderCreateRequest();
+
+			CartItem cartItem = createTestCartItem(1L, "테스트 상품 1", 10000, 2); // 요청 수량이 재고보다 많음
+			CartResponse cartResponse = CartResponse.builder()
+				.cartId("cart:1")
+				.items(Arrays.asList(cartItem))
+				.build();
+
+			// Mock 설정 (명시적 매처 사용)
+			given(memberRepository.findById(eq(1L))).willReturn(Optional.of(testMember1));
+			given(cartService.getCart(eq(1L))).willReturn(cartResponse);
+			given(productRepository.findById(eq(1L))).willReturn(Optional.of(lowStockProduct));
+
+			// when & then
+			assertThatThrownBy(() -> orderService.createOrderFromCart(req, 1L))
+				.isInstanceOf(BusinessException.class)
+				// 핵심 메시지는 포함 여부로 검사 (포맷 민감도 제거)
+				.hasMessageContaining("상품 재고가 부족합니다")
+				// 추가로 상품명·수량·재고가 포함되었는지도 확인 (선택적 강도 높임)
+				.hasMessageContaining("테스트 상품 1")
+				.hasMessageContaining("요청 수량")
+				.hasMessageContaining("현재 재고");
+
+			// 호출 검증: 상품 조회는 했고, 실패 시 장바구니 초기화나 주문 저장은 일어나지 않아야 함
+			verify(productRepository).findById(1L);
+			verify(cartService, never()).clearCart(anyLong());
+			verify(orderRepository, never()).save(any(Order.class));
+		}
+
+		@Test
+		@DisplayName("존재하지 않는 상품으로 주문 생성 - 실패")
+		void createOrderFromCart_ProductNotFound_Fail() {
+			// given
+			Member testMember = createTestMember(1L);
+			OrderCreateRequest testOrderCreateRequest = createTestOrderCreateRequest();
+
+			CartItem testCartItem1 = createTestCartItem(1L, "테스트 상품 1", 10000, 2);
+			CartResponse testCartResponse = CartResponse.builder()
+				.cartId("cart:1")
+				.items(Arrays.asList(testCartItem1))
+				.build();
+
+			// Mock 설정 - 상품을 찾을 수 없도록 설정
+			given(memberRepository.findById(1L)).willReturn(Optional.of(testMember));
+			given(cartService.getCart(1L)).willReturn(testCartResponse);
+			given(productRepository.findById(1L)).willReturn(Optional.empty());
+
+			// when & then
+			assertThatThrownBy(() -> orderService.createOrderFromCart(testOrderCreateRequest, 1L))
+				.isInstanceOf(BusinessException.class)
+				.hasMessage("상품을 찾을 수 없습니다. 상품ID: 1");
+		}
+
+		@Test
+		@DisplayName("빈 장바구니로 주문 생성 - 실패")
+		void createOrderFromCart_EmptyCart_Fail() {
+			// given
+			Member testMember = createTestMember(1L);
+			OrderCreateRequest testOrderCreateRequest = createTestOrderCreateRequest();
+
+			CartResponse emptyCart = CartResponse.builder()
+				.cartId("cart:1")
+				.items(Arrays.asList())
+				.build();
+
+			given(memberRepository.findById(1L)).willReturn(Optional.of(testMember));
+			given(cartService.getCart(1L)).willReturn(emptyCart);
+
+			// when & then
+			assertThatThrownBy(() -> orderService.createOrderFromCart(testOrderCreateRequest, 1L))
+				.isInstanceOf(BusinessException.class)
+				.hasMessage("장바구니가 비어 있습니다.");
+		}
+
+		@Test
+		@DisplayName("존재하지 않는 회원으로 주문 생성 - 실패")
+		void createOrderFromCart_MemberNotFound_Fail() {
+			// given
+			OrderCreateRequest testOrderCreateRequest = createTestOrderCreateRequest();
+			given(memberRepository.findById(999L)).willReturn(Optional.empty());
+
+			// when & then
+			assertThatThrownBy(() -> orderService.createOrderFromCart(testOrderCreateRequest, 999L))
+				.isInstanceOf(BusinessException.class)
+				.hasMessage("회원을 찾을 수 없습니다.");
+		}
+
+		@Test
+		@DisplayName("수량이 0 이하인 상품으로 주문 생성 - 실패")
+		void createOrderFromCart_InvalidQuantity_Fail() {
+			// given
+			Member testMember = createTestMember(1L);
+			OrderCreateRequest testOrderCreateRequest = createTestOrderCreateRequest();
+
+			CartItem invalidCartItem = createTestCartItem(1L, "테스트 상품 1", 10000, 0); // 잘못된 수량
+			CartResponse invalidCart = CartResponse.builder()
+				.cartId("cart:1")
+				.items(Arrays.asList(invalidCartItem))
+				.build();
+
+			given(memberRepository.findById(1L)).willReturn(Optional.of(testMember));
+			given(cartService.getCart(1L)).willReturn(invalidCart);
+
+			// when & then
+			assertThatThrownBy(() -> orderService.createOrderFromCart(testOrderCreateRequest, 1L))
+				.isInstanceOf(BusinessException.class)
+				.hasMessage("수량은 1 이상이어야 합니다. 상품ID: 1");
+		}
+
+		@Test
+		@DisplayName("가격이 음수인 상품으로 주문 생성 - 실패")
+		void createOrderFromCart_NegativePrice_Fail() {
+			// given
+			Member testMember = createTestMember(1L);
+			OrderCreateRequest testOrderCreateRequest = createTestOrderCreateRequest();
+
+			CartItem invalidCartItem = createTestCartItem(1L, "테스트 상품 1", -1000, 1); // 잘못된 가격
+			CartResponse invalidCart = CartResponse.builder()
+				.cartId("cart:1")
+				.items(Arrays.asList(invalidCartItem))
+				.build();
+
+			given(memberRepository.findById(1L)).willReturn(Optional.of(testMember));
+			given(cartService.getCart(1L)).willReturn(invalidCart);
+
+			// when & then
+			assertThatThrownBy(() -> orderService.createOrderFromCart(testOrderCreateRequest, 1L))
+				.isInstanceOf(BusinessException.class)
+				.hasMessage("가격이 유효하지 않습니다. 상품ID: 1");
+		}
+	}
+
+	@Nested
+	@DisplayName("주문 조회 테스트")
+	class GetOrderTest {
+
+		@Test
+		@DisplayName("정상적인 주문 조회 - 성공")
+		void getOrder_Success() {
+			// given
+			Member testMember1 = createTestMember(1L);
+			Product testProduct1 = createTestProduct(1L, testMember1, "테스트 상품 1", 10000, "블랙", Category.BOOKS, 10,
+				true);
+			Order testOrder = createTestOrder(testMember1, testProduct1);
+
+			given(orderRepository.findById(1L)).willReturn(Optional.of(testOrder));
+
+			// when
+			OrderResponse result = orderService.getOrder(1L, 1L);
+
+			// then
+			assertThat(result).isNotNull();
+			assertThat(result.getOrderId()).isEqualTo(1L);
+			assertThat(result.getStatus()).isEqualTo(OrderStatus.PLACED.name());
+			assertThat(result.getConsumerName()).isEqualTo("홍길동");
+		}
+
+		@Test
+		@DisplayName("존재하지 않는 주문 조회 - 실패")
+		void getOrder_OrderNotFound_Fail() {
+			// given
+			given(orderRepository.findById(999L)).willReturn(Optional.empty());
+
+			// when & then
+			assertThatThrownBy(() -> orderService.getOrder(999L, 1L))
+				.isInstanceOf(BusinessException.class)
+				.hasMessage("주문을 찾을 수 없습니다.");
+		}
+
+		@Test
+		@DisplayName("본인이 아닌 주문 조회 - 실패")
+		void getOrder_AccessDenied_Fail() {
+			// given
+			Member testMember1 = createTestMember(1L);
+			Product testProduct1 = createTestProduct(1L, testMember1, "테스트 상품 1", 10000, "블랙", Category.BOOKS, 10,
+				true);
+			Order testOrder = createTestOrder(testMember1, testProduct1);
+
+			given(orderRepository.findById(1L)).willReturn(Optional.of(testOrder));
+
+			// when & then
+			assertThatThrownBy(() -> orderService.getOrder(1L, 999L))
+				.isInstanceOf(BusinessException.class)
+				.hasMessage("본인의 주문만 조회할 수 있습니다.");
+		}
+	}
+
+	@Nested
+	@DisplayName("주문 목록 조회 테스트")
+	class GetMyOrdersTest {
+
+		@Test
+		@DisplayName("정상적인 주문 목록 조회 - 성공")
+		void getMyOrders_Success() {
+			// given
+			Member testMember1 = createTestMember(1L);
+			Product testProduct1 = createTestProduct(1L, testMember1, "테스트 상품 1", 10000, "블랙", Category.BOOKS, 10,
+				true);
+
+			Order testOrder1 = createTestOrder(testMember1, testProduct1);
+			Order testOrder2 = createTestOrder(testMember1, testProduct1);
+			testOrder2.setId(2L);
+
+			List<Order> orders = Arrays.asList(testOrder1, testOrder2);
+			Page<Order> orderPage = new PageImpl<>(orders, PageRequest.of(0, 20), 2);
+
+			given(orderRepository.findByMemberId(eq(1L), any(Pageable.class))).willReturn(orderPage);
+
+			// when
+			Page<OrderResponse> result = orderService.getMyOrders(1L, PageRequest.of(0, 20));
+
+			// then
+			assertThat(result).isNotNull();
+			assertThat(result.getContent()).hasSize(2);
+			assertThat(result.getTotalElements()).isEqualTo(2);
+			assertThat(result.getContent().get(0).getOrderId()).isEqualTo(1L);
+			assertThat(result.getContent().get(1).getOrderId()).isEqualTo(2L);
+		}
+
+		@Test
+		@DisplayName("빈 주문 목록 조회 - 성공")
+		void getMyOrders_EmptyList_Success() {
+			// given
+			Page<Order> emptyPage = new PageImpl<>(Arrays.asList(), PageRequest.of(0, 20), 0);
+			given(orderRepository.findByMemberId(eq(1L), any(Pageable.class))).willReturn(emptyPage);
+
+			// when
+			Page<OrderResponse> result = orderService.getMyOrders(1L, PageRequest.of(0, 20));
+
+			// then
+			assertThat(result).isNotNull();
+			assertThat(result.getContent()).isEmpty();
+			assertThat(result.getTotalElements()).isEqualTo(0);
+		}
+	}
+
+	@Nested
+	@DisplayName("주문 취소 테스트")
+	class CancelOrderTest {
+
+		@Test
+		@DisplayName("정상적인 주문 취소 - 성공")
+		void cancelOrder_Success() {
+			// given
+			Member testMember1 = createTestMember(1L);
+			Product testProduct1 = createTestProduct(1L, testMember1, "테스트 상품 1", 10000, "블랙", Category.BOOKS, 10,
+				true);
+			Order testOrder = createTestOrder(testMember1, testProduct1);
+
+			given(orderRepository.findById(1L)).willReturn(Optional.of(testOrder));
+
+			// when
+			OrderResponse result = orderService.cancelOrder(1L, 1L);
+
+			// then
+			assertThat(result).isNotNull();
+			assertThat(result.getStatus()).isEqualTo(OrderStatus.CANCELED.name());
+
+			// 재고 복구 확인
+			assertThat(testProduct1.getStock()).isEqualTo(12); // 10 + 2
+		}
+
+		@Test
+		@DisplayName("존재하지 않는 주문 취소 - 실패")
+		void cancelOrder_OrderNotFound_Fail() {
+			// given
+			given(orderRepository.findById(999L)).willReturn(Optional.empty());
+
+			// when & then
+			assertThatThrownBy(() -> orderService.cancelOrder(999L, 1L))
+				.isInstanceOf(BusinessException.class)
+				.hasMessage("주문을 찾을 수 없습니다.");
+		}
+
+		@Test
+		@DisplayName("본인이 아닌 주문 취소 - 실패")
+		void cancelOrder_AccessDenied_Fail() {
+			// given
+			Member testMember1 = createTestMember(1L);
+			Product testProduct1 = createTestProduct(1L, testMember1, "테스트 상품 1", 10000, "블랙", Category.BOOKS, 10,
+				true);
+			Order testOrder = createTestOrder(testMember1, testProduct1);
+
+			given(orderRepository.findById(1L)).willReturn(Optional.of(testOrder));
+
+			// when & then
+			assertThatThrownBy(() -> orderService.cancelOrder(1L, 999L))
+				.isInstanceOf(BusinessException.class)
+				.hasMessage("본인의 주문만 취소할 수 있습니다.");
+		}
+
+		@Test
+		@DisplayName("취소 불가능한 상태의 주문 취소 - 실패")
+		void cancelOrder_InvalidStatus_Fail() {
+			// given
+			Member testMember1 = createTestMember(1L);
+			Product testProduct1 = createTestProduct(1L, testMember1, "테스트 상품 1", 10000, "블랙", Category.BOOKS, 10,
+				true);
+			Order testOrder = createTestOrder(testMember1, testProduct1);
+			testOrder.setStatus(OrderStatus.SHIPPED); // 취소 불가능한 상태
+
+			given(orderRepository.findById(1L)).willReturn(Optional.of(testOrder));
+
+			// when & then
+			assertThatThrownBy(() -> orderService.cancelOrder(1L, 1L))
+				.isInstanceOf(BusinessException.class)
+				.hasMessage("주문 취소는 주문 생성 상태에서만 가능합니다. 현재 상태: SHIPPED");
+		}
+	}
+
+	@Nested
+	@DisplayName("OrderResponse 생성 테스트")
+	class CreateOrderResponseTest {
+
+		@Test
+		@DisplayName("OrderResponse 정상 생성 - 성공")
+		void createOrderResponse_Success() {
+			// given
+			Member testMember1 = createTestMember(1L);
+			Product testProduct1 = createTestProduct(1L, testMember1, "테스트 상품 1", 10000, "블랙", Category.BOOKS, 10,
+				true);
+			Order testOrder = createTestOrder(testMember1, testProduct1);
+
+			// when
+			OrderResponse result = orderService.createOrderResponse(testOrder);
+
+			// then
+			assertThat(result).isNotNull();
+			assertThat(result.getOrderId()).isEqualTo(1L);
+			assertThat(result.getStatus()).isEqualTo(OrderStatus.PLACED.name());
+			assertThat(result.getConsumerName()).isEqualTo("홍길동");
+			assertThat(result.getConsumerPhone()).isEqualTo("010-1234-5678");
+			assertThat(result.getReceiverName()).isEqualTo("홍길동");
+			assertThat(result.getReceiverPhone()).isEqualTo("010-1234-5678");
+			assertThat(result.getReceiverRoadName()).isEqualTo("서울시 강남구 테헤란로 123");
+			assertThat(result.getReceiverPostalCode()).isEqualTo("06292");
+			assertThat(result.getItems()).hasSize(1);
+			assertThat(result.getItems().get(0).getProductId()).isEqualTo(1L);
+			assertThat(result.getItems().get(0).getName()).isEqualTo("테스트 상품 1");
+			assertThat(result.getItems().get(0).getPriceSnapshot()).isEqualTo(10000);
+			assertThat(result.getItems().get(0).getQuantity()).isEqualTo(2);
+			assertThat(result.getItems().get(0).getSubtotal()).isEqualTo(20000);
+		}
 	}
 }

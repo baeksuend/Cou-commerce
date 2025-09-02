@@ -18,16 +18,13 @@ import com.backsuend.coucommerce.payment.dto.PaymentRequest;
 import com.backsuend.coucommerce.payment.dto.PaymentResponse;
 import com.backsuend.coucommerce.payment.service.PaymentService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
-/**
- * @author rua
- */
-
-/**
- * Payment Controller
- * - Buyer가 결제를 요청하고 결제 정보를 확인하는 API 엔드포인트
- */
+@Tag(name = "결제 API", description = "결제 관련 API 입니다.")
 @RestController
 @RequestMapping("/api/v1/payments")
 @RequiredArgsConstructor
@@ -35,41 +32,43 @@ public class PaymentController {
 
 	private final PaymentService paymentService;
 
-	/**
-	 * 결제 진행 API
-	 * @param orderId 주문 ID
-	 * @param request 결제 요청 DTO
-	 * @return PaymentResponse
-	 */
+	@Operation(summary = "결제 진행", description = "특정 주문에 대한 결제를 진행합니다.")
+    @ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "결제 성공"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청입니다."),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "접근이 거부되었습니다."),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "주문을 찾을 수 없습니다."),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "결제할 수 없는 주문 상태이거나 이미 결제가 진행된 주문입니다.")
+    })
 	@PostMapping("/{orderId}")
 	public ResponseEntity<ApiResponse<PaymentResponse>> processPayment(
 		@AuthenticationPrincipal UserDetailsImpl userDetails,
-		@PathVariable Long orderId,
+		@Parameter(description = "주문 ID", required = true) @PathVariable Long orderId,
 		@RequestBody PaymentRequest request
 	) {
 		PaymentResponse response = paymentService.processPayment(userDetails.getId(), orderId, request);
 		return ApiResponse.ok(response).toResponseEntity();
 	}
 
-	/**
-	 * 특정 주문의 결제 정보 조회 API
-	 * @param orderId 주문 ID
-	 * @return PaymentResponse
-	 */
+	@Operation(summary = "결제 정보 조회", description = "특정 주문의 결제 정보를 조회합니다.")
+    @ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "결제 정보 조회 성공"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "접근이 거부되었습니다."),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "주문 또는 결제 정보를 찾을 수 없습니다.")
+    })
 	@GetMapping("/{orderId}")
 	public ResponseEntity<ApiResponse<PaymentResponse>> getPayment(
 		@AuthenticationPrincipal UserDetailsImpl userDetails,
-		@PathVariable Long orderId
+		@Parameter(description = "주문 ID", required = true) @PathVariable Long orderId
 	) {
 		PaymentResponse response = paymentService.getPayment(userDetails.getId(), orderId);
 		return ApiResponse.ok(response).toResponseEntity();
 	}
 
-	/**
-	 * Buyer의 모든 결제 내역 조회 API (페이징)
-	 * @param pageable 페이징 정보
-	 * @return Page<PaymentResponse>
-	 */
+	@Operation(summary = "내 결제 내역 조회", description = "현재 로그인한 사용자의 모든 결제 내역을 조회합니다.")
+    @ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "결제 내역 조회 성공")
+    })
 	@GetMapping("/my")
 	public ResponseEntity<ApiResponse<Page<PaymentResponse>>> getMyPayments(
 		@AuthenticationPrincipal UserDetailsImpl userDetails,

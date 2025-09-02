@@ -2,7 +2,6 @@ package com.backsuend.coucommerce.payment.dto;
 
 import java.time.LocalDateTime;
 
-import com.backsuend.coucommerce.payment.entity.CardBrand;
 import com.backsuend.coucommerce.payment.entity.Payment;
 import com.backsuend.coucommerce.payment.entity.PaymentStatus;
 

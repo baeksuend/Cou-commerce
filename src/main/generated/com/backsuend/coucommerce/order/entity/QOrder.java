@@ -24,8 +24,6 @@ public class QOrder extends EntityPathBase<Order> {
 
     public final com.backsuend.coucommerce.common.entity.QBaseTimeEntity _super = new com.backsuend.coucommerce.common.entity.QBaseTimeEntity(this);
 
-    public final com.backsuend.coucommerce.auth.entity.QMember buyer;
-
     public final StringPath consumerName = createString("consumerName");
 
     public final StringPath consumerPhone = createString("consumerPhone");
@@ -39,6 +37,8 @@ public class QOrder extends EntityPathBase<Order> {
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
     public final ListPath<OrderProduct, QOrderProduct> items = this.<OrderProduct, QOrderProduct>createList("items", OrderProduct.class, QOrderProduct.class, PathInits.DIRECT2);
+
+    public final com.backsuend.coucommerce.auth.entity.QMember member;
 
     public final com.backsuend.coucommerce.payment.entity.QPayment payment;
 
@@ -73,7 +73,7 @@ public class QOrder extends EntityPathBase<Order> {
 
     public QOrder(Class<? extends Order> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
-        this.buyer = inits.isInitialized("buyer") ? new com.backsuend.coucommerce.auth.entity.QMember(forProperty("buyer")) : null;
+        this.member = inits.isInitialized("member") ? new com.backsuend.coucommerce.auth.entity.QMember(forProperty("member")) : null;
         this.payment = inits.isInitialized("payment") ? new com.backsuend.coucommerce.payment.entity.QPayment(forProperty("payment"), inits.get("payment")) : null;
     }
 

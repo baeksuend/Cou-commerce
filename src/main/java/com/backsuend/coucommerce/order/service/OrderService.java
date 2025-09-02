@@ -20,7 +20,6 @@ import com.backsuend.coucommerce.order.dto.OrderResponse;
 import com.backsuend.coucommerce.order.entity.Order;
 import com.backsuend.coucommerce.order.entity.OrderProduct;
 import com.backsuend.coucommerce.order.entity.OrderStatus;
-import com.backsuend.coucommerce.order.repository.OrderProductRepository;
 import com.backsuend.coucommerce.order.repository.OrderRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -41,7 +40,6 @@ public class OrderService {
 	private final OrderRepository orderRepository;
 	private final ProductRepository productRepository;
 	private final MemberRepository memberRepository;
-	private final OrderProductRepository orderProductRepository;
 	private final CartService cartService;
 
 	/**
@@ -62,6 +60,18 @@ public class OrderService {
 		CartResponse cartResponse = cartService.getCart(memberId);
 		if (cartResponse.isEmpty()) {
 			throw new BusinessException(ErrorCode.NOT_FOUND, "장바구니가 비어 있습니다.");
+		}
+
+		// 2-1) 입력값 1차 검증
+		for (CartItem ci : cartResponse.getItems()) {
+			if (ci.getQuantity() <= 0) {
+				throw new BusinessException(ErrorCode.INVALID_INPUT,
+					"수량은 1 이상이어야 합니다. 상품ID: " + ci.getProductId());
+			}
+			if (ci.getPrice() < 0) {
+				throw new BusinessException(ErrorCode.INVALID_INPUT,
+					"가격이 유효하지 않습니다. 상품ID: " + ci.getProductId());
+			}
 		}
 
 		// 3. Order 엔티티 생성
@@ -178,7 +188,7 @@ public class OrderService {
 		// 주문 상태 확인 (PLACED 상태에서만 취소 가능)
 		if (order.getStatus() != OrderStatus.PLACED) {
 			throw new BusinessException(ErrorCode.CONFLICT,
-				"주문 취소는 주문 완료 상태에서만 가능합니다. 현재 상태: " + order.getStatus());
+				"주문 취소는 주문 생성 상태에서만 가능합니다. 현재 상태: " + order.getStatus());
 		}
 
 		// 재고 복구 (취소 시 재고 반환)
@@ -199,7 +209,7 @@ public class OrderService {
 	 * @param order Order 엔티티
 	 * @return OrderResponse DTO
 	 */
-	private OrderResponse createOrderResponse(Order order) {
+	OrderResponse createOrderResponse(Order order) {
 		return OrderResponse.builder()
 			.orderId(order.getId())
 			.status(order.getStatus().name())
