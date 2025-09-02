@@ -24,6 +24,8 @@ public class QReview extends EntityPathBase<Review> {
 
     public final com.backsuend.coucommerce.common.entity.QBaseTimeEntity _super = new com.backsuend.coucommerce.common.entity.QBaseTimeEntity(this);
 
+    public final ListPath<Review, QReview> childReviews = this.<Review, QReview>createList("childReviews", Review.class, QReview.class, PathInits.DIRECT2);
+
     public final StringPath content = createString("content");
 
     //inherited
@@ -34,7 +36,11 @@ public class QReview extends EntityPathBase<Review> {
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
+    public final BooleanPath isDeleted = createBoolean("isDeleted");
+
     public final com.backsuend.coucommerce.auth.entity.QMember member;
+
+    public final QReview parentReview;
 
     public final com.backsuend.coucommerce.catalog.entity.QProduct product;
 
@@ -60,6 +66,7 @@ public class QReview extends EntityPathBase<Review> {
     public QReview(Class<? extends Review> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
         this.member = inits.isInitialized("member") ? new com.backsuend.coucommerce.auth.entity.QMember(forProperty("member")) : null;
+        this.parentReview = inits.isInitialized("parentReview") ? new QReview(forProperty("parentReview"), inits.get("parentReview")) : null;
         this.product = inits.isInitialized("product") ? new com.backsuend.coucommerce.catalog.entity.QProduct(forProperty("product"), inits.get("product")) : null;
     }
 

@@ -103,7 +103,6 @@ sourceSets {
 clean {
     delete file(generated)
 }
-
 //** compileTestJava 문제발생해서 추가함.
 tasks.named('checkstyleMain') {
     dependsOn tasks.named('compileTestJava')
