@@ -117,8 +117,4 @@ public class Review extends BaseTimeEntity {
 	public void updateReview(String content) {
 		this.content = content;
 	}
-
-	@Lob
-	@Column(name = "content")
-	private String content;
 }
