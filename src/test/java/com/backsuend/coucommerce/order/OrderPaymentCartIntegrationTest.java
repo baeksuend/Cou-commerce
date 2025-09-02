@@ -79,7 +79,7 @@ class OrderPaymentCartIntegrationTest extends BaseIntegrationTest {
 		addToCart(testProduct2.getId(), 1);
 
 		// 2. 장바구니 조회 확인
-		MvcResult cartResult = mockMvc.perform(get("/api/v1/cart/")
+		MvcResult cartResult = mockMvc.perform(get("/api/v1/cart/items")
 				.header("Authorization", "Bearer " + accessToken))
 			.andExpect(status().isOk())
 			.andReturn();
@@ -100,7 +100,7 @@ class OrderPaymentCartIntegrationTest extends BaseIntegrationTest {
 		Long orderId = orderResponse.get("data").get("orderId").asLong();
 
 		// 4. 주문 생성 후 장바구니가 비어있는지 확인
-		mockMvc.perform(get("/api/v1/cart/")
+		mockMvc.perform(get("/api/v1/cart/items")
 				.header("Authorization", "Bearer " + accessToken))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data.items").isEmpty());
