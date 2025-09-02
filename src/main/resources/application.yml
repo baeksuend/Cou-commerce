@@ -35,7 +35,7 @@ logging:
   level:
     org.hibernate.type.descriptor.sql.BasicBinder: trace
     org.springframework.core.env: DEBUG
-
+    org.springframework.security: DEBUG #시큐리티 로깅보기
 springdoc:
   api-docs:
     enabled: true
