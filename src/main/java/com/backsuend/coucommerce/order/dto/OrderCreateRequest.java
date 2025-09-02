@@ -1,11 +1,6 @@
 package com.backsuend.coucommerce.order.dto;
 
-import java.util.List;
-
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -22,8 +17,9 @@ import lombok.Setter;
 /**
  * 주문 생성 요청 DTO
  * - Buyer(구매자)가 장바구니에서 "주문하기" 버튼 클릭 시 사용
- * - OrderService.createOrder(...) 의 입력 값으로 활용
- * - 장바구니의 상품들을 주문으로 변환하는 과정에서 사용
+ * - OrderService.createOrderFromCart(...) 의 입력 값으로 활용
+ * - 주문 상품은 장바구니에서 자동으로 가져옴
+ * - 배송 정보만 포함
  */
 @Getter
 @Setter
@@ -90,31 +86,4 @@ public class OrderCreateRequest {
 	@Size(max = 10, message = "우편번호는 최대 10자까지 가능합니다.")
 	@Pattern(regexp = "^[0-9-]+$", message = "우편번호는 숫자와 하이픈(-)만 입력 가능합니다.")
 	private String receiverPostalCode;
-
-	/**
-	 * 주문 상품 리스트
-	 * - 장바구니에서 선택한 상품들의 정보
-	 * - 최소 1개 이상의 상품이 필요
-	 * - 각 상품의 ID와 수량 정보 포함
-	 */
-	@NotNull(message = "주문 상품은 필수입니다.")
-	@NotEmpty(message = "주문 상품은 최소 1개 이상 필요합니다.")
-	@Valid
-	private List<OrderItemRequest> items;
-
-	/**
-	 * 주문 상품 개수 반환
-	 * @return 주문 상품 개수
-	 */
-	public int getItemCount() {
-		return items != null ? items.size() : 0;
-	}
-
-	/**
-	 * 주문 상품이 비어있는지 확인
-	 * @return 상품이 없으면 true, 있으면 false
-	 */
-	public boolean isEmpty() {
-		return items == null || items.isEmpty();
-	}
 }

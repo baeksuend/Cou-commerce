@@ -46,7 +46,7 @@ public class PaymentResponse {
 	/**
 	 * 카드 브랜드 (예: KB, SH, KAKAO)
 	 */
-	private CardBrand cardBrand;
+	private String cardBrand;
 
 	/**
 	 * 결제 상태
@@ -55,7 +55,7 @@ public class PaymentResponse {
 	 * - FAILED: 결제 실패
 	 * - REFUNDED: 환불 완료
 	 */
-	private PaymentStatus status;
+	private String status;
 
 	/**
 	 * 외부 트랜잭션 ID
@@ -88,8 +88,8 @@ public class PaymentResponse {
 			.paymentId(payment.getId())
 			.orderId(payment.getOrder().getId())
 			.amount(payment.getAmount())
-			.cardBrand(payment.getCardBrand())
-			.status(payment.getStatus())
+			.cardBrand(payment.getCardBrand().name())
+			.status(payment.getStatus().name())
 			.transactionId(payment.getTransactionId())
 			.orderStatus(payment.getOrder().getStatus().name())
 			.createdAt(payment.getCreatedAt())
@@ -102,7 +102,7 @@ public class PaymentResponse {
 	 * @return APPROVED 상태면 true, 아니면 false
 	 */
 	public boolean isApproved() {
-		return PaymentStatus.APPROVED.equals(status);
+		return PaymentStatus.APPROVED.name().equals(status);
 	}
 
 	/**
@@ -110,7 +110,7 @@ public class PaymentResponse {
 	 * @return FAILED 상태면 true, 아니면 false
 	 */
 	public boolean isFailed() {
-		return PaymentStatus.FAILED.equals(status);
+		return PaymentStatus.FAILED.name().equals(status);
 	}
 
 	/**
@@ -118,7 +118,7 @@ public class PaymentResponse {
 	 * @return PENDING 상태면 true, 아니면 false
 	 */
 	public boolean isPending() {
-		return PaymentStatus.PENDING.equals(status);
+		return PaymentStatus.PENDING.name().equals(status);
 	}
 
 	/**

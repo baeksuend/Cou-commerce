@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * @author rua
@@ -20,6 +21,7 @@ import lombok.NoArgsConstructor;
  * - Buyer가 결제를 진행할 때 전달하는 데이터
  */
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
