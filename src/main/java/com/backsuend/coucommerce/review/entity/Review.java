@@ -14,6 +14,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
@@ -26,6 +27,9 @@ import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.catalog.entity.Product;
 import com.backsuend.coucommerce.common.entity.BaseTimeEntity;
 
+/**
+ * @author rua
+ */
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -114,4 +118,7 @@ public class Review extends BaseTimeEntity {
 		this.content = content;
 	}
 
+	@Lob
+	@Column(name = "content")
+	private String content;
 }

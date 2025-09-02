@@ -72,6 +72,7 @@ tasks.withType(Checkstyle).configureEach {
     }
 }
 
+
 //*** review사용하는 querydsl 설정****
 dependencies {
     // queryDSL 설정
