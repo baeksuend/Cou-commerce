@@ -3,6 +3,7 @@ package com.backsuend.coucommerce.auth.service;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -79,7 +80,7 @@ public class AuthService {
 		// 향후 다중 권한을 지원하려면 이 로직의 수정이 필요합니다.
 		String roleName = userDetails.getAuthorities().stream()
 			.findFirst()
-			.map(org.springframework.security.core.GrantedAuthority::getAuthority)
+			.map(GrantedAuthority::getAuthority)
 			.orElseThrow(() -> new BusinessException(ErrorCode.INTERNAL_ERROR, "사용자 권한 정보를 찾을 수 없습니다."));
 
 		// "ROLE_BUYER" -> "BUYER"

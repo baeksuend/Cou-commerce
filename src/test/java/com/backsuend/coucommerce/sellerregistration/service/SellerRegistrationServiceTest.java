@@ -1,4 +1,4 @@
-package com.backsuend.coucommerce.seller.service;
+package com.backsuend.coucommerce.sellerregistration.service;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,23 +20,23 @@ import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.auth.entity.Role;
 import com.backsuend.coucommerce.common.exception.BusinessException;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
-import com.backsuend.coucommerce.seller.dto.SellerApplicationRequest;
-import com.backsuend.coucommerce.seller.entity.Seller;
-import com.backsuend.coucommerce.seller.entity.SellerStatus;
-import com.backsuend.coucommerce.seller.repository.SellerRepository;
+import com.backsuend.coucommerce.sellerregistration.dto.CreateSellerRegistrationRequest;
+import com.backsuend.coucommerce.sellerregistration.entity.SellerRegistration;
+import com.backsuend.coucommerce.sellerregistration.entity.SellerRegistrationStatus;
+import com.backsuend.coucommerce.sellerregistration.repository.SellerRegistrationRepository;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("SellerApplicationService 단위 테스트")
-class SellerApplicationServiceTest {
+@DisplayName("SellerRegistrationService 단위 테스트")
+class SellerRegistrationServiceTest {
 
 	@InjectMocks
-	private SellerApplicationService sellerApplicationService;
+	private SellerRegistrationService sellerRegistrationService;
 
 	@Mock
 	private MemberRepository memberRepository;
 
 	@Mock
-	private SellerRepository sellerRepository;
+	private SellerRegistrationRepository sellerRegistrationRepository;
 
 	@Nested
 	@DisplayName("판매자 전환 신청 (apply) 테스트")
@@ -46,24 +46,24 @@ class SellerApplicationServiceTest {
 		void apply_success() {
 			// given
 			Long userId = 1L;
-			SellerApplicationRequest request = new SellerApplicationRequest("테스트 상점", "123-45-67890");
+			CreateSellerRegistrationRequest request = new CreateSellerRegistrationRequest("테스트 상점", "123-45-67890");
 			Member buyer = Member.builder().id(userId).role(Role.BUYER).build();
 
 			when(memberRepository.findById(userId)).thenReturn(Optional.of(buyer));
-			when(sellerRepository.existsByMember(buyer)).thenReturn(false);
+			when(sellerRegistrationRepository.existsByMember(buyer)).thenReturn(false);
 
 			// when
-			sellerApplicationService.apply(userId, request);
+			sellerRegistrationService.apply(userId, request);
 
 			// then
-			ArgumentCaptor<Seller> sellerCaptor = ArgumentCaptor.forClass(Seller.class);
-			verify(sellerRepository, times(1)).save(sellerCaptor.capture());
-			Seller savedSeller = sellerCaptor.getValue();
+			ArgumentCaptor<SellerRegistration> sellerCaptor = ArgumentCaptor.forClass(SellerRegistration.class);
+			verify(sellerRegistrationRepository, times(1)).save(sellerCaptor.capture());
+			SellerRegistration savedSeller = sellerCaptor.getValue();
 
 			assertThat(savedSeller.getMember()).isEqualTo(buyer);
 			assertThat(savedSeller.getStoreName()).isEqualTo(request.storeName());
 			assertThat(savedSeller.getBusinessRegistrationNumber()).isEqualTo(request.businessRegistrationNumber());
-			assertThat(savedSeller.getStatus()).isEqualTo(SellerStatus.APPLIED);
+			assertThat(savedSeller.getStatus()).isEqualTo(SellerRegistrationStatus.APPLIED);
 		}
 
 		@Test
@@ -71,16 +71,16 @@ class SellerApplicationServiceTest {
 		void apply_fail_whenNotBuyer() {
 			// given
 			Long userId = 1L;
-			SellerApplicationRequest request = new SellerApplicationRequest("테스트 상점", "123-45-67890");
+			CreateSellerRegistrationRequest request = new CreateSellerRegistrationRequest("테스트 상점", "123-45-67890");
 			Member seller = Member.builder().id(userId).role(Role.SELLER).build();
 
 			when(memberRepository.findById(userId)).thenReturn(Optional.of(seller));
 
 			// when & then
 			assertThrows(BusinessException.class, () -> {
-				sellerApplicationService.apply(userId, request);
+				sellerRegistrationService.apply(userId, request);
 			});
-			verify(sellerRepository, never()).save(any(Seller.class));
+			verify(sellerRegistrationRepository, never()).save(any(SellerRegistration.class));
 		}
 
 		@Test
@@ -88,17 +88,17 @@ class SellerApplicationServiceTest {
 		void apply_fail_whenAlreadyApplied() {
 			// given
 			Long userId = 1L;
-			SellerApplicationRequest request = new SellerApplicationRequest("테스트 상점", "123-45-67890");
+			CreateSellerRegistrationRequest request = new CreateSellerRegistrationRequest("테스트 상점", "123-45-67890");
 			Member buyer = Member.builder().id(userId).role(Role.BUYER).build();
 
 			when(memberRepository.findById(userId)).thenReturn(Optional.of(buyer));
-			when(sellerRepository.existsByMember(buyer)).thenReturn(true);
+			when(sellerRegistrationRepository.existsByMember(buyer)).thenReturn(true);
 
 			// when & then
 			assertThrows(BusinessException.class, () -> {
-				sellerApplicationService.apply(userId, request);
+				sellerRegistrationService.apply(userId, request);
 			});
-			verify(sellerRepository, never()).save(any(Seller.class));
+			verify(sellerRegistrationRepository, never()).save(any(SellerRegistration.class));
 		}
 	}
 }
