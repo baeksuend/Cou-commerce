@@ -37,7 +37,7 @@ public class SellerApplicationIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Nested
-	@DisplayName("판매자 전환 신청 (/api/v1/seller/apply)")
+	@DisplayName("판매자 전환 신청 (/api/v1/seller-app/apply)")
 	class ApplyForSeller {
 
 		@Test
@@ -47,7 +47,7 @@ public class SellerApplicationIntegrationTest extends BaseIntegrationTest {
 			SellerApplicationRequest request = new SellerApplicationRequest("테스트 상점", "123-45-67890");
 
 			// when
-			ResultActions result = mockMvc.perform(post("/api/v1/seller/apply")
+			ResultActions result = mockMvc.perform(post("/api/v1/seller-app/apply")
 				.header("Authorization", "Bearer " + buyerToken)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)));
@@ -69,10 +69,11 @@ public class SellerApplicationIntegrationTest extends BaseIntegrationTest {
 			SellerApplicationRequest request = new SellerApplicationRequest("테스트 상점", "123-45-67890");
 
 			// when
-			ResultActions result = mockMvc.perform(post("/api/v1/seller/apply")
+			ResultActions result = mockMvc.perform(post("/api/v1/seller-app/apply")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)));
 
+			System.out.println("______"+result);
 			// then
 			result.andExpect(status().isUnauthorized());
 		}
@@ -83,14 +84,14 @@ public class SellerApplicationIntegrationTest extends BaseIntegrationTest {
 			// given
 			// 첫 번째 신청
 			SellerApplicationRequest request = new SellerApplicationRequest("테스트 상점", "123-45-67890");
-			mockMvc.perform(post("/api/v1/seller/apply")
+			mockMvc.perform(post("/api/v1/seller-app/apply")
 				.header("Authorization", "Bearer " + buyerToken)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)));
 
 			// when
 			// 두 번째 신청
-			ResultActions result = mockMvc.perform(post("/api/v1/seller/apply")
+			ResultActions result = mockMvc.perform(post("/api/v1/seller-app/apply")
 				.header("Authorization", "Bearer " + buyerToken)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)));
