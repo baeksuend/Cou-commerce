@@ -26,7 +26,7 @@ public class ProductResponse {
 	@Schema(description = "상품내용", example = "상품내용입니다.")
 	private String detail;
 
-	@Schema(description = "재고수량", example = "434")
+	@Schema(description = "재고수량", example = "50")
 	private int stock;
 
 	@Schema(description = "가격", example = "40")

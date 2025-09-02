@@ -34,7 +34,7 @@ public class ProductEditRequest {
 	@NotBlank(message = "상품내용은 필수입니다.")
 	private String detail;
 
-	@Schema(description = "재고수량", example = "434")
+	@Schema(description = "재고수량", example = "40")
 	@NotNull(message = "재고수량은 필수입니다.")
 	private int stock;
 

@@ -87,10 +87,4 @@ public class Product extends BaseTimeEntity {
 		this.deletedAt = LocalDateTime.now();
 	}
 
-	/** 삭제복구 처리 **/
-	public void restore() {
-		this.deletedAt = null;
-
-	}
-
 }

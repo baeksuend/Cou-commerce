@@ -25,7 +25,7 @@ public class ProductDto {
 	@Schema(description = "상품 아이디", example = "1")
 	private Long id;
 
-	@Schema(description = "회원 등록자 아이디", example = "32")
+	@Schema(description = "회원 등록자 아이디", example = "1")
 	private Long member_id;
 
 	@Schema(description = "상품명", example = "우리 현미쌀")
@@ -37,7 +37,7 @@ public class ProductDto {
 	@NotBlank(message = "상품내용은 필수입니다.")
 	private String detail;
 
-	@Schema(description = "재고수량", example = "434")
+	@Schema(description = "재고수량", example = "10")
 	@NotNull(message = "재고수량은 필수입니다.")
 	private int stock;
 
@@ -55,10 +55,10 @@ public class ProductDto {
 	@Schema(description = "등록일", example = "2025-03-04T00:00:00")
 	private LocalDateTime createdAt;
 
-	@Schema(description = "수정일", example = "2025-03-04T00:00:00")
+	@Schema(description = "수정일")
 	private LocalDateTime updatedAt;
 
-	@Schema(description = "삭제일", example = "2025-03-04T00:00:00")
+	@Schema(description = "삭제일")
 	private LocalDateTime deletedAt;
 
 	public static ProductDto fromEntity(Product product) {

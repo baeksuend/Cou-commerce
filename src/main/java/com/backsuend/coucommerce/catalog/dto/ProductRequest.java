@@ -22,7 +22,7 @@ import lombok.Setter;
 @Builder
 public class ProductRequest {
 
-	@Schema(description = "회원 등록자 아이디", example = "32")
+	@Schema(description = "회원 등록자 아이디", example = "1")
 	@NotNull(message = "회원아이디는 필수입니다.")
 	private Long member_id;
 
@@ -35,7 +35,7 @@ public class ProductRequest {
 	@NotBlank(message = "상품내용은 필수입니다.")
 	private String detail;
 
-	@Schema(description = "재고수량", example = "434")
+	@Schema(description = "재고수량", example = "50")
 	@NotNull(message = "재고수량은 필수입니다.")
 	private int stock;
 

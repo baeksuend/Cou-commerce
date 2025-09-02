@@ -22,7 +22,6 @@ import com.backsuend.coucommerce.auth.dto.LoginRequest;
 import com.backsuend.coucommerce.auth.dto.SignupRequest;
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.auth.entity.Role;
-import com.backsuend.coucommerce.auth.jwt.JwtProvider;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -43,9 +42,6 @@ public abstract class BaseIntegrationTest {
 
 	@Autowired
 	protected PasswordEncoder passwordEncoder;
-
-	@Autowired
-	protected JwtProvider jwtProvider;
 
 	@Autowired
 	protected StringRedisTemplate redisTemplate;
@@ -92,7 +88,7 @@ public abstract class BaseIntegrationTest {
 
 	protected String login(String email, String password) throws Exception {
 		LoginRequest loginRequest = new LoginRequest(email, password);
-		System.out.println("login loginRequest="+loginRequest);
+		System.out.println("login loginRequest=" + loginRequest);
 		MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(loginRequest)))
@@ -100,7 +96,7 @@ public abstract class BaseIntegrationTest {
 		System.out.println("login 222");
 
 		String responseString = result.getResponse().getContentAsString();
-		System.out.println("login responseString =="+responseString);
+		System.out.println("login responseString ==" + responseString);
 		return objectMapper.readTree(responseString).get("data").get("accessToken").asText();
 	}
 

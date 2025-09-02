@@ -2,6 +2,7 @@ package com.backsuend.coucommerce.review.service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
@@ -110,15 +111,15 @@ public class ReviewServiceImpl implements ReviewService {
 	public ReviewResponseDto readView(Long product_id, Long review_id, long memberId) {
 
 		// 회원 정보가져오기
-		Member member = findAuthenticatedUser(memberId);
+		findAuthenticatedUser(memberId);
 
 		// 상품상세내용 검증
-		Product product = validateProduct(product_id);
+		validateProduct(product_id);
 
 		//저장된데이터 불러오기
 		Review saved = reviewRepository.findById(review_id).orElse(null);
 
-		return new ReviewResponseDto(saved);
+		return new ReviewResponseDto(Objects.requireNonNull(saved));
 	}
 
 	/**
@@ -133,7 +134,7 @@ public class ReviewServiceImpl implements ReviewService {
 		Member member = findAuthenticatedUser(memberId);
 
 		// 상품상세내용 검증
-		Product product = validateProduct(product_id);
+		validateProduct(product_id);
 
 		// 상품상세내용, 리뷰 및 리뷰에 대한 유저 권한 검증
 		Review review = validateReviewOwnership(product_id, review_id, member);

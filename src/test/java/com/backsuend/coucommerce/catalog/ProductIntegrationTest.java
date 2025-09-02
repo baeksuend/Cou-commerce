@@ -10,8 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -20,13 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.auth.entity.MemberStatus;
 import com.backsuend.coucommerce.auth.entity.Role;
-import com.backsuend.coucommerce.auth.service.UserDetailsImpl;
 import com.backsuend.coucommerce.catalog.entity.Product;
 import com.backsuend.coucommerce.catalog.enums.Category;
 import com.backsuend.coucommerce.catalog.repository.ProductRepository;
-import com.backsuend.coucommerce.catalog.service.ProductServiceImpl;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 @ActiveProfiles("test")
 @Transactional
@@ -39,32 +34,18 @@ public class ProductIntegrationTest {
 	MockMvc mockMvc;
 
 	@Autowired
-	ObjectMapper objectMapper;
-
-	@Autowired
 	ProductRepository productRepository;
 
 	@Autowired
 	MemberRepository memberRepository;
-
-	@Autowired
-	ProductServiceImpl productService; // 실제 구현체 + mock 주입
 
 	Long member_id;
 	Long product_id;
 	Member member = null;
 	Product product = null;
 
-	String accessToken;
-
-	private UserDetailsImpl testUserDetails;
-	private Authentication authentication;
-
-	@Autowired
-	private PasswordEncoder passwordEncoder;
-
 	@BeforeEach
-	void setUp() throws Exception {
+	void setUp() {
 
 		String password = "12345678";
 		member = Member.builder().email("hofngheeheeedagu@naver.com")
@@ -126,8 +107,9 @@ public class ProductIntegrationTest {
 		//given
 
 		//when
+		String category = "FOOD";
 		ResultActions resultActions = mockMvc.perform(
-			get("/api/v1/products/category/{recate}", Category.FOOD)
+			get("/api/v1/products/category/{category}", category)
 				.param("page", "1")
 				.param("sort", "")
 				.param("sortDir", "")

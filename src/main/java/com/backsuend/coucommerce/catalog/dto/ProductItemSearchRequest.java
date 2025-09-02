@@ -14,38 +14,30 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ProductItemSearchRequest {
 
-	@Schema(description = "페이지번호", example = "3")
+	@Schema(description = "페이지번호", example = "1")
 	private Integer page = 1;
 
-	@Schema(description = "한페이지 데이터 갯수", example = "3", nullable = true)
+	@Schema(description = "한페이지 데이터 갯수", example = "1", nullable = true)
 	private Integer pageSize = 10;
 
-	@Schema(description = "정렬이름", example = "name")
+	@Schema(description = "정렬이름", example = "")
 	private String sort;
 
-	@Schema(description = "정렬순서", example = "asc")
+	@Schema(description = "정렬순서", example = "")
 	private String sortDir;
 
-	@Schema(description = "검색어", example = "책", nullable = true)
+	@Schema(description = "검색어", example = "", nullable = true)
 	private String keyword;
 
-	@Schema(description = "검색분류", example = "카테고리 분류", nullable = true)
+	@Schema(description = "검색분류", example = "", nullable = true)
 	private Category cate;
 
 	public Integer getPage() {
 		return page != null ? page : 1;
 	}
 
-	public void setPage(Integer page) {
-		this.page = page;
-	}
-
 	public Integer getPageSize() {
 		return pageSize != null ? pageSize : 10;
-	}
-
-	public void setPageSize(Integer pageSize) {
-		this.pageSize = pageSize;
 	}
 
 }

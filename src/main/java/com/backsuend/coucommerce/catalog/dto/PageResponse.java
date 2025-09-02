@@ -11,12 +11,9 @@ import lombok.Setter;
 @Getter
 @Setter
 
-/**
- * list api에서 페이지 나눌때 사용
- */
 public class PageResponse<T> {
 
-	@Schema(description = "페이지 내용", example = "리스트값을 배열로 ㅏㄷ는다.")
+	@Schema(description = "페이지 내용", example = "리스트값을 배열로.")
 	private List<T> content;
 
 	@Schema(description = "현재페이지", example = "1")
@@ -25,13 +22,13 @@ public class PageResponse<T> {
 	@Schema(description = "총페이지", example = "1")
 	private int totalPages;
 
-	@Schema(description = "총갯수", example = "451")
+	@Schema(description = "총갯수", example = "10")
 	private long totalElements;
 
 	@Schema(description = "시작페이지 번호", example = "1")
 	private int startPage;
 
-	@Schema(description = "끝페이지 번호", example = "6")
+	@Schema(description = "끝페이지 번호", example = "1")
 	private int endPage;
 
 	@Schema(description = "이전글여부", example = "true")

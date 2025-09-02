@@ -17,13 +17,11 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.test.web.servlet.MockMvc;
 
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.auth.entity.MemberStatus;
@@ -38,16 +36,11 @@ import com.backsuend.coucommerce.catalog.enums.ProductListType;
 import com.backsuend.coucommerce.catalog.enums.ProductReadType;
 import com.backsuend.coucommerce.catalog.repository.ProductRepository;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ProductService 단위 테스트")
 public class ProductServiceListTest {
 
-	@Autowired
-	MockMvc mockMvc;
-	@Autowired
-	ObjectMapper objectMapper;
 	@Mock
 	ProductRepository productRepository;
 
@@ -60,8 +53,6 @@ public class ProductServiceListTest {
 
 	Pageable pageable;
 	Page<Product> mockPage;
-	Page<ProductResponse> mockPage2;
-	Product mockProduct;
 	Long member_id = 1L;
 	Long product_id = 1L;
 	Member member;
@@ -94,40 +85,35 @@ public class ProductServiceListTest {
 
 	@Test
 	@DisplayName("삭제상품을 제외하고 ProductListType 형식별로 상품 목록을 조회한다.")
-	void getProducts_success() throws Exception {
+	void getProducts_success() {
 
 		// Given
-		Long product_id = 1L;
 		Long member_id = 1L;
 		String keyword = "";
-		Category cate = null;
 		ProductListType listType = ProductListType.USER_LIST_ALL;
 		ProductItemSearchRequest item = new ProductItemSearchRequest(1, 10, "name", "asc", "", null);
 
 		//when
 		doReturn(mockPage).when(productService)
-			.getProductsListType(eq(listType), eq(member_id), eq(keyword), eq(cate), any(Pageable.class));
+			.getProductsListType(eq(listType), eq(member_id), eq(keyword), eq(null), any(Pageable.class));
 
 		// then
 		Page<ProductResponse> result = productService.getProducts(listType, item.getPage(), item.getPageSize(),
-			"", "", member_id, keyword, cate);
+			"", "", member_id, keyword, null);
 
 		assertThat(result).isNotNull();
-		assertThat(result.getContent().get(0).getName()).isEqualTo("바나나");
+		assertThat(result.getContent().getFirst().getName()).isEqualTo("바나나");
 
 	}
 
 	@Test
 	@DisplayName("일반 사용자가 삭제상품을 제외하고 상품 상세내용을 조회한다.")
-	void getRead() throws Exception {
+	void getRead() {
 
 		// Given
 		Long product_id = 1L;
 		Long member_id = 1L;
-		String keyword = "";
-		Category cate = null;
 		ProductReadType readType = ProductReadType.USER_READ;
-		ProductItemSearchRequest item = new ProductItemSearchRequest(1, 10, "name", "asc", "", null);
 
 		Product mockCont = mockPage.getContent().stream()
 			.filter(p -> p.getId().equals(product_id) && p.getMember().getId().equals(member_id))
@@ -147,12 +133,10 @@ public class ProductServiceListTest {
 
 	@Test
 	@DisplayName("셀러나 관리자가 상품을 등록한다.")
-	void getCreate() throws Exception {
+	void getCreate() {
 
 		// Given
 		Long member_id = 1L;
-		ProductReadType readType = ProductReadType.USER_READ;
-		ProductItemSearchRequest item = new ProductItemSearchRequest(1, 10, "name", "asc", "", null);
 
 		ProductRequest dto = ProductRequest.builder().member_id(member_id)
 			.name("파인애플").detail("맛있는 파인애플").stock(100).price(10000)
@@ -172,13 +156,11 @@ public class ProductServiceListTest {
 
 	@Test
 	@DisplayName("셀러나 관리자가 상품을 수정한다.")
-	void getEdit() throws Exception {
+	void getEdit() {
 
 		// Given
-		Long product_id = 1L;
-		Long member_id = 1L;
-		//ProductReadType readType = ProductReadType.USER_READ;
-		//ProductItemSearchRequest item = new ProductItemSearchRequest(1, 10, "name", "asc", "", null);
+		long product_id = 1L;
+		long member_id = 1L;
 
 		ProductEditRequest dto = ProductEditRequest.builder().name("파인애플")
 			.detail("맛있는 파인애플").stock(100).price(10000)
@@ -202,15 +184,11 @@ public class ProductServiceListTest {
 
 	@Test
 	@DisplayName("셀러나 관리자가 상품을 삭제한다.")
-	void getDelete() throws Exception {
+	void getDelete() {
 
 		// Given
-		Long product_id = 1L;
-		Long member_id = 1L;
-		String keyword = "";
-		Category cate = null;
-		ProductReadType readType = ProductReadType.USER_READ;
-		ProductItemSearchRequest item = new ProductItemSearchRequest(1, 10, "name", "asc", "", null);
+		long product_id = 1L;
+		long member_id = 1L;
 
 		ProductEditRequest dto = ProductEditRequest.builder().name("파인애플")
 			.detail("맛있는 파인애플").stock(100).price(10000)

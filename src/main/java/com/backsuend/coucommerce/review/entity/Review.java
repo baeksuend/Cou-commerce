@@ -14,10 +14,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 import org.hibernate.annotations.ColumnDefault;
@@ -27,9 +25,6 @@ import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.catalog.entity.Product;
 import com.backsuend.coucommerce.common.entity.BaseTimeEntity;
 
-/**
- * @author rua
- */
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -65,7 +60,7 @@ public class Review extends BaseTimeEntity {
 
 	@Schema(description = "회원 아이디", example = "2")
 	@ManyToOne(cascade = CascadeType.PERSIST)//@ManyToOne(fetch=FetchType.LAZY)
-	@JoinColumn(name = "member_id", referencedColumnName = "id", nullable = true, updatable = false)
+	@JoinColumn(name = "member_id", referencedColumnName = "id", updatable = false)
 	private Member member;
 
 	@Schema(description = "리뷰 내용", example = "상세내용입니다.")
@@ -84,7 +79,7 @@ public class Review extends BaseTimeEntity {
 	@Schema(description = "부모 댓글 삭제 상태")
 	@ColumnDefault("FALSE")
 	@Column(name = "is_deleted", nullable = false)
-	private Boolean isDeleted;
+	private Boolean isDeleted = false;
 
 	/* 대댓글 조회용*/
 	@Builder
@@ -96,13 +91,6 @@ public class Review extends BaseTimeEntity {
 		this.content = content;
 		this.parentReview = parentReview;
 		this.createdAt = createdAt;
-	}
-
-	@PrePersist
-	public void prePersist() {
-		if (this.isDeleted == null)
-			this.isDeleted = false;
-		this.createdAt = LocalDateTime.now();
 	}
 
 	public void markAsDeleted() {
