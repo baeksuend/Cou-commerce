@@ -26,6 +26,13 @@ import lombok.Setter;
 /**
  * @author rua
  */
+
+/**
+ * Payment (결제 엔티티)
+ * - Order와 1:1 매핑
+ * - 결제 요청/승인/실패/환불 상태를 관리
+ * - 실제 PG 연동이 아닌 Mock 기반으로 결제 시뮬레이션 가능
+ */
 @Entity
 @Table(name = "payment",
 	indexes = {
@@ -39,32 +46,33 @@ import lombok.Setter;
 @Builder
 public class Payment extends BaseTimeEntity {
 
+	/** 고유 결제 ID */
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	/** 주문과 1:1 (스키마에 맞춰 order_id FK 보유) */
+	/** 주문 (Order)와 1:1 관계 (결제 대상 주문) */
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "order_id", nullable = false, unique = true)
 	private Order order;
 
-	/** 카드 브랜드 */
+	/** 카드 브랜드 (예: KB, SH, KAKAO) */
 	@Enumerated(EnumType.STRING)
 	@Column(name = "card_brand", nullable = false, length = 50)
 	private CardBrand cardBrand;
 
-	/** 결제 금액 */
+	/** 결제 금액 (주문 총액과 일치해야 함) */
 	@Min(0)
 	@Column(name = "amount", nullable = false)
 	private int amount;
 
-	/** 결제 상태 */
+	/** 결제 상태 (PENDING → APPROVED/FAILED/REFUNDED) */
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, length = 20)
 	@Builder.Default
 	private PaymentStatus status = PaymentStatus.PENDING;
 
-	/** (선택) 외부 PG 트랜잭션 번호 */
+	/** 외부 PG사 트랜잭션 번호 (Mock일 경우 가짜 ID 발급) */
 	@Column(name = "transaction_id", length = 100, unique = true)
 	private String transactionId;
 }
