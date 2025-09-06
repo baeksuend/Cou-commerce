@@ -34,7 +34,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "[판매자] 상품 관리 API", description = "판매자 상품 관리 기능")
+@Tag(name = "[판매자] 상품 관리 API", description = "판매자 상품 목록, 등록, 수정, 삭제 기능을 제공합니다.")
 @RequestMapping("/api/v1/seller")
 @RestController
 @RequiredArgsConstructor
@@ -54,7 +54,7 @@ public class SellerController {
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
 		long memberId = userDetails.getId();
-
+/*
 		Page<ProductResponse> pageList = productService.getProducts(ProductListType.SELLER_LIST_ALL,
 			req.getPage(),
 			req.getPageSize(),
@@ -62,7 +62,11 @@ public class SellerController {
 			req.getSortDir(),
 			memberId,
 			req.getKeyword(),
-			req.getCate());
+			null);*/
+
+		Page<ProductResponse> pageList = productService.getProducts(ProductListType.SELLER_LIST_ALL,
+			req, memberId, null);
+
 		PageResponse<ProductResponse> productResponse = new PageResponse<>(pageList, req.getPageSize());
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(200),
