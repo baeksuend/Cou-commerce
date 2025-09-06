@@ -1,16 +1,5 @@
 package com.backsuend.coucommerce.catalog.dto;
 
-import java.time.LocalDateTime;
-
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-
-import com.backsuend.coucommerce.auth.entity.Member;
-import com.backsuend.coucommerce.catalog.entity.Product;
-import com.backsuend.coucommerce.catalog.enums.Category;
-
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,6 +10,7 @@ import lombok.Setter;
 @Builder
 @AllArgsConstructor
 public class ProductDto {
+/*
 
 	@Schema(description = "상품 아이디", example = "1")
 	private Long id;
@@ -88,5 +78,6 @@ public class ProductDto {
 			.visible(visible)
 			.build();
 	}
+*/
 
 }

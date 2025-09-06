@@ -30,6 +30,7 @@ import com.backsuend.coucommerce.catalog.entity.Product;
 import com.backsuend.coucommerce.catalog.enums.Category;
 import com.backsuend.coucommerce.catalog.enums.ProductListType;
 import com.backsuend.coucommerce.catalog.enums.ProductReadType;
+import com.backsuend.coucommerce.catalog.enums.ProductSortType;
 import com.backsuend.coucommerce.catalog.repository.ProductRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -77,7 +78,7 @@ public class ProductServiceTest {
 	@Test
 	@DisplayName("정렬항목 널(null)이고 정렬방식 널(null) 일 경우 등록일(createdAt) 내림차순(desc)으로 정렬한다.")
 	void checkBuildSortOrder_defaultValues_desc() {
-		Sort.Order order = productService.checkBuildSortOrder(null, null);
+		Sort.Order order = productService.checkBuildSortOrder(ProductSortType.RECENT);
 		assertThat(order).isNotNull();
 		assertThat(order.getProperty()).isEqualTo("createdAt");
 		assertThat(order.getDirection()).isEqualTo(Sort.Direction.DESC);
@@ -86,7 +87,7 @@ public class ProductServiceTest {
 	@Test
 	@DisplayName("정렬항목 이름(name)이고 정렬방식 널(null) 일 경우 이름(name) 내림차순(desc)으로 정렬한다.")
 	void checkBuildSortOrder_nameValues1_asc() {
-		Sort.Order order = productService.checkBuildSortOrder("name", null);
+		Sort.Order order = productService.checkBuildSortOrder(ProductSortType.RECENT);
 		assertThat(order).isNotNull();
 		assertThat(order.getProperty()).isEqualTo("name");
 		assertThat(order.getDirection()).isEqualTo(Sort.Direction.DESC);
@@ -95,7 +96,7 @@ public class ProductServiceTest {
 	@Test
 	@DisplayName("정렬항목 널(null)이고 정렬방식 오름차순(asc) 일 경우 등록일(createdAt) 순서대로(ASC)으로 정렬한다.")
 	void checkBuildSortOrder_nameValues2_asc() {
-		Sort.Order order = productService.checkBuildSortOrder(null, "asc");
+		Sort.Order order = productService.checkBuildSortOrder(ProductSortType.RECENT);
 		assertThat(order).isNotNull();
 		assertThat(order.getProperty()).isEqualTo("createdAt");
 		assertThat(order.getDirection()).isEqualTo(Sort.Direction.ASC);
@@ -104,7 +105,7 @@ public class ProductServiceTest {
 	@Test
 	@DisplayName("정렬항목 이름(name)이고 정렬방식 내림차순(desc) 일 경우 이름(name) 내림차순(DESC)으로 정렬한다.")
 	void checkBuildSortOrder_nameValues3_asc() {
-		Sort.Order order = productService.checkBuildSortOrder("name", "desc");
+		Sort.Order order = productService.checkBuildSortOrder(ProductSortType.RECENT);
 		assertThat(order).isNotNull();
 		assertThat(order.getProperty()).isEqualTo("name");
 		assertThat(order.getDirection()).isEqualTo(Sort.Direction.DESC);
@@ -199,6 +200,7 @@ public class ProductServiceTest {
 		when(productService.getProductsListType(listType, member_id, keyword, null, pageable))
 			.thenReturn(mockPage);
 
+		//when
 		Page<Product> result = productService.getProductsListType(listType, member_id, keyword, null, pageable);
 
 		// then

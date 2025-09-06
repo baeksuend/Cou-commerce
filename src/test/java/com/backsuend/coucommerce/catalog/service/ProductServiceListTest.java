@@ -71,7 +71,7 @@ public class ProductServiceListTest {
 
 		Product product1 = Product.builder().id(product_id).member(member).name("바나나").detail("맛있는 바나나")
 			.stock(100).price(10000).category(Category.FOOD).visible(true).build();
-		Product product2 = Product.builder().id(product_id).member(member).name("바나나").detail("맛있는 바나나")
+		Product product2 = Product.builder().id(product_id).member(member).name("딸기").detail("맛있는 딸기")
 			.stock(100).price(10000).category(Category.FOOD).visible(true).build();
 		List<Product> productList = List.of(product1, product2);
 		mockPage = new PageImpl<>(productList, pageable, productList.size());
@@ -91,18 +91,18 @@ public class ProductServiceListTest {
 		Long member_id = 1L;
 		String keyword = "";
 		ProductListType listType = ProductListType.USER_LIST_ALL;
-		ProductItemSearchRequest item = new ProductItemSearchRequest(1, 10, "name", "asc", "", null);
+		ProductItemSearchRequest item = new ProductItemSearchRequest(1, 10, "name", "asc", "");
 
 		//when
 		doReturn(mockPage).when(productService)
 			.getProductsListType(eq(listType), eq(member_id), eq(keyword), eq(null), any(Pageable.class));
 
 		// then
-		Page<ProductResponse> result = productService.getProducts(listType, item.getPage(), item.getPageSize(),
-			"", "", member_id, keyword, null);
+		Page<ProductResponse> result = productService.getProducts(listType, item, member_id, null);
 
 		assertThat(result).isNotNull();
 		assertThat(result.getContent().getFirst().getName()).isEqualTo("바나나");
+		assertThat(result.getContent().get(1).getName()).isEqualTo("딸기");
 
 	}
 
@@ -136,9 +136,9 @@ public class ProductServiceListTest {
 	void getCreate() {
 
 		// Given
-		Long member_id = 1L;
+		long member_id = 1L;
 
-		ProductRequest dto = ProductRequest.builder().member_id(member_id)
+		ProductRequest dto = ProductRequest.builder()
 			.name("파인애플").detail("맛있는 파인애플").stock(100).price(10000)
 			.category(Category.FOOD).visible(true).build();
 		Product product = dto.toEntity(member);
@@ -147,7 +147,7 @@ public class ProductServiceListTest {
 		when(productRepository.save(any(Product.class))).thenReturn(product);
 
 		//when
-		ProductResponse result = productService.getCreate(dto, member_id);
+		ProductResponse result = productService.getCreate(dto, member_id, null);
 
 		// then
 		assertThat(result).isNotNull();
@@ -175,7 +175,7 @@ public class ProductServiceListTest {
 		when(productRepository.save(any(Product.class))).thenReturn(product);
 
 		//when
-		ProductResponse result = productService.getEdit(product_id, dto, member_id);
+		ProductResponse result = productService.getEdit(product_id, member_id, dto, null);
 
 		// then
 		assertThat(result).isNotNull();

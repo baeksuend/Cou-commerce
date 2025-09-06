@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.backsuend.coucommerce.auth.service.UserDetailsImpl;
 import com.backsuend.coucommerce.catalog.dto.PageResponse;
 import com.backsuend.coucommerce.common.dto.ApiResponse;
-import com.backsuend.coucommerce.review.dto.ReviewEditRequestDto;
 import com.backsuend.coucommerce.review.dto.ReviewRequestDto;
 import com.backsuend.coucommerce.review.dto.ReviewResponseDto;
 import com.backsuend.coucommerce.review.service.ReviewService;
@@ -26,8 +25,10 @@ import com.backsuend.coucommerce.review.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 
+@Tag(name = "[구매자] 리뷰 관리 API", description = "구매자 리뷰관리 기능")
 @RequestMapping("/api/v1")
 @RestController
 @AllArgsConstructor
@@ -39,12 +40,12 @@ public class ReviewController {
 	@ApiResponses({
 		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "목록조회 성공 값")
 	})
-	@GetMapping("/products/{product_id}/reviews")
-	public ResponseEntity<ApiResponse<PageResponse<ReviewResponseDto>>> getReviews(@PathVariable long product_id,
+	@GetMapping("/products/{productId}/reviews")
+	public ResponseEntity<ApiResponse<PageResponse<ReviewResponseDto>>> getReviews(@PathVariable long productId,
 		@RequestParam(value = "isAsc", defaultValue = "true") boolean isAsc,
 		@RequestParam(value = "page", defaultValue = "1") int page
 	) {
-		Page<ReviewResponseDto> responseDto = reviewService.getReviews(product_id, page - 1, isAsc);
+		Page<ReviewResponseDto> responseDto = reviewService.getReviews(productId, page - 1, isAsc);
 		PageResponse<ReviewResponseDto> reviewResponseDto = new PageResponse<>(responseDto, 10);
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(200),
@@ -59,13 +60,13 @@ public class ReviewController {
 	})
 	@SecurityRequirement(name = "Authorization")
 	@PreAuthorize("hasRole('BUYER') ")
-	@GetMapping("/products/{product_id}/reviews/{review_id}")
-	public ResponseEntity<ApiResponse<ReviewResponseDto>> readReview(@PathVariable Long product_id,
+	@GetMapping("/products/{productId}/reviews/{review_id}")
+	public ResponseEntity<ApiResponse<ReviewResponseDto>> readReview(@PathVariable Long productId,
 		@PathVariable Long review_id,
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
 		ReviewResponseDto responseDto
-			= reviewService.readView(product_id, review_id, userDetails.getId());    //, userDetails
+			= reviewService.readView(productId, review_id, userDetails.getId());    //, userDetails
 
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(200),
@@ -81,12 +82,12 @@ public class ReviewController {
 	})
 	@SecurityRequirement(name = "Authorization")
 	@PreAuthorize("hasRole('BUYER') ")
-	@PostMapping("/products/{product_id}/reviews")
-	public ResponseEntity<ApiResponse<ReviewResponseDto>> createReview(@PathVariable Long product_id,
+	@PostMapping("/products/{productId}/reviews")
+	public ResponseEntity<ApiResponse<ReviewResponseDto>> createReview(@PathVariable Long productId,
 		@RequestBody ReviewRequestDto requestDto, @AuthenticationPrincipal UserDetailsImpl userDetails) {
 
 		ReviewResponseDto responseDto
-			= reviewService.createReview(product_id, requestDto, userDetails.getId());    //, userDetails
+			= reviewService.createReview(productId, requestDto, userDetails.getId());    //, userDetails
 
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(201),
@@ -101,12 +102,12 @@ public class ReviewController {
 	})
 	@SecurityRequirement(name = "Authorization")
 	@PreAuthorize("hasRole('BUYER') ")
-	@PutMapping("/products/{product_id}/reviews/{review_id}")
-	public ResponseEntity<?> updateReview(@PathVariable Long product_id, @PathVariable Long review_id,
-		@RequestBody ReviewEditRequestDto requestDto, @AuthenticationPrincipal UserDetailsImpl userDetails) {
+	@PutMapping("/products/{productIdv}/reviews/{reviewId}")
+	public ResponseEntity<?> updateReview(@PathVariable Long productId, @PathVariable Long reviewId,
+		@RequestBody ReviewRequestDto requestDto, @AuthenticationPrincipal UserDetailsImpl userDetails) {
 
 		ReviewResponseDto responseDto
-			= reviewService.updateReview(product_id, review_id, requestDto, userDetails.getId());
+			= reviewService.updateReview(productId, reviewId, requestDto, userDetails.getId());
 
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(200),
@@ -121,11 +122,11 @@ public class ReviewController {
 	})
 	@SecurityRequirement(name = "Authorization")
 	@PreAuthorize("hasRole('BUYER') ")
-	@DeleteMapping("/products/{product_id}/reviews/{review_id}")
-	public ResponseEntity<?> deleteReview(@PathVariable Long product_id, @PathVariable Long review_id,
+	@DeleteMapping("/products/{productId}/reviews/{reviewId}")
+	public ResponseEntity<?> deleteReview(@PathVariable Long productId, @PathVariable Long reviewId,
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
-		reviewService.deleteReview(product_id, review_id, userDetails.getId());
+		reviewService.deleteReview(productId, reviewId, userDetails.getId());
 		return ResponseEntity.noContent().build();
 	}
 
@@ -135,12 +136,12 @@ public class ReviewController {
 	})
 	@SecurityRequirement(name = "Authorization")
 	@PreAuthorize("hasRole('BUYER') ")
-	@DeleteMapping("/products/{product_id}/reviews/{review_id}/child/{childReviewId}")
-	public ResponseEntity<?> deleteChildReview(@PathVariable Long product_id,
-		@PathVariable Long review_id, @PathVariable Long childReviewId,
+	@DeleteMapping("/products/{productId}/reviews/{reviewId}/child/{childReviewId}")
+	public ResponseEntity<?> deleteChildReview(@PathVariable Long productId,
+		@PathVariable Long reviewId, @PathVariable Long childReviewId,
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
-		reviewService.deleteChildReview(product_id, review_id, childReviewId, userDetails.getId());
+		reviewService.deleteChildReview(productId, reviewId, childReviewId, userDetails.getId());
 		return ResponseEntity.noContent().build();
 	}
 

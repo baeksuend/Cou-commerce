@@ -85,8 +85,13 @@ public class OrderService {
 			.receiverPostalCode(request.getReceiverPostalCode())
 			.build();
 
+		System.out.println("	order.getId=" + order.getId());
+		System.out.println("	order.getConsumerName()=" + order.getConsumerName());
+		System.out.println("	order.consumerPhone()=" + order.getConsumerPhone());
+
 		// 4. CartItem → OrderProduct 변환 + 가격/재고 검증 및 재고 차감
 		for (CartItem cartItem : cartResponse.getItems()) {
+			System.out.println("+++++ 가격/재고 검증 및 재고 차감");
 			Product product = productRepository.findById(cartItem.getProductId())
 				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND,
 					"상품을 찾을 수 없습니다. 상품ID: " + cartItem.getProductId()));
@@ -97,6 +102,7 @@ public class OrderService {
 					"판매 중단된 상품입니다: " + product.getName());
 			}
 
+			System.out.println(product.getPrice() + "___" + cartItem.getPrice());
 			// 가격 검증 (장바구니에 담은 시점과 주문 시점의 가격 비교)
 			if (product.getPrice() != cartItem.getPrice()) {
 				throw new BusinessException(ErrorCode.CONFLICT,
@@ -210,6 +216,7 @@ public class OrderService {
 	 * @return OrderResponse DTO
 	 */
 	OrderResponse createOrderResponse(Order order) {
+
 		return OrderResponse.builder()
 			.orderId(order.getId())
 			.status(order.getStatus().name())

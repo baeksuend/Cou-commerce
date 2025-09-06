@@ -23,6 +23,7 @@ import com.backsuend.coucommerce.catalog.dto.ProductEditRequest;
 import com.backsuend.coucommerce.catalog.dto.ProductItemSearchRequest;
 import com.backsuend.coucommerce.catalog.dto.ProductRequest;
 import com.backsuend.coucommerce.catalog.dto.ProductResponse;
+import com.backsuend.coucommerce.catalog.dto.UploadRequest;
 import com.backsuend.coucommerce.catalog.enums.ProductListType;
 import com.backsuend.coucommerce.catalog.enums.ProductReadType;
 import com.backsuend.coucommerce.catalog.service.ProductService;
@@ -38,7 +39,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/seller")
 @RestController
 @RequiredArgsConstructor
-public class SellerController {
+public class ProductSellerController {
 
 	private final ProductService productService;
 
@@ -83,12 +84,12 @@ public class SellerController {
 	})
 	@SecurityRequirement(name = "Authorization")
 	@PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
-	@GetMapping("/products/{id}")
-	public ResponseEntity<ApiResponse<ProductResponse>> getSellerProductsRead(@PathVariable long id,
+	@GetMapping("/products/{productId}")
+	public ResponseEntity<ApiResponse<ProductResponse>> getSellerProductsRead(@PathVariable long productId,
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
 		long memberId = userDetails.getId();
-		ProductResponse productResponse = productService.getRead(ProductReadType.USER_READ, id, memberId);
+		ProductResponse productResponse = productService.getRead(ProductReadType.USER_READ, productId, memberId);
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(200),
 				"상품내용 조회 성공",
@@ -106,10 +107,11 @@ public class SellerController {
 	@PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
 	@PostMapping("/products")
 	public ResponseEntity<ApiResponse<ProductResponse>> getSellerCreate(@RequestBody @Valid ProductRequest dto,
+		@Valid UploadRequest file,
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
 		long memberId = userDetails.getId();
-		ProductResponse productResponse = productService.getCreate(dto, memberId);
+		ProductResponse productResponse = productService.getCreate(dto, memberId, file);
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(201),
 				"상품등록 완료",
@@ -125,13 +127,14 @@ public class SellerController {
 	})
 	@SecurityRequirement(name = "Authorization")
 	@PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
-	@PutMapping("/products/{id}")
-	public ResponseEntity<ApiResponse<ProductResponse>> getProductsEdit(@PathVariable long id,
+	@PutMapping("/products/{productId}")
+	public ResponseEntity<ApiResponse<ProductResponse>> getProductsEdit(@PathVariable long productId,
 		@RequestBody @Valid ProductEditRequest dto,
+		@Valid UploadRequest file,
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
 		long memberId = userDetails.getId();
-		ProductResponse productResponse = productService.getEdit(id, dto, memberId);
+		ProductResponse productResponse = productService.getEdit(productId, memberId, dto, file);
 		return ResponseEntity.ok().body(ApiResponse.ok(productResponse));
 	}
 
@@ -143,12 +146,12 @@ public class SellerController {
 	})
 	@SecurityRequirement(name = "Authorization")
 	@PreAuthorize("hasRole('SELLER') or hasRole('ADMIN')")
-	@DeleteMapping("/products/{id}")
-	public ResponseEntity<?> getProductsDelete(@PathVariable long id,
+	@DeleteMapping("/products/{productId}")
+	public ResponseEntity<?> getProductsDelete(@PathVariable long productId,
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
 		long memberId = userDetails.getId();
-		productService.getDelete(id, memberId);
+		productService.getDelete(productId, memberId);
 		return ResponseEntity.noContent().build();
 	}
 

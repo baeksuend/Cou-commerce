@@ -3,6 +3,8 @@ package com.backsuend.coucommerce.catalog;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.util.List;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -42,7 +44,7 @@ public class ProductIntegrationTest {
 	Long member_id;
 	Long product_id;
 	Member member = null;
-	Product product = null;
+	List<Product> products = null;
 
 	@BeforeEach
 	void setUp() {
@@ -55,22 +57,18 @@ public class ProductIntegrationTest {
 			.role(Role.SELLER)
 			.status(MemberStatus.ACTIVE)
 			.build();
-
 		Member member2 = memberRepository.save(member);
-
 		member_id = member2.getId();
 
-		product = Product.builder()
-			.member(member)
-			.name("바나나")
-			.detail("맛있는 바나나")
-			.stock(100)
-			.price(10000)
-			.category(Category.FOOD)
-			.visible(true)
-			.build();
-		Product product2 = productRepository.save(product);
-		product_id = product2.getId();
+		Product product1 = Product.builder().member(member).name("바나나").detail("맛있는 바나나")
+			.stock(100).price(10000).category(Category.FOOD).visible(true).build();
+		Product product2 = Product.builder().member(member).name("딸기").detail("맛있는 딸기")
+			.stock(50).price(20000).category(Category.FOOD).visible(true).build();
+		Product product3 = Product.builder().member(member).name("포도").detail("맛있는 포도")
+			.stock(60).price(30000).category(Category.FOOD).visible(true).build();
+		List<Product> productList = List.of(product1, product2, product3);
+		products = productRepository.saveAll(productList);
+		product_id = product1.getId();
 
 	}
 
@@ -79,7 +77,6 @@ public class ProductIntegrationTest {
 	}
 
 	@Test
-	@Transactional
 	@DisplayName("제품 목록 조회 성공")
 	void ProductList() throws Exception {
 
@@ -96,11 +93,16 @@ public class ProductIntegrationTest {
 
 		//then
 		resultActions.andExpect(status().isOk())
-			.andExpect(jsonPath("$.data").isNotEmpty());
+			.andExpect(jsonPath("$.data").isMap())
+			.andExpect(jsonPath("$.data.content").isArray())
+			.andExpect(jsonPath("$.data.content.length()").value(3))
+			.andExpect(jsonPath("$.data.content[0].name").value("포도")) // 최신순 정렬로 보임
+			.andExpect(jsonPath("$.data.content[0].detail").value("맛있는 포도"))
+			.andExpect(jsonPath("$.data.content[0].price").isNumber());
+
 	}
 
 	@Test
-	@Transactional
 	@DisplayName("제품 카테고리별 목록 조회 성공")
 	void ProductCategoryList() throws Exception {
 
@@ -118,11 +120,15 @@ public class ProductIntegrationTest {
 
 		//then
 		resultActions.andExpect(status().isOk())
-			.andExpect(jsonPath("$.data").isNotEmpty());
+			.andExpect(jsonPath("$.data").isMap())
+			.andExpect(jsonPath("$.data.content").isArray())
+			.andExpect(jsonPath("$.data.content.length()").value(3))
+			.andExpect(jsonPath("$.data.content[1].name").value("딸기")) // 최신순 정렬로 보임
+			.andExpect(jsonPath("$.data.content[1].detail").value("맛있는 딸기"))
+			.andExpect(jsonPath("$.data.content[1].price").isNumber());
 	}
 
 	@Test
-	@Transactional
 	@DisplayName("제품 상세내용 조회 성공")
 	void ProductDetail() throws Exception {
 		//given
@@ -138,7 +144,11 @@ public class ProductIntegrationTest {
 
 		//then
 		resultActions.andExpect(status().isOk())
-			.andExpect(jsonPath("$.data").isNotEmpty());
+			.andExpect(jsonPath("$.data").isMap())
+			.andExpect(jsonPath("$.data.name").value("바나나")) // 최신순 정렬로 보임
+			.andExpect(jsonPath("$.data.detail").value("맛있는 바나나"))
+			.andExpect(jsonPath("$.data.price").isNumber());
+
 	}
 
 }

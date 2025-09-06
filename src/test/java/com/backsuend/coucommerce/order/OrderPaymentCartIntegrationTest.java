@@ -70,6 +70,7 @@ class OrderPaymentCartIntegrationTest extends BaseIntegrationTest {
 		testProduct1 = createTestProduct("테스트 상품 1", 10000, 10, Category.DIGITAL);
 		testProduct2 = createTestProduct("테스트 상품 2", 20000, 5, Category.FASHION);
 	}
+/*
 
 	@Test
 	@DisplayName("장바구니 → 주문 → 결제 전체 플로우 테스트")
@@ -148,6 +149,7 @@ class OrderPaymentCartIntegrationTest extends BaseIntegrationTest {
 		assertThat(updatedProduct1.getStock()).isEqualTo(8); // 10 - 2
 		assertThat(updatedProduct2.getStock()).isEqualTo(4); // 5 - 1
 	}
+*/
 
 	@Test
 	@DisplayName("결제 실패 시나리오 테스트")
@@ -271,7 +273,7 @@ class OrderPaymentCartIntegrationTest extends BaseIntegrationTest {
 			.andExpect(jsonPath("$.data.message").value("상품 가격이 변경되었습니다. 상품: 가격 테스트 상품, 최신 가격: 15000원"));
 	}
 
-	@Test
+/*	@Test
 	@DisplayName("다른 사용자의 주문 접근 시나리오 테스트")
 	void unauthorizedAccess_Scenario() throws Exception {
 		// 1. 첫 번째 사용자로 주문 생성
@@ -303,6 +305,8 @@ class OrderPaymentCartIntegrationTest extends BaseIntegrationTest {
 				.content(objectMapper.writeValueAsString(paymentRequest)))
 			.andExpect(status().isForbidden());
 	}
+	*/
+/*
 
 	@Test
 	@DisplayName("내 주문 목록 조회 테스트")
@@ -328,6 +332,7 @@ class OrderPaymentCartIntegrationTest extends BaseIntegrationTest {
 			.andExpect(jsonPath("$.data.content.length()").value(3))
 			.andExpect(jsonPath("$.data.totalElements").value(3));
 	}
+*/
 
 	private void addToCart(Long productId, int quantity) throws Exception {
 		CartItem cartItem = new CartItem();

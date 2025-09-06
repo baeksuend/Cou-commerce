@@ -1,5 +1,6 @@
 package com.backsuend.coucommerce.catalog.dto;
 
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -22,10 +23,6 @@ import lombok.Setter;
 @Builder
 public class ProductRequest {
 
-	@Schema(description = "회원 등록자 아이디", example = "1")
-	@NotNull(message = "회원아이디는 필수입니다.")
-	private Long member_id;
-
 	@Schema(description = "상품명", example = "우리 현미쌀")
 	@NotBlank(message = "상품명은 필수입니다.")
 	@Size(min = 2, max = 50, message = "상품명은 필수입니다.")
@@ -35,11 +32,13 @@ public class ProductRequest {
 	@NotBlank(message = "상품내용은 필수입니다.")
 	private String detail;
 
-	@Schema(description = "재고수량", example = "50")
+	@Schema(description = "재고수량", example = "40")
+	@Digits(integer = 5, fraction = 0, message = "숫자만 가능합니다.")
 	@NotNull(message = "재고수량은 필수입니다.")
 	private int stock;
 
-	@Schema(description = "가격", example = "40")
+	@Schema(description = "가격", example = "50000")
+	@Digits(integer = 10, fraction = 0, message = "숫자만 가능합니다.")
 	@NotNull(message = "가격은 필수입니다.")
 	private int price;
 

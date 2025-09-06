@@ -16,9 +16,10 @@ import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.catalog.entity.Product;
 import com.backsuend.coucommerce.catalog.repository.ProductRepository;
 import com.backsuend.coucommerce.common.exception.BusinessException;
+import com.backsuend.coucommerce.common.exception.CustomValidationException;
 import com.backsuend.coucommerce.common.exception.ErrorCode;
+import com.backsuend.coucommerce.common.exception.NotFoundException;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
-import com.backsuend.coucommerce.review.dto.ReviewEditRequestDto;
 import com.backsuend.coucommerce.review.dto.ReviewRequestDto;
 import com.backsuend.coucommerce.review.dto.ReviewResponseDto;
 import com.backsuend.coucommerce.review.entity.Review;
@@ -44,12 +45,12 @@ public class ReviewServiceImpl implements ReviewService {
 	 **/
 	@Override
 	@Transactional(readOnly = true)
-	public Page<ReviewResponseDto> getReviews(Long product_id, int page, boolean isAsc) {
+	public Page<ReviewResponseDto> getReviews(Long productId, int page, boolean isAsc) {
 
 		// 조회 시에는 유저 정보 검증 x
 
 		// 상품상세내용 검증
-		Product product = validateProduct(product_id);
+		Product product = validateProduct(productId);
 
 		// pageable 객체 생성
 		Pageable pageable = validateAndCreatePageable(page, isAsc);
@@ -71,21 +72,39 @@ public class ReviewServiceImpl implements ReviewService {
 	 * 상품상세내용 리뷰 추가
 	 **/
 	@Override
+	public ReviewResponseDto readView(Long productId, Long reviewId, long memberId) {
+
+		// 회원 정보가져오기
+		findAuthenticatedUser(memberId);
+
+		// 상품상세내용 검증
+		validateProduct(productId);
+
+		//저장된데이터 불러오기
+		Review saved = reviewRepository.findById(reviewId).orElse(null);
+
+		return new ReviewResponseDto(Objects.requireNonNull(saved));
+	}
+
+	/**
+	 * 상품상세내용 리뷰 추가
+	 **/
+	@Override
 	@Transactional
-	public ReviewResponseDto createReview(Long product_id,
+	public ReviewResponseDto createReview(Long productId,
 		ReviewRequestDto requestDto, long memberId) {
 
 		// 회원 정보가져오기
 		Member member = findAuthenticatedUser(memberId);
 
 		// 상품상세내용 검증
-		Product product = validateProduct(product_id);
+		Product product = validateProduct(productId);
 
 		// 부모 리뷰 여부 확인
 		Review parentReview;
-		if (requestDto.getParent_review_id() != null) {
-			parentReview = reviewRepository.findById(requestDto.getParent_review_id())
-				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+		if (requestDto.getParentReviewId() != null) {
+			parentReview = reviewRepository.findById(requestDto.getParentReviewId())
+				.orElseThrow(() -> new CustomValidationException(ErrorCode.NOT_FOUND));
 		} else {
 			parentReview = null;
 		}
@@ -105,39 +124,21 @@ public class ReviewServiceImpl implements ReviewService {
 	}
 
 	/**
-	 * 상품상세내용 리뷰 추가
-	 **/
-	@Override
-	public ReviewResponseDto readView(Long product_id, Long review_id, long memberId) {
-
-		// 회원 정보가져오기
-		findAuthenticatedUser(memberId);
-
-		// 상품상세내용 검증
-		validateProduct(product_id);
-
-		//저장된데이터 불러오기
-		Review saved = reviewRepository.findById(review_id).orElse(null);
-
-		return new ReviewResponseDto(Objects.requireNonNull(saved));
-	}
-
-	/**
 	 * 상품상세내용 리뷰 수정
 	 **/
 	@Override
 	@Transactional
-	public ReviewResponseDto updateReview(Long product_id, Long review_id,
-		ReviewEditRequestDto requestDto, long memberId) {
+	public ReviewResponseDto updateReview(Long productId, Long reviewId,
+		ReviewRequestDto requestDto, long memberId) {
 
 		// 유저 정보 검증
 		Member member = findAuthenticatedUser(memberId);
 
 		// 상품상세내용 검증
-		validateProduct(product_id);
+		validateProduct(productId);
 
 		// 상품상세내용, 리뷰 및 리뷰에 대한 유저 권한 검증
-		Review review = validateReviewOwnership(product_id, review_id, member);
+		Review review = validateReviewOwnership(productId, reviewId, member);
 
 		//유저정보 수정하기
 		review.updateReview(requestDto.getContent());
@@ -150,13 +151,13 @@ public class ReviewServiceImpl implements ReviewService {
 	 **/
 	@Override
 	@Transactional
-	public void deleteReview(Long product_id, Long review_id, long memberId) {
+	public void deleteReview(Long productId, Long reviewId, long memberId) {
 
 		// 유저 정보 검증
 		Member member = findAuthenticatedUser(memberId);
 
 		// 상품상세내용, 리뷰 및 리뷰에 대한 유저 권한 검증
-		Review review = validateReviewOwnership(product_id, review_id, member);
+		Review review = validateReviewOwnership(productId, reviewId, member);
 
 		// 대리뷰이 있는 부모 리뷰인 경우, 내용만 "삭제된 리뷰입니다"로 변경
 		if (!review.getChildReviews().isEmpty()) {
@@ -173,7 +174,7 @@ public class ReviewServiceImpl implements ReviewService {
 	 **/
 	@Override
 	@Transactional
-	public void deleteChildReview(Long product_id, Long review_id,
+	public void deleteChildReview(Long productId, Long reviewId,
 		Long childReviewId, long memberId) {
 
 		// 유저 정보 검증
@@ -181,11 +182,11 @@ public class ReviewServiceImpl implements ReviewService {
 
 		// 대댓글 조회
 		Review childReview = reviewRepository.findById(childReviewId)
-			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+			.orElseThrow(() -> new CustomValidationException(ErrorCode.NOT_FOUND));
 
 		// 대댓글의 작성자가 현재 사용자와 일치하는지 확인
 		if (!childReview.getMember().getId().equals(member.getId())) {
-			throw new BusinessException(ErrorCode.ACCESS_DENIED);
+			throw new CustomValidationException(ErrorCode.ACCESS_DENIED);
 		}
 
 		// 자식 리뷰(대댓글) 삭제
@@ -211,27 +212,27 @@ public class ReviewServiceImpl implements ReviewService {
 	 **/
 	public Member findAuthenticatedUser(long memberId) {
 		return memberRepository.findById(memberId)
-			.orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, "접근권한이 없습니다."));
+			.orElseThrow(() -> new CustomValidationException(ErrorCode.UNAUTHORIZED, "등록된 회원이 아닙니다."));
 	}
 
 	/**
 	 *  product 검증 메서드
 	 **/
-	public Product validateProduct(Long product_id) {
-		return productRepository.findById(product_id)
-			.orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, "상품정보가 없습니다."));
+	public Product validateProduct(Long productId) {
+		return productRepository.findById(productId)
+			.orElseThrow(() -> new CustomValidationException(ErrorCode.VALIDATION_FAILED, "상품정보가 없습니다."));
 	}
 
 	/**
 	 * 리뷰 및 리뷰에 대한 유저 권한 검증 메서드
 	 **/
-	public Review validateReviewOwnership(Long product_id, Long review_id, Member member) {
+	public Review validateReviewOwnership(Long productId, Long reviewId, Member member) {
 		/* 게시글 검증*/
-		Product product = validateProduct(product_id);
+		Product product = validateProduct(productId);
 
 		/* 리뷰 검증*/
-		Review review = reviewRepository.findByProductAndId(product, review_id)
-			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+		Review review = reviewRepository.findByProductAndId(product, reviewId)
+			.orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
 
 		/* 리뷰에 대한 유저 권한 검증*/
 		if (!review.getMember().getId().equals(member.getId())) {
@@ -245,7 +246,7 @@ public class ReviewServiceImpl implements ReviewService {
 	 **/
 	public Pageable validateAndCreatePageable(int page, boolean isAsc) {
 		if (page < 0) {
-			throw new BusinessException(ErrorCode.INVALID_INPUT);
+			throw new CustomValidationException(ErrorCode.INVALID_INPUT);
 		}
 		Sort.Direction direction = isAsc ? Sort.Direction.ASC : Sort.Direction.DESC;
 		return PageRequest.of(page, 10, Sort.by(direction, "createdAt"));

@@ -1,11 +1,5 @@
 package com.backsuend.coucommerce.review.dto;
 
-import java.time.LocalDateTime;
-
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,6 +10,7 @@ import lombok.Setter;
 @Setter
 @Builder
 public class ReviewDto {
+/*
 
 	@Schema(description = "리뷰 아이디", example = "3")
 	private Long id;
@@ -42,6 +37,7 @@ public class ReviewDto {
 
 	public ReviewDto() {
 	}
+*/
 
 }
 

@@ -1,8 +1,10 @@
 package com.backsuend.coucommerce.catalog.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.backsuend.coucommerce.catalog.entity.Product;
+import com.backsuend.coucommerce.catalog.entity.ProductThumbnail;
 import com.backsuend.coucommerce.catalog.enums.Category;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -38,6 +40,12 @@ public class ProductResponse {
 	@Schema(description = "진열여부", example = "true")
 	private LocalDateTime createdAt;
 
+	private String productThumbnail_S; // 작은 이미지
+	private String productThumbnail_M; // 작은 이미지
+	private String productThumbnail_L; // 작은 이미지
+
+	private List<String> productThumbnails; // 썸네일 경로 리스트 추가
+
 	public static ProductResponse fromEntity(Product product) {
 		return new ProductResponse(
 			product.getId(),
@@ -46,7 +54,14 @@ public class ProductResponse {
 			product.getStock(),
 			product.getPrice(),
 			product.getCategory(),
-			product.getCreatedAt()
+			product.getCreatedAt(),
+			product.getProductThumbnails().stream().filter(productThumbnail ->
+				productThumbnail.getImageType().contains("S")).toString(),
+			product.getProductThumbnails().stream().filter(productThumbnail ->
+				productThumbnail.getImageType().contains("M")).toString(),
+			product.getProductThumbnails().stream().filter(productThumbnail ->
+				productThumbnail.getImageType().contains("L")).toString(),
+			product.getProductThumbnails().stream().map(ProductThumbnail::getImagePath).toList()
 		);
 	}
 

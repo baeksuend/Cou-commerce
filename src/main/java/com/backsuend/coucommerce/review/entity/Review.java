@@ -63,6 +63,10 @@ public class Review extends BaseTimeEntity {
 	@JoinColumn(name = "member_id", referencedColumnName = "id", updatable = false)
 	private Member member;
 
+	@Schema(description = "리뷰 평점", example = "4.5")
+	@Column(name = "avg_review_score")
+	private int avgReviewScore;
+
 	@Schema(description = "리뷰 내용", example = "상세내용입니다.")
 	@Column
 	private String content;
@@ -72,14 +76,14 @@ public class Review extends BaseTimeEntity {
 	@JoinColumn(name = "parent_review_id", updatable = false)
 	private Review parentReview;
 
-	@Schema(description = "대댓글 목록")
-	@OneToMany(mappedBy = "parentReview", orphanRemoval = true)
-	private List<Review> childReviews = new ArrayList<>();
-
 	@Schema(description = "부모 댓글 삭제 상태")
 	@ColumnDefault("FALSE")
 	@Column(name = "is_deleted", nullable = false)
 	private Boolean isDeleted = false;
+
+	@Schema(description = "대댓글 목록")
+	@OneToMany(mappedBy = "parentReview", orphanRemoval = true)
+	private List<Review> childReviews = new ArrayList<>();
 
 	/* 대댓글 조회용*/
 	@Builder
