@@ -35,6 +35,8 @@ public class SecurityConfig {
 	private static final String[] WHITE_LIST = {
 		"/api/v1/auth/**",    // Auth API
 		"/api/v1/products/**",    // Products API
+		"/uploads/**",    // 이미지 업로드 경로
+		"/static/**",    // 정적 이미지 경로
 		"/swagger-ui/**",     // Swagger UI
 		"/v3/api-docs/**",    // Swagger API 문서
 		"/api/v1/redis/ping"  // Redis 연결 테스트

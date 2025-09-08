@@ -46,8 +46,8 @@ public class ReviewIntegrationTest extends BaseIntegrationTest {
 
 	@Autowired
 	ReviewRepository reviewRepository;
-	Long member_id;
-	Long product_id;
+	Long memberId;
+	Long productId;
 	Member member = null;
 	Product product = null;
 	String accessToken;
@@ -60,7 +60,7 @@ public class ReviewIntegrationTest extends BaseIntegrationTest {
 
 		//가입, 로그인, 토큰 발급
 		member = createMember(email, password, Role.BUYER);
-		member_id = member.getId();
+		memberId = member.getId();
 		accessToken = login(email, password);
 
 		product = Product.builder()
@@ -73,7 +73,7 @@ public class ReviewIntegrationTest extends BaseIntegrationTest {
 			.visible(true)
 			.build();
 		Product savedProduct = productRepository.save(product);
-		product_id = savedProduct.getId();
+		productId = savedProduct.getId();
 
 		System.out.println("accessToken111===>" + accessToken);
 
@@ -94,11 +94,11 @@ public class ReviewIntegrationTest extends BaseIntegrationTest {
 		Review review2 = Review.builder().product(product).member(member).content("내용입니다.2")
 			.parentReview(null).build();
 		List<Review> reviewList = List.of(review1, review2);
-		List<Review> reviews = reviewRepository.saveAll(reviewList);
+		reviewRepository.saveAll(reviewList);
 
 		//when
 		ResultActions resultActions = mockMvc.perform(
-			get("/api/v1/products/{product_id}/reviews", product_id)
+			get("/api/v1/products/{product_id}/reviews", productId)
 				.header("Authorization", "Bearer " + accessToken)
 				.param("page", "1")
 				.param("sort", "")
@@ -126,8 +126,8 @@ public class ReviewIntegrationTest extends BaseIntegrationTest {
 
 		//when
 		ResultActions resultActions = mockMvc.perform(
-			get("/api/v1/products/{product_id}/reviews/{review_id}",
-				product_id, review.getId())
+			get("/api/v1/products/{productId}/reviews/{reviewId}",
+				productId, review.getId())
 				.header("Authorization", "Bearer " + accessToken)
 				.param("isAsc", "1")
 				.param("page", "")
@@ -151,7 +151,7 @@ public class ReviewIntegrationTest extends BaseIntegrationTest {
 
 		//when
 		ResultActions resultActions = mockMvc.perform(
-			post("/api/v1/products/{product_id}/reviews", product_id)
+			post("/api/v1/products/{productId}/reviews", productId)
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(dto))
@@ -160,7 +160,7 @@ public class ReviewIntegrationTest extends BaseIntegrationTest {
 		//then
 		resultActions.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.data").isMap())
-			.andExpect(jsonPath("$.data.product_id").value(product_id)) // 최신순 정렬로 보임
+			.andExpect(jsonPath("$.data.productId").value(productId)) // 최신순 정렬로 보임
 			.andExpect(jsonPath("$.data.content").value("내용입니다.1"));
 
 	}
@@ -178,12 +178,12 @@ public class ReviewIntegrationTest extends BaseIntegrationTest {
 			.product(product).member(member).content(requestDto.getContent()).parentReview(null)
 			.build();
 		Review saved = reviewRepository.save(review);
-		long review_id = saved.getId();
+		long reviewId = saved.getId();
 
 		//when
 		ResultActions resultActions = mockMvc.perform(
-			put("/api/v1/products/{product_id}/reviews/{review_id}",
-				product_id, review_id)
+			put("/api/v1/products/{product_id}/reviews/{reviewId}",
+				productId, reviewId)
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(requestDto))
@@ -196,7 +196,7 @@ public class ReviewIntegrationTest extends BaseIntegrationTest {
 
 		resultActions.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data").isMap())
-			.andExpect(jsonPath("$.data.product_id").value(product_id)) // 최신순 정렬로 보임
+			.andExpect(jsonPath("$.data.productId").value(productId)) // 최신순 정렬로 보임
 			.andExpect(jsonPath("$.data.content").value("내용입니다.2"));
 
 	}
@@ -217,15 +217,15 @@ public class ReviewIntegrationTest extends BaseIntegrationTest {
 			.parentReview(null)
 			.build();
 		Review saved = reviewRepository.save(review);
-		long review_id = saved.getId();
+		long reviewId = saved.getId();
 
 		//when
 		ResultActions resultActions = mockMvc.perform(
-			delete("/api/v1/products/{product_id}/reviews/{review_id}",
-				product_id, review_id)
+			delete("/api/v1/products/{productId}/reviews/{reviewId}",
+				productId, reviewId)
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(MediaType.APPLICATION_JSON)
-				.param("member_id", String.valueOf(member_id))
+				.param("member_id", String.valueOf(memberId))
 		);
 
 		//then

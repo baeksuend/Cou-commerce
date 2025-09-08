@@ -27,7 +27,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Tag(name = "[구매자] 리뷰 관리 API", description = "구매자 리뷰관리 기능")
 @RequestMapping("/api/v1")
 @RestController
@@ -45,8 +47,14 @@ public class ReviewController {
 		@RequestParam(value = "isAsc", defaultValue = "true") boolean isAsc,
 		@RequestParam(value = "page", defaultValue = "1") int page
 	) {
+
+		log.info("[API] GET /api/v1/products/{}/reviews 목록 호출", productId);  // 요청 들어옴 기록
+
 		Page<ReviewResponseDto> responseDto = reviewService.getReviews(productId, page - 1, isAsc);
 		PageResponse<ReviewResponseDto> reviewResponseDto = new PageResponse<>(responseDto, 10);
+
+		log.debug("[API] 리뷰목록 호출 결과 데이터: {}", reviewResponseDto); // 상세 데이터 (개발용)
+
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(200),
 				"목록조회 성공",
@@ -60,14 +68,17 @@ public class ReviewController {
 	})
 	@SecurityRequirement(name = "Authorization")
 	@PreAuthorize("hasRole('BUYER') ")
-	@GetMapping("/products/{productId}/reviews/{review_id}")
+	@GetMapping("/products/{productId}/reviews/{reviewId}")
 	public ResponseEntity<ApiResponse<ReviewResponseDto>> readReview(@PathVariable Long productId,
-		@PathVariable Long review_id,
+		@PathVariable Long reviewId,
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
-		ReviewResponseDto responseDto
-			= reviewService.readView(productId, review_id, userDetails.getId());    //, userDetails
+		log.info("[API] GET /api/v1/products/{}/reviews/{} 목록 호출", productId, reviewId);
 
+		ReviewResponseDto responseDto
+			= reviewService.readView(productId, reviewId, userDetails.getId());
+
+		log.debug("[API] 리뷰내용 호출 결과 데이터: {}", responseDto);
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(200),
 				"내용조회 성공",
@@ -86,9 +97,12 @@ public class ReviewController {
 	public ResponseEntity<ApiResponse<ReviewResponseDto>> createReview(@PathVariable Long productId,
 		@RequestBody ReviewRequestDto requestDto, @AuthenticationPrincipal UserDetailsImpl userDetails) {
 
+		log.info("[API] POST /api/v1/products/{}/reviews 등록 호출", productId);
+
 		ReviewResponseDto responseDto
 			= reviewService.createReview(productId, requestDto, userDetails.getId());    //, userDetails
 
+		log.debug("[API] 리뷰등록 결과 데이터: {}", responseDto);
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(201),
 				"등록 성공",
@@ -102,13 +116,16 @@ public class ReviewController {
 	})
 	@SecurityRequirement(name = "Authorization")
 	@PreAuthorize("hasRole('BUYER') ")
-	@PutMapping("/products/{productIdv}/reviews/{reviewId}")
+	@PutMapping("/products/{productId}/reviews/{reviewId}")
 	public ResponseEntity<?> updateReview(@PathVariable Long productId, @PathVariable Long reviewId,
 		@RequestBody ReviewRequestDto requestDto, @AuthenticationPrincipal UserDetailsImpl userDetails) {
+
+		log.info("[API] PUT /api/v1/products/{}/reviews/{} 수정 호출", productId, reviewId);
 
 		ReviewResponseDto responseDto
 			= reviewService.updateReview(productId, reviewId, requestDto, userDetails.getId());
 
+		log.debug("[API] 리뷰수정 결과 데이터 : {}", responseDto);
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(200),
 				"수정 성공",
@@ -126,7 +143,11 @@ public class ReviewController {
 	public ResponseEntity<?> deleteReview(@PathVariable Long productId, @PathVariable Long reviewId,
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
+		log.info("[API] DELETE /api/v1/products/{}/reviews/{} 수정 호출", productId, reviewId);
+
 		reviewService.deleteReview(productId, reviewId, userDetails.getId());
+
+		log.info("[API] 리뷰 삭제 결과  productId ={} 삭제성공", reviewId);
 		return ResponseEntity.noContent().build();
 	}
 
@@ -141,7 +162,12 @@ public class ReviewController {
 		@PathVariable Long reviewId, @PathVariable Long childReviewId,
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
+		log.info("[API] DELETE /api/v1//products/{}/reviews/{}/child/{childReviewId}{} 자식리뷰 호출",
+			productId, reviewId, childReviewId);
+
 		reviewService.deleteChildReview(productId, reviewId, childReviewId, userDetails.getId());
+
+		log.info("[API] 자식리뷰 삭제 결과  productId ={} 삭제성공", reviewId);
 		return ResponseEntity.noContent().build();
 	}
 

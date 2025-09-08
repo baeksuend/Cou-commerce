@@ -11,11 +11,23 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Digits;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import com.backsuend.coucommerce.common.entity.BaseTimeEntity;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@Builder
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "product_summary")
-public class ProductSummary {
+public class ProductSummary extends BaseTimeEntity {
 
 	@Schema(description = "상품요약정보 아이디", example = "1")
 	@Id
@@ -31,28 +43,31 @@ public class ProductSummary {
 	@Schema(description = "조회수", example = "412")
 	@Digits(integer = 10, fraction = 0, message = "숫자만 입력가능합니다.")
 	@Column(name = "view_count")
-	private int viewCount;
+	private int viewCount = 0;
 
 	@Schema(description = "구매 수량", example = "1")
 	@Digits(integer = 10, fraction = 0, message = "숫자만 입력가능합니다.")
 	@Column(name = "order_count")
-	private int orderCount;
+	private int orderCount = 0;
 
 	@Schema(description = "찜", example = "2")
 	@Digits(integer = 10, fraction = 0, message = "숫자만 입력가능합니다.")
 	@Column(name = "zim_count")
-	private int zimCount;
+	private int zimCount = 0;
 
 	@Schema(description = "리뷰 개수", example = "3")
 	@Digits(integer = 10, fraction = 0, message = "숫자만 입력가능합니다.")
 	@Column(name = "review_count")
-	private int reviewCount;
+	private int reviewCount = 0;
+
+	@Schema(description = "평균 총점", example = "10.5")
+	//@Digits(integer = 10, fraction = 1, message = "숫자만 입력가능합니다.")
+	@Column(name = "review_total_score")
+	private double reviewTotalScore = 0;
 
 	@Schema(description = "평균 평점", example = "3.5")
-	@Digits(integer = 10, fraction = 0, message = "숫자만 입력가능합니다.")
-	@Column(name = "avg_reviw_score")
-	private int avgReviewScore;
+	//@Digits(integer = 10, fraction = 1, message = "숫자만 입력가능합니다.")
+	@Column(name = "review_avg_score")
+	private double reviewAvgScore = 0;
 
 }
-
-

@@ -1,9 +1,13 @@
 package com.backsuend.coucommerce.catalog.dto;
 
+import java.util.List;
+
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+
+import org.springframework.web.multipart.MultipartFile;
 
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.catalog.entity.Product;
@@ -51,6 +55,9 @@ public class ProductEditRequest {
 
 	@Schema(description = "진열여부", example = "true")
 	private boolean visible;
+
+	@Schema(type = "첨부파일", format = "binary", description = "업로드 이미지")
+	private List<MultipartFile> images;
 
 	public Product toEntity(Member member) {
 		return Product.builder()

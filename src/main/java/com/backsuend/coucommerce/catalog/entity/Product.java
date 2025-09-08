@@ -106,7 +106,7 @@ public class Product extends BaseTimeEntity {
 	/**
 	 *  summery 엔티티와 1:1 동일하게 세팅
 	 * */
-	@OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	@OneToOne(mappedBy = "product", cascade = CascadeType.ALL)
 	private ProductSummary productSummary;
 
 	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)

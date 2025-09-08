@@ -3,6 +3,7 @@ plugins {
     id 'checkstyle'
     id 'org.springframework.boot' version '3.5.5'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.jetbrains.kotlin.jvm'
 }
 
 group = 'com.backsuend'
@@ -57,6 +58,7 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
 
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
 }
 
@@ -106,4 +108,10 @@ clean {
 //** compileTestJava 문제발생해서 추가함.
 tasks.named('checkstyleMain') {
     dependsOn tasks.named('compileTestJava')
+}
+//엑추에이터 프로메테우스 관련 의존성 추가
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-core'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 }

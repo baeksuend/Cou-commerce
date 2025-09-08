@@ -28,6 +28,7 @@ import com.backsuend.coucommerce.auth.entity.MemberStatus;
 import com.backsuend.coucommerce.auth.entity.Role;
 import com.backsuend.coucommerce.catalog.entity.Product;
 import com.backsuend.coucommerce.catalog.enums.Category;
+import com.backsuend.coucommerce.catalog.service.ProductSummaryService;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
 import com.backsuend.coucommerce.review.dto.ReviewRequestDto;
 import com.backsuend.coucommerce.review.dto.ReviewResponseDto;
@@ -45,6 +46,9 @@ public class ReviewServiceTest {
 	@Mock
 	MemberRepository memberRepository;
 
+	@Mock
+	ProductSummaryService productSummaryService;
+
 	@Spy
 	@InjectMocks
 	ReviewServiceImpl reviewService; // 실제 구현체 + mock 주입
@@ -52,8 +56,8 @@ public class ReviewServiceTest {
 	Pageable pageable;
 	Page<Review> mockPage;
 	Page<Product> mockProduct;
-	Long member_id = 1L;
-	Long product_id = 1L;
+	Long memberId = 1L;
+	Long productId = 1L;
 	Member member = null;
 	Product product = null;
 
@@ -61,11 +65,11 @@ public class ReviewServiceTest {
 	void setUp() {
 
 		//member 생성
-		member = Member.builder().id(member_id).email("hongheeheeedagu@naver.com").password("12345678")
+		member = Member.builder().id(memberId).email("hongheeheeedagu@naver.com").password("12345678")
 			.phone("010-222-3333").name("홍길동").role(Role.SELLER).status(MemberStatus.ACTIVE).build();
 
 		//product 생성
-		product = Product.builder().id(product_id).member(member).name("바나나").detail("맛있는 바나나")
+		product = Product.builder().id(productId).member(member).name("바나나").detail("맛있는 바나나")
 			.stock(100).price(10000).category(Category.FOOD).visible(true).build();
 
 		//product 생성
@@ -101,14 +105,14 @@ public class ReviewServiceTest {
 		//given
 
 		Product mockCont = mockProduct.getContent().stream()
-			.filter(p -> p.getId().equals(product_id) && p.getMember().getId().equals(member_id))
+			.filter(p -> p.getId().equals(productId) && p.getMember().getId().equals(memberId))
 			.findFirst()
 			.orElse(null);
-		doReturn(mockCont).when(reviewService).validateProduct(eq(product_id));
+		doReturn(mockCont).when(reviewService).validateProduct(eq(productId));
 		doReturn(mockPage).when(reviewRepository).findByProductAndParentReviewIsNull(eq(mockCont), any(Pageable.class));
 
 		//when
-		Page<ReviewResponseDto> result = reviewService.getReviews(product_id, 1, true);
+		Page<ReviewResponseDto> result = reviewService.getReviews(productId, 1, true);
 
 		// then
 		assertThat(result).isNotNull();
@@ -122,12 +126,12 @@ public class ReviewServiceTest {
 		// given
 
 		Member mockMember = Member.builder()
-			.id(member_id)
+			.id(memberId)
 			.name("테스트유저")
 			.build();
 
 		Product mockCont = mockProduct.getContent().stream()
-			.filter(p -> p.getId().equals(product_id) && p.getMember().getId().equals(member_id))
+			.filter(p -> p.getId().equals(productId) && p.getMember().getId().equals(productId))
 			.findFirst()
 			.orElse(null);
 
@@ -141,12 +145,14 @@ public class ReviewServiceTest {
 			.build();
 
 		// mock 정의
-		when(memberRepository.findById(member_id)).thenReturn(Optional.of(mockMember));
-		doReturn(mockCont).when(reviewService).validateProduct(product_id);
+		when(memberRepository.findById(memberId)).thenReturn(Optional.of(mockMember));
+		doReturn(mockCont).when(reviewService).validateProduct(productId);
 		when(reviewRepository.save(any(Review.class))).thenReturn(savedReview);
 
+		doNothing().when(productSummaryService).setReviewCount(eq(dto.getAvgReviewScore()), eq(productId));
+
 		// when
-		ReviewResponseDto result = reviewService.createReview(product_id, dto, member_id);
+		ReviewResponseDto result = reviewService.createReview(productId, dto, memberId);
 
 		// then
 		assertNotNull(result);
@@ -160,23 +166,23 @@ public class ReviewServiceTest {
 	void updateReview() {
 
 		// given
-		Long review_id = 1L;
+		Long reviewId = 1L;
 		String content = "내용입니다.";
 
 		Member mockMember = Member.builder()
-			.id(member_id)
+			.id(memberId)
 			.name("테스트유저")
 			.build();
 
 		Product mockCont = mockProduct.getContent().stream()
-			.filter(p -> p.getId().equals(product_id) && p.getMember().getId().equals(member_id))
+			.filter(p -> p.getId().equals(productId) && p.getMember().getId().equals(memberId))
 			.findFirst()
 			.orElse(null);
 
 		ReviewRequestDto dto = new ReviewRequestDto("내용입니다.1", 3, null);
 
 		Review review = Review.builder()
-			.id(review_id)
+			.id(reviewId)
 			.product(mockCont)
 			.member(mockMember)
 			.content(content)
@@ -184,12 +190,12 @@ public class ReviewServiceTest {
 			.build();
 
 		// mock 정의
-		when(memberRepository.findById(member_id)).thenReturn(Optional.of(mockMember));
-		doReturn(mockCont).when(reviewService).validateProduct(product_id);
-		doReturn(review).when(reviewService).validateReviewOwnership(product_id, review_id, mockMember);
+		when(memberRepository.findById(memberId)).thenReturn(Optional.of(mockMember));
+		doReturn(mockCont).when(reviewService).validateProduct(productId);
+		doReturn(review).when(reviewService).validateReviewOwnership(productId, reviewId, mockMember);
 
 		// when
-		ReviewResponseDto result = reviewService.updateReview(product_id, review_id, dto, member_id);
+		ReviewResponseDto result = reviewService.updateReview(productId, reviewId, dto, memberId);
 
 		// then
 		assertNotNull(result);
@@ -203,17 +209,17 @@ public class ReviewServiceTest {
 
 		// given
 
-		Long review_id = 1L;
+		Long reviewId = 1L;
 
 		Product mockCont = mockProduct.getContent().stream()
-			.filter(p -> p.getId().equals(product_id) && p.getMember().getId().equals(member_id))
+			.filter(p -> p.getId().equals(productId) && p.getMember().getId().equals(memberId))
 			.findFirst()
 			.orElse(null);
 
 		ReviewRequestDto dto = new ReviewRequestDto("내용입니다.1", 3, null);
 
 		Review review = Review.builder()
-			.id(review_id)
+			.id(reviewId)
 			.product(mockCont)
 			.member(member)
 			.content(dto.getContent())
@@ -221,11 +227,11 @@ public class ReviewServiceTest {
 			.build();
 
 		// mock 정의
-		when(memberRepository.findById(member_id)).thenReturn(Optional.of(member));
-		doReturn(review).when(reviewService).validateReviewOwnership(product_id, review_id, member);
+		when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
+		doReturn(review).when(reviewService).validateReviewOwnership(productId, reviewId, member);
 
 		// when & then
-		assertDoesNotThrow(() -> reviewService.deleteReview(product_id, review_id, member_id));
+		assertDoesNotThrow(() -> reviewService.deleteReview(productId, reviewId, memberId));
 
 	}
 }

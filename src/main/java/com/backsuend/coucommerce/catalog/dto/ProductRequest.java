@@ -1,9 +1,13 @@
 package com.backsuend.coucommerce.catalog.dto;
 
+import java.util.List;
+
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+
+import org.springframework.web.multipart.MultipartFile;
 
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.catalog.entity.Product;
@@ -28,7 +32,7 @@ public class ProductRequest {
 	@Size(min = 2, max = 50, message = "상품명은 필수입니다.")
 	private String name;
 
-	@Schema(description = "상품내용", example = "상품내용입니다.")
+	@Schema(description = "상품내용", example = "<p>상품내용입니다.</p><p>맛이 좋아요!!!</p>")
 	@NotBlank(message = "상품내용은 필수입니다.")
 	private String detail;
 
@@ -48,6 +52,9 @@ public class ProductRequest {
 
 	@Schema(description = "진열여부", example = "true")
 	private boolean visible;
+
+	@Schema(type = "첨부파일", format = "binary", description = "업로드 이미지")
+	private List<MultipartFile> images;
 
 	public Product toEntity(Member member) {
 		return Product.builder()

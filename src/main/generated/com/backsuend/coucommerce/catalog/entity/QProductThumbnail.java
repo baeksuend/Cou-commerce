@@ -22,7 +22,13 @@ public class QProductThumbnail extends EntityPathBase<ProductThumbnail> {
 
     public static final QProductThumbnail productThumbnail = new QProductThumbnail("productThumbnail");
 
-    public final DateTimePath<java.time.LocalDateTime> createdAt = createDateTime("createdAt", java.time.LocalDateTime.class);
+    public final com.backsuend.coucommerce.common.entity.QBaseTimeEntity _super = new com.backsuend.coucommerce.common.entity.QBaseTimeEntity(this);
+
+    //inherited
+    public final DateTimePath<java.time.LocalDateTime> createdAt = _super.createdAt;
+
+    //inherited
+    public final DateTimePath<java.time.LocalDateTime> deletedAt = _super.deletedAt;
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
@@ -31,6 +37,9 @@ public class QProductThumbnail extends EntityPathBase<ProductThumbnail> {
     public final StringPath imageType = createString("imageType");
 
     public final QProduct product;
+
+    //inherited
+    public final DateTimePath<java.time.LocalDateTime> updatedAt = _super.updatedAt;
 
     public QProductThumbnail(String variable) {
         this(ProductThumbnail.class, forVariable(variable), INITS);

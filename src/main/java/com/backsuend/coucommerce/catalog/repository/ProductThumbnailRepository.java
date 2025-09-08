@@ -12,6 +12,6 @@ public interface ProductThumbnailRepository extends JpaRepository<ProductThumbna
 
 	List<ProductThumbnail> findByProduct_Id(Long productId);
 
-	void deleteByProduct_Id(Long productId);
-
+	// 특정 productId를 가진 레코드 존재 여부 확인
+	boolean existsByProduct_Id(Long productId);
 }

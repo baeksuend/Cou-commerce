@@ -3,6 +3,7 @@ package com.backsuend.coucommerce.catalog.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -10,19 +11,22 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.catalog.dto.ProductEditRequest;
 import com.backsuend.coucommerce.catalog.dto.ProductItemSearchRequest;
 import com.backsuend.coucommerce.catalog.dto.ProductRequest;
 import com.backsuend.coucommerce.catalog.dto.ProductResponse;
-import com.backsuend.coucommerce.catalog.dto.UploadRequest;
 import com.backsuend.coucommerce.catalog.entity.Product;
+import com.backsuend.coucommerce.catalog.entity.ProductSummary;
+import com.backsuend.coucommerce.catalog.entity.ProductThumbnail;
 import com.backsuend.coucommerce.catalog.enums.Category;
-import com.backsuend.coucommerce.catalog.enums.ProductListType;
+import com.backsuend.coucommerce.catalog.enums.ProductMainDisplay;
 import com.backsuend.coucommerce.catalog.enums.ProductReadType;
 import com.backsuend.coucommerce.catalog.enums.ProductSortType;
 import com.backsuend.coucommerce.catalog.repository.ProductRepository;
+import com.backsuend.coucommerce.catalog.repository.ProductThumbnailRepository;
 import com.backsuend.coucommerce.common.exception.CustomValidationException;
 import com.backsuend.coucommerce.common.exception.ErrorCode;
 import com.backsuend.coucommerce.common.exception.NotFoundException;
@@ -40,36 +44,17 @@ public class ProductServiceImpl implements ProductService {
 
 	private final ProductRepository productRepository;
 	private final MemberRepository memberRepository;
+	private final ProductThumbnailRepository productThumbnailRepository;
 	private final ProductSummaryService productSummaryService;
 	private final ProductThumbnailServiceImpl productThumbnailService;
-
-	/**
-	 * 상품목록의 정렬순서
-	 **/
-	@Override
-	public Sort.Order checkBuildSortOrder(ProductSortType sort) {
-		switch (sort) {
-			case ProductSortType.RECENT:
-				return Sort.Order.desc("createdAt");
-			case ProductSortType.LOW_PRICE:
-				return Sort.Order.asc("price");
-			case ProductSortType.HIGH_PRICE:
-				return Sort.Order.desc("price");
-			case ProductSortType.SALE_COUNT_TOTAL:
-				return Sort.Order.desc("zim_count");
-			case ProductSortType.REVIEW_SCORE_TOTAL:
-				return Sort.Order.desc("review_count");
-			case ProductSortType.REVIEW_COUNT_TOTAL:
-				return Sort.Order.desc("avg_review_score");
-		}
-		return Sort.Order.desc("createdAt");
-	}
 
 	/**
 	 * 카테고리 null체크, db에 값 비교할때는 string으로 변경해준다.
 	 **/
 	@Override
 	public String checkCategoryNullCheck(Category cate) {
+
+		log.debug("checkCategoryNullCheck 호출: {}", cate);
 		if (cate != null) {
 			return cate.toString();
 		} else {
@@ -82,8 +67,11 @@ public class ProductServiceImpl implements ProductService {
 	 **/
 	@Override
 	public void checkExistsProduct(long productId, long memberId) {
-		productRepository.findByDeletedAtIsNullAndIdAndMemberId(productId, memberId)
-			.orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND, "관련 상품이 없습니다."));
+
+		log.debug("checkMember 호출: productId={}, memberId={}", productId, memberId);
+
+		productRepository.findByDeletedAtIsNullAndIdAndMember_Id(productId, memberId)
+			.orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND, "관련 상품이 없습니다.1"));
 	}
 
 	/**
@@ -91,27 +79,42 @@ public class ProductServiceImpl implements ProductService {
 	 **/
 	@Override
 	public Member checkMember(long memberId) {
+
+		log.debug("checkMember 호출: memberId={}", memberId);
+
 		return memberRepository.findById(memberId)
 			.orElseThrow(() -> new CustomValidationException(ErrorCode.VALIDATION_FAILED, "등록된 회원 정보가 없습니다."));
 	}
 
-	/**
-	 ** ListType 형식을 비교해서 DB 내용 가져오기
-	 * USER_LIST_ALL : 비회원 전체목록
-	 * USER_LIST_CATEGORY : 비회원 카테고리별 목록
-	 * SELLER_LIST_ALL : 판매자(셀러) 전체 목록
-	 * ADMIN_LIST_ALL : 전체관리자 목록
-	 **/
 	@Override
-	public Page<Product> getProductsListType(ProductListType listType, long memberId,
+	public Page<Product> getProductsListTypeUser(ProductSortType sortType, long memberId,
 		String keyword, Category cate, Pageable pageable) {
-		String cateStr = checkCategoryNullCheck(cate);
-		return switch (listType) {
-			case ProductListType.USER_LIST_ALL -> productRepository.userListAll(keyword, cateStr, pageable);
-			case ProductListType.USER_LIST_CATEGORY -> productRepository.userListCategory(cateStr, keyword, pageable);
-			case ProductListType.SELLER_LIST_ALL ->
-				productRepository.sellerListAll(memberId, keyword, cateStr, pageable);
-			case ProductListType.ADMIN_LIST_ALL -> productRepository.adminListAll(memberId, keyword, cateStr, pageable);
+
+		log.debug("getProductsListTypeUser 호출: sortType={}, memberId={}, keyword={}, category={}, pageable={}",
+			sortType, memberId, keyword, cate, pageable);
+
+		return switch (sortType) {
+			case RECENT -> productRepository.userListCategory_RECENT(cate, keyword, pageable);
+			case LOW_PRICE -> productRepository.userListCategory_LOW_PRICE(cate, keyword, pageable);
+			case HIGH_PRICE -> productRepository.userListCategory_HIGH_PRICE(cate, keyword, pageable);
+			case SALE_COUNT_TOTAL -> productRepository.userListCategory_SALE_COUNT_TOTAL(cate, keyword, pageable);
+			case REVIEW_SCORE_TOTAL -> productRepository.userListCategory_REVIEW_SCORE_TOTAL(cate, keyword, pageable);
+		};
+	}
+
+	@Override
+	public Page<Product> getProductsListTypeSeller(ProductSortType sortType, Member member,
+		String keyword, Category cate, Pageable pageable) {
+
+		log.debug("getProductsListTypeSeller 호출: sortType={}, member={}, keyword={}, category={}, pageable={}",
+			sortType, member, keyword, cate, pageable);
+
+		return switch (sortType) {
+			case RECENT -> productRepository.sellerListCategory_RECENT(member, keyword, cate, pageable);
+			case LOW_PRICE -> productRepository.userListCategory_LOW_PRICE(cate, keyword, pageable);
+			case HIGH_PRICE -> productRepository.userListCategory_HIGH_PRICE(cate, keyword, pageable);
+			case SALE_COUNT_TOTAL -> productRepository.userListCategory_SALE_COUNT_TOTAL(cate, keyword, pageable);
+			case REVIEW_SCORE_TOTAL -> productRepository.userListCategory_REVIEW_SCORE_TOTAL(cate, keyword, pageable);
 		};
 	}
 
@@ -119,18 +122,17 @@ public class ProductServiceImpl implements ProductService {
 	 ** ReadType 형식을 비교해서 DB 내용 가져오기
 	 * USER_READ : 사용자 내용
 	 * SELLER_READ : 판매자(셀러) 내용
-	 * ADMIN_READ : 관리자 내용
 	 **/
 	@Override
-	public Product getProductsReadType(ProductReadType readType, long productId, long memberId) {
+	public Product getProductsReadType(ProductReadType readType, Member member, long productId, long memberId) {
+
+		log.debug("getProductsReadType 호출: readType={}, productId={}, memberId={}",
+			readType, productId, memberId);
 
 		return switch (readType) {
-			case ProductReadType.USER_READ -> productRepository.findByDeletedAtIsNullAndVisibleIsTrueAndId(productId)
+			case ProductReadType.USER_READ -> productRepository.findUserRead(productId)
 				.orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND, "관련 상품이 없습니다."));
-			case ProductReadType.SELLER_READ ->
-				productRepository.findByDeletedAtIsNullAndIdAndMemberId(productId, memberId)
-					.orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND, "관련 상품이 없습니다."));
-			case ProductReadType.ADMIN_READ -> productRepository.findByDeletedAtIsNullAndId(productId)
+			case ProductReadType.SELLER_READ -> productRepository.findSellerRead(member, productId)
 				.orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND, "관련 상품이 없습니다."));
 		};
 	}
@@ -138,49 +140,81 @@ public class ProductServiceImpl implements ProductService {
 	/**
 	 ** 상품 목록 가져오기
 	 **/
-/*	@Override
-	public Page<ProductResponse> getProducts(ProductListType listType, int page, int pageSize,
-		String sort, String sortDirection, long memberId, String keyword, Category cate) {
+	@Transactional
+	@Override
+	public Page<ProductResponse> getProductsMain(ProductMainDisplay mainDisplay, int pageSize) {
 
-		Sort.Order order = checkBuildSortOrder(sort, sortDirection);
-		Pageable pageable = PageRequest.of(page - 1, pageSize, Sort.by(order));
+		log.info("getProductsMain 호출: mainDisplay={}, pageSize={}", mainDisplay, pageSize);
 
-		//ListType 내용 가져오기
-		Page<Product> pageList = getProductsListType(listType, memberId, keyword, cate, pageable);
-
+		Pageable pageable = PageRequest.of(0, pageSize, Sort.by(Sort.Order.desc("createdAt")));
+		Page<Product> pageList;
+		if (mainDisplay.equals(ProductMainDisplay.MAIN_BEST)) {
+			pageList = productRepository.searchMainBestProducts(pageable);
+		} else {
+			pageList = productRepository.searchMainManyReviewProducts(pageable);
+		}
 		List<ProductResponse> dtoPage = pageList.stream().map(ProductResponse::fromEntity)
 			.collect(Collectors.toList());
-		return new PageImpl<>(dtoPage, pageable, pageList.getTotalElements());
-	}
-	*/
-	@Transactional
-	@Override
-	public List<ProductResponse> getProductsMain(ProductSortType sort) {
 
-		Sort.Order order = Sort.Order.desc("createdAt");
+		// 최대 10개만 잘라서 반환
+		if (dtoPage.size() > pageSize) {
+			dtoPage = dtoPage.subList(0, pageSize);
+		}
 
-		Pageable pageable = PageRequest.of(0, 10, Sort.by(order));
+		log.debug("getProductsMain 결과: dtoPageSize={}, totalElements={}",
+			dtoPage.size(), pageList.getTotalElements());
 
-		//목록 가져오기
-		List<Product> list = productRepository.mainProductList(pageable);
-
-		return list.stream().map(ProductResponse::fromEntity).toList();
+		return new PageImpl<>(dtoPage, pageable, Math.min(pageList.getTotalElements(), pageSize));
 	}
 
 	@Transactional
 	@Override
-	public Page<ProductResponse> getProducts(ProductListType listType, ProductItemSearchRequest req,
+	public Page<ProductResponse> getProductsUser(ProductItemSearchRequest req,
 		long memberId, Category cate) {
+
+		log.info("getProductsUser 호출: memberId={}, category={}, page={}, pageSize={}",
+			memberId, cate, req.getPage(), req.getPageSize());
 
 		Sort.Order order = Sort.Order.desc("createdAt");
 		Pageable pageable = PageRequest.of(req.getPage() - 1,
 			req.getPageSize(), Sort.by(order));
 
 		//ListType 내용 가져오기
-		Page<Product> pageList = getProductsListType(listType, memberId, req.getKeyword(), cate, pageable);
+		Page<Product> pageList = getProductsListTypeUser(req.getSort(), memberId, req.getKeyword(), cate, pageable);
 
 		List<ProductResponse> dtoPage = pageList.stream().map(ProductResponse::fromEntity)
 			.collect(Collectors.toList());
+
+		log.debug("getProductsUser 결과: pageSize={}, pageable={}, totalElements={}",
+			dtoPage.size(), pageable, pageList.getTotalElements());
+
+		return new PageImpl<>(dtoPage, pageable, pageList.getTotalElements());
+	}
+
+	@Transactional
+	@Override
+	public Page<ProductResponse> getProductsSeller(ProductItemSearchRequest req,
+		long memberId, Category cate) {
+
+		log.info("getProductsSeller 호출: req={}, memberId={}, cate={}",
+			req, memberId, cate);
+
+		Sort.Order order = Sort.Order.desc("createdAt");
+		Pageable pageable = PageRequest.of(req.getPage() - 1,
+			req.getPageSize(), Sort.by(order));
+
+		Member member = memberRepository.findById(memberId)
+			.orElseThrow(() -> new CustomValidationException(ErrorCode.ACCESS_DENIED, "접근이 불가합니다."));
+
+		//ListType 내용 가져오기
+		Page<Product> pageList = getProductsListTypeSeller(req.getSort(), member, req.getKeyword(), cate, pageable);
+
+		List<ProductResponse> dtoPage = pageList.stream().map(ProductResponse::fromEntity)
+			.collect(Collectors.toList());
+
+		log.debug("getProductsSeller 결과: pageSize={}, pageable={}, totalElements={}",
+			dtoPage.size(), pageable, pageList.getTotalElements());
+
 		return new PageImpl<>(dtoPage, pageable, pageList.getTotalElements());
 	}
 
@@ -190,11 +224,17 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public ProductResponse getRead(ProductReadType productReadType, long productId, long memberId) {
 
+		log.info("getRead 호출: productReadType={}, productId={}, memberId={}",
+			productReadType, productId, memberId);
+
+		Member member = memberRepository.findById(memberId).orElse(null);
 		//ReadType 형식별로 상품내용 가져오기
-		Product product = getProductsReadType(productReadType, productId, memberId);
+		Product product = getProductsReadType(productReadType, member, productId, memberId);
 
 		//** 추가 productSummary에 상품조회수 업데이트 / viewCount +1
 		productSummaryService.setViewCount(product.getId());
+
+		log.debug("getProductsSeller 결과: product id={}", product.getId());
 
 		return ProductResponse.fromEntity(product);
 	}
@@ -203,14 +243,27 @@ public class ProductServiceImpl implements ProductService {
 	 ** 상품등록하기
 	 **/
 	@Override
-	public ProductResponse getCreate(ProductRequest dto, long memberId, UploadRequest upload) {
+	public ProductResponse getCreate(ProductRequest dto, long memberId, List<MultipartFile> images) {
+
+		log.info("getCreate 호출: memberId={}, productName={}", memberId, dto.getName());
 
 		Member member = checkMember(memberId);
 		Product product = dto.toEntity(member);
+
+		ProductSummary summary = new ProductSummary();
+		summary.setProduct(product);  // ProductSummary가 외래키 주인
+		product.setProductSummary(summary);
+
 		Product saved = productRepository.save(product);
 
 		//** 추가 - 썸네일 저장 메서드 실행
-		productThumbnailService.uploadThumbnail(product, upload);
+		productThumbnailService.uploadThumbnail(product, images);
+
+		//저장된 내용 가져오기
+		List<ProductThumbnail> productThumbnail = productThumbnailRepository.findByProduct_Id(saved.getId());
+		saved.setProductThumbnails(productThumbnail);
+
+		log.info("getCreate 완료: productId={}, thumbnails={}", saved.getId(), productThumbnail.size());
 
 		return ProductResponse.fromEntity(saved);
 	}
@@ -219,17 +272,33 @@ public class ProductServiceImpl implements ProductService {
 	 ** 상품  수정하기
 	 **/
 	@Override
-	public ProductResponse getEdit(long productId, long memberId, ProductEditRequest dto, UploadRequest file) {
+	public ProductResponse getEdit(long productId, long memberId, ProductEditRequest dto, List<MultipartFile> images) {
+
+		log.info("getEdit 호출: productId={}, memberId={}", productId, memberId);
 
 		//수정, 삭제시에 본인글 여부 체크
 		checkExistsProduct(productId, memberId);
 
-		Member member = checkMember(memberId);
-		Product product = dto.toEntity(member);
+		//기존 등록 상품 조회
+		Product product = productRepository.findById(productId)
+			.orElseThrow(() -> new RuntimeException("등록된 상품이 없음11"));
+
+		//내용복사
+		BeanUtils.copyProperties(dto, product, "id", "productSummary");
+
+		//수정
 		Product saved = productRepository.save(product);
 
-		//** 추가  이미지 삭제
-		productThumbnailService.deleteProductImages(product.getId());
+		//** (추가) 기존에 이미지가 있고 선택된 이미지 있으면 삭제
+		boolean exists = productThumbnailRepository.existsByProduct_Id(productId);
+		if (exists && !images.isEmpty()) {
+			productThumbnailService.deleteProductImages(product.getId());
+		}
+
+		//** 추가 - 썸네일 저장 메서드 실행
+		productThumbnailService.uploadThumbnail(product, images);
+
+		log.info("새 썸네일 업로드 완료: productId={}, imagesCount={}", product.getId(), images.size());
 
 		return ProductResponse.fromEntity(saved);
 	}
@@ -240,13 +309,25 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public void getDelete(long productId, long memberId) {
 
+		log.info("getDelete 호출: productId={}, memberId={}", productId, memberId);
+
 		//수정, 삭제시에 본인글 여부 체크
 		checkExistsProduct(productId, memberId);
 
-		Product product = productRepository.findByDeletedAtIsNullAndIdAndMemberId(productId, memberId)
-			.orElseThrow(() -> new CustomValidationException(ErrorCode.NOT_FOUND, "관련 상품이 없습니다."));
+		Member member = memberRepository.findById(memberId).orElse(null);
+		Product product = productRepository.findSellerRead(member, productId)
+			.orElseThrow(() -> new CustomValidationException(ErrorCode.NOT_FOUND, "관련 상품이 없습니다.2"));
+
+		//삭제처리
 		product.delete();
+
+		//** (추가) 보관을 위해서 이미지 삭제 X
+
+		//deletedAt 날짜 등록후 저장
 		productRepository.save(product);
+
+		log.info("상품 삭제 처리 완료: productId={}", productId);
+
 	}
 
 }

@@ -28,7 +28,6 @@ import com.backsuend.coucommerce.auth.entity.MemberStatus;
 import com.backsuend.coucommerce.auth.entity.Role;
 import com.backsuend.coucommerce.catalog.entity.Product;
 import com.backsuend.coucommerce.catalog.enums.Category;
-import com.backsuend.coucommerce.catalog.enums.ProductListType;
 import com.backsuend.coucommerce.catalog.enums.ProductReadType;
 import com.backsuend.coucommerce.catalog.enums.ProductSortType;
 import com.backsuend.coucommerce.catalog.repository.ProductRepository;
@@ -46,13 +45,14 @@ public class ProductServiceTest {
 
 	Pageable pageable;
 	Page<Product> mockPage;
-	Long member_id = 1L;
+	//Long memberId = 1L;
+	Member member;
 
 	@BeforeEach
 	void setUp() {
 
 		//회원 테이블 생성
-		Member member = new Member(member_id, "hong@naver.com", "1111", "1112223333", "홍길동", Role.SELLER,
+		member = new Member(1L, "hong@naver.com", "1111", "1112223333", "홍길동", Role.SELLER,
 			MemberStatus.ACTIVE);
 
 		//product 생성
@@ -76,42 +76,6 @@ public class ProductServiceTest {
 	}
 
 	@Test
-	@DisplayName("정렬항목 널(null)이고 정렬방식 널(null) 일 경우 등록일(createdAt) 내림차순(desc)으로 정렬한다.")
-	void checkBuildSortOrder_defaultValues_desc() {
-		Sort.Order order = productService.checkBuildSortOrder(ProductSortType.RECENT);
-		assertThat(order).isNotNull();
-		assertThat(order.getProperty()).isEqualTo("createdAt");
-		assertThat(order.getDirection()).isEqualTo(Sort.Direction.DESC);
-	}
-
-	@Test
-	@DisplayName("정렬항목 이름(name)이고 정렬방식 널(null) 일 경우 이름(name) 내림차순(desc)으로 정렬한다.")
-	void checkBuildSortOrder_nameValues1_asc() {
-		Sort.Order order = productService.checkBuildSortOrder(ProductSortType.RECENT);
-		assertThat(order).isNotNull();
-		assertThat(order.getProperty()).isEqualTo("name");
-		assertThat(order.getDirection()).isEqualTo(Sort.Direction.DESC);
-	}
-
-	@Test
-	@DisplayName("정렬항목 널(null)이고 정렬방식 오름차순(asc) 일 경우 등록일(createdAt) 순서대로(ASC)으로 정렬한다.")
-	void checkBuildSortOrder_nameValues2_asc() {
-		Sort.Order order = productService.checkBuildSortOrder(ProductSortType.RECENT);
-		assertThat(order).isNotNull();
-		assertThat(order.getProperty()).isEqualTo("createdAt");
-		assertThat(order.getDirection()).isEqualTo(Sort.Direction.ASC);
-	}
-
-	@Test
-	@DisplayName("정렬항목 이름(name)이고 정렬방식 내림차순(desc) 일 경우 이름(name) 내림차순(DESC)으로 정렬한다.")
-	void checkBuildSortOrder_nameValues3_asc() {
-		Sort.Order order = productService.checkBuildSortOrder(ProductSortType.RECENT);
-		assertThat(order).isNotNull();
-		assertThat(order.getProperty()).isEqualTo("name");
-		assertThat(order.getDirection()).isEqualTo(Sort.Direction.DESC);
-	}
-
-	@Test
 	@DisplayName("카테고리를 분류(cate)값이 있을경우 문자형(String)으로 반환한다.")
 	void checkCategoryNullCheck1() {
 		String result = productService.checkCategoryNullCheck(Category.FOOD);
@@ -131,56 +95,39 @@ public class ProductServiceTest {
 	void checkExistsMember() {
 
 		//given
-		long id = 1L;
-		long member_id = 1L;
-
-		Member member = new Member(1L, "hong@naver.com", "1111", "1112223333", "홍길동", Role.SELLER, MemberStatus.ACTIVE);
+		long productId = 1L;
+		long memberId = 1L;
 
 		Product product = Product.builder().id(1L).member(member).name("바나나").detail("맛있는 바나나")
 			.stock(100).price(10000).category(Category.FOOD).visible(true).build();
 
 		// mock 리포지토리가 특정 조건에서 가짜 데이터를 리턴하도록 설정
-		Mockito.when(productRepository.findByDeletedAtIsNullAndIdAndMemberId(id, member_id))
+		Mockito.when(productRepository.findByDeletedAtIsNullAndIdAndMember_Id(productId, memberId))
 			.thenReturn(Optional.of(product));
 
 		// when & then
-		assertDoesNotThrow(() -> productService.checkExistsProduct(id, member_id));
+		assertDoesNotThrow(() -> productService.checkExistsProduct(productId, memberId));
 
 	}
 
 	@Test
-	@DisplayName("삭제안되고 진열된 상품 전체목록(USER_LIST_ALL) 가져온다.")
-	void getProductsListType1() {
+	@DisplayName("비회원 사용자의 삭제안되고 진열된 상품을 카테고리별(USER_LIST_CATEGORY)별로 상품목록 가져온다.")
+	void getProductsListTypeUser() {
 
 		//given
-		ProductListType listType = ProductListType.USER_LIST_ALL;
-		long member_id = 1L;
+		long memberId = 1L;
 		String keyword = "";
+		String sort = "RECENT";
+		String cate = "BOOKS";
 
-		when(productService.getProductsListType(listType, member_id, keyword, null, pageable))
+		when(
+			productService.getProductsListTypeUser(ProductSortType.valueOf(sort), memberId,
+				keyword, Category.valueOf(cate), pageable))
 			.thenReturn(mockPage);
 
-		Page<Product> result = productService.getProductsListType(listType, member_id, keyword, null, pageable);
-
-		// then
-		assertThat(result).isNotNull();
-		assertThat(result.getContent().getFirst().getName()).isEqualTo("바나나");
-		assertThat(result.getContent().getFirst().getPrice()).isEqualTo(10000);
-	}
-
-	@Test
-	@DisplayName("삭제안되고 진열된 상품을 카테고리별(USER_LIST_CATEGORY)별로 상품목록 가져온다.")
-	void getProductsListType2() {
-
-		//given
-		ProductListType listType = ProductListType.USER_LIST_CATEGORY;
-		long member_id = 1L;
-		String keyword = "";
-
-		when(productService.getProductsListType(listType, member_id, keyword, null, pageable))
-			.thenReturn(mockPage);
-
-		Page<Product> result = productService.getProductsListType(listType, member_id, keyword, null, pageable);
+		//when
+		Page<Product> result = productService.getProductsListTypeUser(ProductSortType.valueOf(sort), memberId,
+			keyword, Category.valueOf(cate), pageable);
 
 		// then
 		assertThat(result).isNotNull();
@@ -190,18 +137,20 @@ public class ProductServiceTest {
 
 	@Test
 	@DisplayName("셀러회원이 삭제안되고 진열된 상품(SELLER_LIST_ALL)을 가져온다.")
-	void getProductsListType3() {
+	void getProductsListTypeSeller() {
 
 		//given
-		ProductListType listType = ProductListType.SELLER_LIST_ALL;
-		long member_id = 1L;
 		String keyword = "";
+		String sort = "RECENT";
+		String cate = "BOOKS";
 
-		when(productService.getProductsListType(listType, member_id, keyword, null, pageable))
+		when(productService.getProductsListTypeSeller(ProductSortType.valueOf(sort), member,
+			keyword, Category.valueOf(cate), pageable))
 			.thenReturn(mockPage);
 
 		//when
-		Page<Product> result = productService.getProductsListType(listType, member_id, keyword, null, pageable);
+		Page<Product> result = productService.getProductsListTypeSeller(ProductSortType.valueOf(sort), member,
+			keyword, Category.valueOf(cate), pageable);
 
 		// then
 		assertThat(result).isNotNull();
@@ -209,96 +158,29 @@ public class ProductServiceTest {
 	}
 
 	@Test
-	@DisplayName("관리자에게 전체 상품목록(ADMIN_LIST_ALL)을 가져온다.")
-	void getProductsListType4() {
-
-		//given
-		ProductListType listType = ProductListType.ADMIN_LIST_ALL;
-		long member_id = 1L;
-		String keyword = "";
-
-		when(productService.getProductsListType(listType, member_id, keyword, null, pageable))
-			.thenReturn(mockPage);
-
-		Page<Product> result = productService.getProductsListType(listType, member_id, keyword, null, pageable);
-
-		// then
-		assertThat(result).isNotNull();
-		assertThat(result.getContent().get(1).getName()).isEqualTo("딸기");
-	}
-
-	@Test
-	@DisplayName("삭제안되고 진열된 상품의 상품상세내용 가져온다.")
+	@DisplayName("셀러회원이 삭제안되고 진열된 상품(SELLER_LIST_ALL)을 가져온다.")
 	void getProductsReadType() {
+
 		//given
-		Long product_id = 1L;
-		Long member_id = 1L;
+		Long productId = 1L;
+		long memberId = 1L;
 		ProductReadType readType = ProductReadType.USER_READ;
 
 		Product mockCont = mockPage.getContent().stream()
-			.filter(p -> p.getId().equals(product_id) && p.getMember().getId().equals(member_id))
+			.filter(p -> p.getId().equals(productId) && p.getMember().getId().equals(memberId))
 			.findFirst()
 			.orElse(null);
 
 		doReturn(mockCont).when(productService)
-			.getProductsReadType(eq(readType), eq(product_id), eq(member_id));
+			.getProductsReadType(eq(readType), eq(member), eq(productId), eq(memberId));
 
 		//when
-		Product result = productService.getProductsReadType(readType, product_id, member_id);
+		Product result = productService.getProductsReadType(readType, member, productId, memberId);
 
 		// then
 		assertThat(result).isNotNull();
 		assertThat(result.getName()).isEqualTo("바나나");
-	}
-
-	@Test
-	@DisplayName("셀러회원의 상품상세내용 가져오기 ")
-	void getProductsReadType2() {
-
-		//given
-		ProductReadType readType = ProductReadType.SELLER_READ;
-		long product_id = 1L;
-		long member_id = 1L;
-
-		Product mockCont = mockPage.getContent().stream()
-			.filter(p -> p.getId().equals(product_id) && p.getMember().getId().equals(member_id))
-			.findFirst()
-			.orElse(null);
-
-		doReturn(mockCont).when(productService)
-			.getProductsReadType(eq(readType), eq(product_id), eq(member_id));
-
-		//when
-		Product result = productService.getProductsReadType(readType, product_id, member_id);
-
-		// then
-		assertThat(result).isNotNull();
-		assertThat(result.getName()).isEqualTo("바나나");
-	}
-
-	@Test
-	@DisplayName("관리자의 상품상세내용 가져오기 ")
-	void getProductsReadType3() {
-
-		//given
-		ProductReadType readType = ProductReadType.ADMIN_READ;
-		long product_id = 1L;
-		long member_id = 1L;
-
-		Product mockCont = mockPage.getContent().stream()
-			.filter(p -> p.getId().equals(product_id) && p.getMember().getId().equals(member_id))
-			.findFirst()
-			.orElse(null);
-
-		doReturn(mockCont).when(productService)
-			.getProductsReadType(eq(readType), eq(product_id), eq(member_id));
-
-		//when
-		Product result = productService.getProductsReadType(readType, product_id, member_id);
-
-		// then
-		assertThat(result).isNotNull();
-		assertThat(result.getName()).isEqualTo("바나나");
+		assertThat(result.getCategory()).isEqualTo(Category.FOOD);
 	}
 
 }

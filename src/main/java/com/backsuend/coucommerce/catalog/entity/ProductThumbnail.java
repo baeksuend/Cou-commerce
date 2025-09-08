@@ -11,6 +11,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+import com.backsuend.coucommerce.common.entity.BaseTimeEntity;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,7 +27,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor // 디폴트 생성자
 @Table(name = "product_thumbnails")
-public class ProductThumbnail {
+public class ProductThumbnail extends BaseTimeEntity {
 
 	@Schema(description = "썸네일 아이디", example = "1")
 	@Id
@@ -44,10 +46,6 @@ public class ProductThumbnail {
 	@Schema(description = "이미지 형태", example = "S")
 	@Column(name = "image_type", nullable = false)
 	private String imageType;
-
-	@Schema(description = "등록일", example = "2025-05-25")
-	@Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-	private LocalDateTime createdAt;
 
 	// 생성자
 	public ProductThumbnail(Product product, String imageType, String imagePath) {

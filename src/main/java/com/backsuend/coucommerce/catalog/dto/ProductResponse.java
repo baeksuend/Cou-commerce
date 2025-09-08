@@ -1,7 +1,9 @@
 package com.backsuend.coucommerce.catalog.dto;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import com.backsuend.coucommerce.catalog.entity.Product;
 import com.backsuend.coucommerce.catalog.entity.ProductThumbnail;
@@ -44,9 +46,11 @@ public class ProductResponse {
 	private String productThumbnail_M; // 작은 이미지
 	private String productThumbnail_L; // 작은 이미지
 
-	private List<String> productThumbnails; // 썸네일 경로 리스트 추가
-
 	public static ProductResponse fromEntity(Product product) {
+
+		List<ProductThumbnail> thumbnails = Optional.ofNullable(product.getProductThumbnails())
+			.orElse(Collections.emptyList());
+
 		return new ProductResponse(
 			product.getId(),
 			product.getName(),
@@ -55,13 +59,15 @@ public class ProductResponse {
 			product.getPrice(),
 			product.getCategory(),
 			product.getCreatedAt(),
-			product.getProductThumbnails().stream().filter(productThumbnail ->
-				productThumbnail.getImageType().contains("S")).toString(),
-			product.getProductThumbnails().stream().filter(productThumbnail ->
-				productThumbnail.getImageType().contains("M")).toString(),
-			product.getProductThumbnails().stream().filter(productThumbnail ->
-				productThumbnail.getImageType().contains("L")).toString(),
-			product.getProductThumbnails().stream().map(ProductThumbnail::getImagePath).toList()
+			thumbnails.stream()
+				.filter(p -> "S".equals(p.getImageType()))
+				.map(ProductThumbnail::getImagePath).findFirst().orElse(""),
+			thumbnails.stream()
+				.filter(p -> "M".equals(p.getImageType()))
+				.map(ProductThumbnail::getImagePath).findFirst().orElse(""),
+			thumbnails.stream()
+				.filter(p -> "L".equals(p.getImageType()))
+				.map(ProductThumbnail::getImagePath).findFirst().orElse("")
 		);
 	}
 

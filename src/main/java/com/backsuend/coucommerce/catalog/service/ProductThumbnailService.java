@@ -7,11 +7,10 @@ import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.backsuend.coucommerce.catalog.dto.ProductThumbnailDto;
-import com.backsuend.coucommerce.catalog.dto.UploadRequest;
 import com.backsuend.coucommerce.catalog.entity.Product;
 
 public interface ProductThumbnailService {
-	void uploadThumbnail(Product product, UploadRequest upload);
+	void uploadThumbnail(Product product, List<MultipartFile> images);
 
 	List<ProductThumbnailDto> saveImage(Product product, MultipartFile image) throws IOException;
 

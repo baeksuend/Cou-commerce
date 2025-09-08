@@ -28,10 +28,10 @@ public class ReviewRequestDto {
 	@Digits(integer = 1, fraction = 1, message = "숫자만 가능합니다.")
 	@Size(min = 1, max = 5, message = "상품명은 필수입니다.")
 	@NotNull(message = "재고수량은 필수입니다.")
-	private int avgReviewScore;
+	private double avgReviewScore;
 
 	@Builder
-	public ReviewRequestDto(String content, int avgReviewScore, Long parentReviewId) {
+	public ReviewRequestDto(String content, double avgReviewScore, Long parentReviewId) {
 		this.content = content;
 		this.avgReviewScore = avgReviewScore;
 		this.parentReviewId = parentReviewId;

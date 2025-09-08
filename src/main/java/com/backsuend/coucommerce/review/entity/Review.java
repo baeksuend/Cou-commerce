@@ -65,7 +65,7 @@ public class Review extends BaseTimeEntity {
 
 	@Schema(description = "리뷰 평점", example = "4.5")
 	@Column(name = "avg_review_score")
-	private int avgReviewScore;
+	private double avgReviewScore;
 
 	@Schema(description = "리뷰 내용", example = "상세내용입니다.")
 	@Column
@@ -87,12 +87,13 @@ public class Review extends BaseTimeEntity {
 
 	/* 대댓글 조회용*/
 	@Builder
-	public Review(Long id, Member member, Product product, String content, Review parentReview,
-		LocalDateTime createdAt) {
+	public Review(Long id, Member member, Product product, String content,
+		double avgReviewScore, Review parentReview, LocalDateTime createdAt) {
 		this.id = id;
 		this.member = member;
 		this.product = product;
 		this.content = content;
+		this.avgReviewScore = avgReviewScore;
 		this.parentReview = parentReview;
 		this.createdAt = createdAt;
 	}
@@ -108,5 +109,9 @@ public class Review extends BaseTimeEntity {
 
 	public void updateReview(String content) {
 		this.content = content;
+	}
+
+	public void updateAvgReviewScore(double avgReviewScore) {
+		this.avgReviewScore = avgReviewScore;
 	}
 }

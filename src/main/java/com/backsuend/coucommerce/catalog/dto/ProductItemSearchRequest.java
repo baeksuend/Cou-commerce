@@ -36,11 +36,6 @@ public class ProductItemSearchRequest {
 	@Builder.Default
 	private ProductSortType sort = ProductSortType.RECENT;
 
-/*	@Schema(description = "정렬순서", example = "asc")
-	@Pattern(regexp = "^(asc|desc)$", flags = Pattern.Flag.CASE_INSENSITIVE,
-		message = "정렬 방향은 asc 또는 desc만 가능합니다.")
-	private String sortDir;*/
-
 	@Schema(description = "검색어")
 	private String keyword;
 

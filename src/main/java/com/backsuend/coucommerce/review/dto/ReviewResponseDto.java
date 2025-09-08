@@ -29,7 +29,7 @@ public class ReviewResponseDto {
 	private String content;
 
 	@Schema(description = "리뷰평점", example = "3.5")
-	private int avgReviewScore;
+	private double avgReviewScore;
 
 	@Schema(description = "등록일", example = "2025-08-02T00:00:00")
 	private LocalDateTime createdAt;
@@ -42,6 +42,7 @@ public class ReviewResponseDto {
 		this.memberId = review.getMember().getId();
 		this.memberName = review.getMember().getName();
 		this.content = review.getContent();
+		this.avgReviewScore = review.getAvgReviewScore();
 		this.createdAt = review.getCreatedAt();
 	}
 
@@ -52,23 +53,8 @@ public class ReviewResponseDto {
 		this.memberId = review.getMember().getId();
 		this.memberName = review.getMember().getName();
 		this.content = review.getContent();
+		this.avgReviewScore = review.getAvgReviewScore();
 		this.createdAt = review.getCreatedAt();
 		this.childComments = childReviews; /* 대댓글 목록 할당*/
 	}
-/*
-	@Builder
-	public ReviewResponseDto() {
-
-	}
-
-	public ReviewResponseDto(Long id, Long product_id, Long member_id, String memberName, String content,
-		LocalDateTime createdAt) {
-		this.id = id;
-		this.product_id = product_id;
-		this.member_id = member_id;
-		this.memberName = memberName;
-		this.content = content;
-		this.createdAt = createdAt;
-	}*/
-
 }

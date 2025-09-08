@@ -22,7 +22,13 @@ public class QProductSummary extends EntityPathBase<ProductSummary> {
 
     public static final QProductSummary productSummary = new QProductSummary("productSummary");
 
-    public final NumberPath<Integer> avgReviewScore = createNumber("avgReviewScore", Integer.class);
+    public final com.backsuend.coucommerce.common.entity.QBaseTimeEntity _super = new com.backsuend.coucommerce.common.entity.QBaseTimeEntity(this);
+
+    //inherited
+    public final DateTimePath<java.time.LocalDateTime> createdAt = _super.createdAt;
+
+    //inherited
+    public final DateTimePath<java.time.LocalDateTime> deletedAt = _super.deletedAt;
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
@@ -30,7 +36,14 @@ public class QProductSummary extends EntityPathBase<ProductSummary> {
 
     public final QProduct product;
 
+    public final NumberPath<Double> reviewAvgScore = createNumber("reviewAvgScore", Double.class);
+
     public final NumberPath<Integer> reviewCount = createNumber("reviewCount", Integer.class);
+
+    public final NumberPath<Double> reviewTotalScore = createNumber("reviewTotalScore", Double.class);
+
+    //inherited
+    public final DateTimePath<java.time.LocalDateTime> updatedAt = _super.updatedAt;
 
     public final NumberPath<Integer> viewCount = createNumber("viewCount", Integer.class);
 

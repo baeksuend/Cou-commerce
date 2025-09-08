@@ -24,7 +24,7 @@ public class QReview extends EntityPathBase<Review> {
 
     public final com.backsuend.coucommerce.common.entity.QBaseTimeEntity _super = new com.backsuend.coucommerce.common.entity.QBaseTimeEntity(this);
 
-    public final NumberPath<Integer> avgReviewScore = createNumber("avgReviewScore", Integer.class);
+    public final NumberPath<Double> avgReviewScore = createNumber("avgReviewScore", Double.class);
 
     public final ListPath<Review, QReview> childReviews = this.<Review, QReview>createList("childReviews", Review.class, QReview.class, PathInits.DIRECT2);
 
