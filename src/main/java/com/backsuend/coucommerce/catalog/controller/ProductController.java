@@ -40,7 +40,7 @@ public class ProductController {
 	@GetMapping("/products/main_best")
 	public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> getMainBestProducts() {
 
-		log.info("[API] GET /api/v1/products/main_best 호출");  // 요청 들어옴 기록
+		log.info("[API] GET /api/v1/products/main_best 호출하기 ");  // 요청 들어옴 기록
 
 		int page = 10;
 		Page<ProductResponse> pageList = productService.getProductsMain(ProductMainDisplay.MAIN_BEST, page);
