@@ -61,3 +61,6 @@ hs_err_pid*
 replay_pid*
 
 docs/
+
+# Java 빌드 폴더
+/target/

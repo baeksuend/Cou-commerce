@@ -42,7 +42,13 @@ public class QProduct extends EntityPathBase<Product> {
 
     public final NumberPath<Integer> price = createNumber("price", Integer.class);
 
+    public final QProductSummary productSummary;
+
+    public final ListPath<ProductThumbnail, QProductThumbnail> productThumbnails = this.<ProductThumbnail, QProductThumbnail>createList("productThumbnails", ProductThumbnail.class, QProductThumbnail.class, PathInits.DIRECT2);
+
     public final NumberPath<Integer> stock = createNumber("stock", Integer.class);
+
+    public final NumberPath<Integer> tranPrice = createNumber("tranPrice", Integer.class);
 
     //inherited
     public final DateTimePath<java.time.LocalDateTime> updatedAt = _super.updatedAt;
@@ -68,6 +74,7 @@ public class QProduct extends EntityPathBase<Product> {
     public QProduct(Class<? extends Product> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
         this.member = inits.isInitialized("member") ? new com.backsuend.coucommerce.auth.entity.QMember(forProperty("member")) : null;
+        this.productSummary = inits.isInitialized("productSummary") ? new QProductSummary(forProperty("productSummary"), inits.get("productSummary")) : null;
     }
 
 }
