@@ -1,8 +1,13 @@
 package com.backsuend.coucommerce.catalog.dto;
 
+import java.util.List;
+
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+
+import org.springframework.web.multipart.MultipartFile;
 
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.catalog.entity.Product;
@@ -22,24 +27,22 @@ import lombok.Setter;
 @Builder
 public class ProductRequest {
 
-	@Schema(description = "회원 등록자 아이디", example = "32")
-	@NotNull(message = "회원아이디는 필수입니다.")
-	private Long member_id;
-
 	@Schema(description = "상품명", example = "우리 현미쌀")
 	@NotBlank(message = "상품명은 필수입니다.")
 	@Size(min = 2, max = 50, message = "상품명은 필수입니다.")
 	private String name;
 
-	@Schema(description = "상품내용", example = "상품내용입니다.")
+	@Schema(description = "상품내용", example = "<p>상품내용입니다.</p><p>맛이 좋아요!!!</p>")
 	@NotBlank(message = "상품내용은 필수입니다.")
 	private String detail;
 
-	@Schema(description = "재고수량", example = "434")
+	@Schema(description = "재고수량", example = "40")
+	@Digits(integer = 5, fraction = 0, message = "숫자만 가능합니다.")
 	@NotNull(message = "재고수량은 필수입니다.")
 	private int stock;
 
-	@Schema(description = "가격", example = "40")
+	@Schema(description = "가격", example = "50000")
+	@Digits(integer = 10, fraction = 0, message = "숫자만 가능합니다.")
 	@NotNull(message = "가격은 필수입니다.")
 	private int price;
 
@@ -49,6 +52,9 @@ public class ProductRequest {
 
 	@Schema(description = "진열여부", example = "true")
 	private boolean visible;
+
+	@Schema(type = "첨부파일", format = "binary", description = "업로드 이미지")
+	private List<MultipartFile> images;
 
 	public Product toEntity(Member member) {
 		return Product.builder()
