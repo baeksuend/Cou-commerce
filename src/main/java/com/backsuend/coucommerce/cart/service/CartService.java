@@ -11,6 +11,7 @@ import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import com.backsuend.coucommerce.cart.config.CartRedisConfig;
 import com.backsuend.coucommerce.cart.dto.CartItem;
 import com.backsuend.coucommerce.cart.dto.CartResponse;
 import com.backsuend.coucommerce.common.exception.BusinessException;
@@ -25,16 +26,29 @@ import lombok.RequiredArgsConstructor;
 /**
  * ToDo
  * 1. 현재 add 및 update 할 시에 접근하는 항목에만 장바구니의 데이터들의 ttl이 7일로 다시 설정됨. 전부 설정하고 싶으면 변경 필요.
+ * Done
+ * 1. 해결됨. 30일로 사용자의 조회를 제외한 모든 접근에 항목을 업데이트 하도록 변경.
  * */
 @Service
 @RequiredArgsConstructor
 public class CartService {
-
+	/** Cart TTL: 30일 (PRD 기준). CartRedisConfig.CART_TTL 참조 */
+	private static final Duration CART_TTL = CartRedisConfig.CART_TTL;
 	@Qualifier("cartRedisTemplate")
 	private final RedisTemplate<String, CartItem> cartRedisTemplate;
 
 	private String getCartKey(Long memberId) {
 		return "cart:" + memberId;
+	}
+
+	/** 쓰기 경로에서 TTL 보장 (슬라이딩 on write) */
+	private void ensureTtl(Long memberId) {
+		try {
+			String key = getCartKey(memberId);
+			cartRedisTemplate.expire(key, CART_TTL);
+		} catch (Exception ignore) {
+			// TTL 보장은 베스트에포트. 실패시 기능에는 영향 주지 않음.
+		}
 	}
 
 	/** 장바구니 조회 */
@@ -68,7 +82,8 @@ public class CartService {
 			if (isNewKey) {
 				cartRedisTemplate.expire(key, Duration.ofDays(7));
 			}
-			// 접근 시마다 TTL 갱신하고 싶으면 여기 추가 : cartRedisTemplate.expire(key, Duration.ofDays(7));
+			// TTL 보장
+			ensureTtl(memberId);
 
 			return getCart(memberId);
 		} catch (DataAccessException dae) {
@@ -92,8 +107,10 @@ public class CartService {
 					Map.of("memberId", memberId, "productId", item.getProductId()));
 			}
 			hashOps.put(key, field, item);
-			// 필요시 TTL 갱신 정책 선택
-			cartRedisTemplate.expire(key, Duration.ofDays(7));
+
+			// TTL 보장
+			ensureTtl(memberId);
+
 			return getCart(memberId);
 		} catch (DataAccessException dae) {
 			throw new BusinessException(
@@ -113,6 +130,9 @@ public class CartService {
 					ErrorCode.NOT_FOUND, "장바구니에 해당 상품이 없습니다.",
 					Map.of("memberId", memberId, "productId", productId));
 			}
+			// TTL 보장
+			ensureTtl(memberId);
+
 			return getCart(memberId);
 		} catch (DataAccessException dae) {
 			throw new BusinessException(
@@ -126,6 +146,8 @@ public class CartService {
 		String key = getCartKey(memberId);
 		try {
 			cartRedisTemplate.delete(key);
+			// TTL 보장
+			ensureTtl(memberId);
 		} catch (DataAccessException dae) {
 			throw new BusinessException(
 				ErrorCode.INTERNAL_ERROR, "장바구니 초기화 실패", Map.of("memberId", memberId));
