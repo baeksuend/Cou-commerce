@@ -1,5 +1,7 @@
 package com.backsuend.coucommerce.cart.controller;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -50,7 +52,7 @@ public class CartController {
 	})
 	@PostMapping("/items")
 	public ResponseEntity<ApiResponse<CartResponse>> addItem(@AuthenticationPrincipal UserDetailsImpl user,
-		@RequestBody CartItem item) {
+		@Valid @RequestBody CartItem item) {
 		Long memberId = user.getId();
 		CartResponse cartResponse = cartService.addItem(memberId, item);
 		return ApiResponse.created(cartResponse).toResponseEntity();
@@ -64,7 +66,7 @@ public class CartController {
 	})
 	@PutMapping("/items")
 	public ResponseEntity<ApiResponse<CartResponse>> updateItem(@AuthenticationPrincipal UserDetailsImpl user,
-		@RequestBody CartItem item) {
+		@Valid @RequestBody CartItem item) {
 		Long memberId = user.getId();
 		CartResponse cartResponse = cartService.updateItem(memberId, item);
 		return ApiResponse.ok(cartResponse).toResponseEntity();

@@ -44,6 +44,10 @@ public record ApiResponse<T>(
 		return of(false, HttpStatus.valueOf(statusCode), message, null);
 	}
 
+	public static <T> ApiResponse<T> error(HttpStatus status, String message, T data) {
+		return of(false, status, message, data);
+	}
+
 	/* ---------- Common Builder ---------- */
 
 	public static <T> ApiResponse<T> of(boolean success, HttpStatus status, String message, T data) {

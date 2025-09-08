@@ -106,6 +106,13 @@ public class CartService {
 					ErrorCode.NOT_FOUND, "장바구니에 해당 상품이 없습니다.",
 					Map.of("memberId", memberId, "productId", item.getProductId()));
 			}
+			if (item.getQuantity() <= 0) {
+				hashOps.delete(key, field);
+				// TTL 보장
+				ensureTtl(memberId);
+				return getCart(memberId);
+			}
+			// 덮어쓰기(수량 변경 포함)
 			hashOps.put(key, field, item);
 
 			// TTL 보장
