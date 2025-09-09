@@ -36,25 +36,25 @@ public class SellerOrderController {
 		return ResponseEntity.ok(ApiResponse.ok(orderService.getSellerOrders(seller.getId())));
 	}
 
-	@PatchMapping("/{orderId}/ship")
-	public ResponseEntity<ApiResponse<OrderResponse>> shipOrder(
-		@PathVariable Long orderId,
-		@AuthenticationPrincipal UserDetailsImpl seller,
-		@RequestBody ShipOrderRequest request) {
-		return ResponseEntity.ok(ApiResponse.ok(orderService.shipOrder(orderId, seller.getId(), request)));
-	}
+    @PatchMapping("/{orderId}/ship")
+    public ResponseEntity<ApiResponse<OrderResponse>> shipOrder(
+        @PathVariable Long orderId,
+        @AuthenticationPrincipal UserDetailsImpl seller,
+        @RequestBody ShipOrderRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(orderService.shipOrder(orderId, seller.getId(), request)));
+    }
 
-	@PatchMapping("/{orderId}/approve-cancel")
-	public ResponseEntity<ApiResponse<OrderResponse>> approveCancel(
-		@PathVariable Long orderId,
-		@AuthenticationPrincipal UserDetailsImpl seller) {
-		return ResponseEntity.ok(ApiResponse.ok(orderService.approveCancel(orderId, seller.getId())));
-	}
+    @PatchMapping("/{orderId}/approve-refund")
+    public ResponseEntity<ApiResponse<OrderResponse>> approveRefund(
+        @PathVariable Long orderId,
+        @AuthenticationPrincipal UserDetailsImpl seller) {
+        return ResponseEntity.ok(ApiResponse.ok(orderService.approveRefund(orderId, seller.getId())));
+    }
 
-	@PatchMapping("/{orderId}/approve-refund")
-	public ResponseEntity<ApiResponse<OrderResponse>> approveRefund(
-		@PathVariable Long orderId,
-		@AuthenticationPrincipal UserDetailsImpl seller) {
-		return ResponseEntity.ok(ApiResponse.ok(orderService.approveRefund(orderId, seller.getId())));
-	}
+    @PatchMapping("/{orderId}/complete")
+    public ResponseEntity<ApiResponse<OrderResponse>> completeOrder(
+        @PathVariable Long orderId,
+        @AuthenticationPrincipal UserDetailsImpl seller) {
+        return ResponseEntity.ok(ApiResponse.ok(orderService.completeOrder(orderId, seller.getId())));
+    }
 }

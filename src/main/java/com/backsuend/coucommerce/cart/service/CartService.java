@@ -77,39 +77,38 @@ public class CartService {
 		}
 	}
 
-	/** 상품 추가(없으면 추가, 있으면 덮어쓰기) */
-	public CartResponse addItem(Long memberId, CartItem request) {
-		String key = getCartKey(memberId);
-		String field = request.getProductId().toString();
+    /** 상품 추가(없으면 신규 추가, 있으면 수량 가산) */
+    public CartResponse addItem(Long memberId, CartItem request) {
+        String key = getCartKey(memberId);
+        String field = request.getProductId().toString();
 
-		try {
-			boolean isNewKey = !cartRedisTemplate.hasKey(key);
-			// 기존 아이템 조회
-			HashOperations<String, String, CartItem> hashOps = cartRedisTemplate.opsForHash();
-			CartItem existing = hashOps.get(key, field);
-			if (existing == null) {
-				throw new BusinessException(ErrorCode.NOT_FOUND, "장바구니에 해당 상품이 없습니다.",
-					Map.of("memberId", memberId, "productId", field));
-			}
-			int quantity = request.getQuantity();
-			if (quantity <= 0) {
-				// 0 이하이면 삭제
-				cartRedisTemplate.opsForHash().delete(key, field);
-				ensureTtl(memberId);
-				return getCart(memberId);
-			}
-			existing.setQuantity(quantity);
-			hashOps.put(key, field, existing);
+        try {
+            HashOperations<String, String, CartItem> hashOps = cartRedisTemplate.opsForHash();
+            CartItem existing = hashOps.get(key, field);
+            int quantity = request.getQuantity();
+            if (existing == null) {
+                // 신규 추가
+                if (quantity <= 0) {
+                    throw new BusinessException(ErrorCode.INVALID_INPUT, "수량은 1 이상이어야 합니다.",
+                        Map.of("memberId", memberId, "productId", field, "quantity", quantity));
+                }
+                hashOps.put(key, field, request);
+            } else {
+                // 기존 항목이면 수량 가산 (덮어쓰기는 updateItem에서 처리)
+                int newQty = existing.getQuantity() + quantity;
+                if (newQty <= 0) {
+                    // 방어적 처리: 결과 수량이 0 이하면 삭제
+                    cartRedisTemplate.opsForHash().delete(key, field);
+                } else {
+                    existing.setQuantity(newQty);
+                    hashOps.put(key, field, existing);
+                }
+            }
+            // TTL 보장
+            ensureTtl(memberId);
 
-			// TTL: 최초 생성시에만 설정(7일)
-			if (isNewKey) {
-				cartRedisTemplate.expire(key, Duration.ofDays(7));
-			}
-			// TTL 보장
-			ensureTtl(memberId);
-
-			return getCart(memberId);
-		} catch (DataAccessException dae) {
+            return getCart(memberId);
+        } catch (DataAccessException dae) {
 			throw new BusinessException(
 				ErrorCode.INTERNAL_ERROR, "장바구니 저장 실패",
 				Map.of("memberId", memberId, "productId", request.getProductId()));
@@ -135,9 +134,8 @@ public class CartService {
 				ensureTtl(memberId);
 				return getCart(memberId);
 			}
-			existing.setQuantity(request.getQuantity());
-			// 덮어쓰기(수량 변경 포함)
-			hashOps.put(key, field, existing);
+            // 요청값으로 덮어쓰기(수량 등 변경 반영)
+            hashOps.put(key, field, request);
 
 			// TTL 보장
 			ensureTtl(memberId);
@@ -150,27 +148,47 @@ public class CartService {
 		}
 	}
 
-	/** 상품 삭제 */
-	public CartResponse removeItem(Long memberId, Long productId) {
-		String key = getCartKey(memberId);
-		String field = productId.toString();
-		try {
-			Long removed = cartRedisTemplate.opsForHash().delete(key, field);
-			if (removed == null || removed == 0) {
-				throw new BusinessException(
-					ErrorCode.NOT_FOUND, "장바구니에 해당 상품이 없습니다.",
-					Map.of("memberId", memberId, "productId", productId));
-			}
-			// TTL 보장
-			ensureTtl(memberId);
+    /** 상품 삭제 (CartItem 바디 기반) */
+    public CartResponse removeItem(Long memberId, CartItem item) {
+        String key = getCartKey(memberId);
+        String field = item.getProductId().toString();
+        try {
+            Long removed = cartRedisTemplate.opsForHash().delete(key, field);
+            if (removed == null || removed == 0) {
+                throw new BusinessException(
+                    ErrorCode.NOT_FOUND, "장바구니에 해당 상품이 없습니다.",
+                    Map.of("memberId", memberId, "productId", field));
+            }
+            // TTL 보장
+            ensureTtl(memberId);
 
-			return getCart(memberId);
-		} catch (DataAccessException dae) {
-			throw new BusinessException(
-				ErrorCode.INTERNAL_ERROR, "장바구니 삭제 실패",
-				Map.of("memberId", memberId, "productId", productId));
-		}
-	}
+            return getCart(memberId);
+        } catch (DataAccessException dae) {
+            throw new BusinessException(
+                ErrorCode.INTERNAL_ERROR, "장바구니 삭제 실패",
+                Map.of("memberId", memberId, "productId", field));
+        }
+    }
+
+    /** 상품 삭제 (productId 경로 변수 기반) */
+    public CartResponse removeItem(Long memberId, Long productId) {
+        String key = getCartKey(memberId);
+        String field = productId.toString();
+        try {
+            Long removed = cartRedisTemplate.opsForHash().delete(key, field);
+            if (removed == null || removed == 0) {
+                throw new BusinessException(
+                    ErrorCode.NOT_FOUND, "장바구니에 해당 상품이 없습니다.",
+                    Map.of("memberId", memberId, "productId", field));
+            }
+            ensureTtl(memberId);
+            return getCart(memberId);
+        } catch (DataAccessException dae) {
+            throw new BusinessException(
+                ErrorCode.INTERNAL_ERROR, "장바구니 삭제 실패",
+                Map.of("memberId", memberId, "productId", field));
+        }
+    }
 
 	/** 장바구니 비우기 */
 	public void clearCart(Long memberId) {

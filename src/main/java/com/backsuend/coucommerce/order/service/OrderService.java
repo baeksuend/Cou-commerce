@@ -1,7 +1,9 @@
 package com.backsuend.coucommerce.order.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import jakarta.persistence.OptimisticLockException;
 
@@ -12,9 +14,11 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.backsuend.coucommerce.auth.entity.Member;
+import com.backsuend.coucommerce.cart.dto.CartItem;
 import com.backsuend.coucommerce.cart.dto.CartResponse;
 import com.backsuend.coucommerce.cart.service.CartService;
 import com.backsuend.coucommerce.catalog.entity.Product;
+import com.backsuend.coucommerce.catalog.service.ProductSummaryService;
 import com.backsuend.coucommerce.common.exception.BusinessException;
 import com.backsuend.coucommerce.common.exception.ErrorCode;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
@@ -47,6 +51,7 @@ import lombok.RequiredArgsConstructor;
  * 1. Spring Retry (@Retryable) : spring-retry 라이브러리를 추가하면, 재시도를 애노테이션으로 선언할 수 있음.
  * 2. 자동 연동 모드 (추후 구현 가능) : 택배사(Open API, 예: CJ, 한진, 롯데)와 연동 배송 요청 시 API 호출 → 운송장 번호 자동 발급 시스템이 바로 Shipment 엔티티에 기록
  * 3. 상태 전이는 OrderStatus Enum으로 통제 (취소 승인 = CANCEL_REQUESTED만 허용, 환불 승인 = REFUND_REQUESTED만 허용) 추적은 OrderLog로 보강 누가 언제 "취소 요청"을 했고, "승인"을 했는지 기록 boolean 필드는 나중에 조회 최적화나 운영 편의가 필요할 때만 추가
+ * 4. PaymentLog/Settlement(정산): 미구현(2차 범위지만 미구현 3차 개인 진행)
  */
 
 @Service
@@ -57,21 +62,21 @@ public class OrderService {
 	private final CartService cartService;
 	private final OrderVerificationService orderVerificationService;
 	private final OrderSnapshotService orderSnapshotService;
-	private final OrderProductRepository orderProductRepository;
-	/**
-	 * 장바구니에서 주문 생성
-	 * @param request 주문 생성 요청 정보 (배송지 정보 포함)
-	 * @param memberId 주문하는 회원 ID
-	 * @return 생성된 주문 정보
-	 * @throws BusinessException 회원이 없거나, 장바구니가 비어있거나, 상품 정보가 유효하지 않은 경우
-	 */
+    private final OrderProductRepository orderProductRepository;
+    private final ProductSummaryService productSummaryService;
 
 	/**
-	 * TODO
-	 * 1. Idempotency-Key(헤더) 지원 : 클라이언트가 주문 생성 API를 같은 요청을 여러 번 보낼 수 있음 (네트워크 타임아웃, 중복 클릭 등). 이런 경우 동일한 주문이 두 번 생성될 수 있는데, Idempotency-Key를 써서 중복 요청은 하나로만 처리하라는 뜻입니다.
+	 * 장바구니에서 주문 생성 (옵션 A: 셀러별 주문 분할)
+	 * - 장바구니 아이템을 product.member.id(셀러) 기준으로 그룹핑하여 여러 개의 Order를 생성합니다.
+	 * - 각 주문은 해당 셀러의 상품만 포함하고, 결제/배송/환불은 주문 단위로 처리됩니다.
+	 *
+	 * @param request 주문 생성 요청 정보 (배송지 정보 포함)
+	 * @param memberId 주문하는 회원 ID
+	 * @return 생성된 주문 목록 (셀러별 분할 결과)
+	 * @throws BusinessException 회원이 없거나, 장바구니가 비어있거나, 상품 정보가 유효하지 않은 경우
 	 */
 	@Transactional(isolation = Isolation.REPEATABLE_READ)
-	public OrderResponse createOrderFromCart(OrderCreateRequest request, Long memberId) {
+	public List<OrderResponse> createOrderFromCart(OrderCreateRequest request, Long memberId) {
 		int maxRetries = 3;
 		int attempt = 0;
 
@@ -89,32 +94,47 @@ public class OrderService {
 				}
 				// 3. 최신 가격/재고 재검증
 				Map<Long, Product> productMap = orderVerificationService.verify(cartResponse.getItems());
+				// 4. 셀러별로 CartItem 분할
+				Map<Long, List<CartItem>> itemsBySeller =
+					cartResponse.getItems().stream()
+						.collect(Collectors.groupingBy(ci -> {
+							Product p = productMap.get(ci.getProductId());
+							if (p == null)
+								return -1L; // 방어
+							return p.getMember().getId();
+						}));
 
-				// 3. Order 엔티티 생성
-				Order order = Order.builder()
-					.member(buyer)
-					.consumerName(request.getConsumerName())
-					.consumerPhone(request.getConsumerPhone())
-					.receiverName(request.getReceiverName())
-					.receiverRoadName(request.getReceiverRoadName())
-					.receiverPhone(request.getReceiverPhone())
-					.receiverPostalCode(request.getReceiverPostalCode())
-					.build();
+				List<OrderResponse> responses = new ArrayList<>();
 
-				// 스냅샷 저장: Product.price -> OrderProduct.priceSnapshot, Product 참조 유지
-				order = orderSnapshotService.toOrderProducts(order, cartResponse.getItems(), productMap);
+				// 5. 그룹별로 Order 생성/저장
+				for (Map.Entry<Long, List<CartItem>> entry : itemsBySeller.entrySet()) {
+					List<CartItem> sellerItems = entry.getValue();
 
-				// 주문 저장
-				Order savedOrder = orderRepository.save(order);
+					Order order = Order.builder()
+						.member(buyer)
+						.consumerName(request.getConsumerName())
+						.consumerPhone(request.getConsumerPhone())
+						.receiverName(request.getReceiverName())
+						.receiverRoadName(request.getReceiverRoadName())
+						.receiverPhone(request.getReceiverPhone())
+						.receiverPostalCode(request.getReceiverPostalCode())
+						.build();
 
-				// 상세 주문 스냅샷 저장
-				orderProductRepository.saveAll(order.getItems());
+					// 스냅샷 저장 및 재고 차감
+					order = orderSnapshotService.toOrderProducts(order, sellerItems, productMap);
 
-				// 장바구니 초기화 (주문 완료 후)
+					// 주문 저장 및 아이템 저장
+					Order savedOrder = orderRepository.save(order);
+					orderProductRepository.saveAll(savedOrder.getItems());
+
+					responses.add(createOrderResponse(savedOrder));
+				}
+
+				// 6. 장바구니 초기화 (주문 완료 후)
 				cartService.clearCart(memberId);
 
-				// 응답 반환
-				return createOrderResponse(savedOrder);
+				// 7. 응답 반환 (셀러별 주문 리스트)
+				return responses;
 			} catch (OptimisticLockException e) {
 				if (attempt >= maxRetries) {
 					throw new BusinessException(ErrorCode.CONFLICT, "동시 주문 충돌. 다시 시도해주세요.");
@@ -229,7 +249,7 @@ public class OrderService {
 	}
 
 	@Transactional
-	public OrderResponse shipOrder(Long orderId, Long sellerId, ShipOrderRequest request) {
+    public OrderResponse shipOrder(Long orderId, Long sellerId, ShipOrderRequest request) {
 		Order order = orderRepository.findById(orderId)
 			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문 없음"));
 
@@ -256,36 +276,45 @@ public class OrderService {
 		order.setStatus(OrderStatus.SHIPPED);
 		order.setShipment(shipment); // 편의 메서드 추가 필요
 
-		return createOrderResponse(order);
-	}
+        return createOrderResponse(order);
+    }
+
+    @Transactional
+    public OrderResponse completeOrder(Long orderId, Long sellerId) {
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문 없음"));
+
+        // Seller 검증: 본인 상품 포함 여부 확인 (셀러 단위 주문이지만 방어적으로 확인)
+        boolean ownsProduct = order.getItems().stream()
+            .anyMatch(item -> item.getProduct().getMember().getId().equals(sellerId));
+        if (!ownsProduct) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED, "본인 상품 주문만 완료 처리 가능");
+        }
+
+        // 상태 검증: SHIPPED 에서만 완료 처리 허용
+        if (order.getStatus() != OrderStatus.SHIPPED) {
+            throw new BusinessException(ErrorCode.CONFLICT, "배송완료 처리는 SHIPPED 상태에서만 가능");
+        }
+
+        // 상태 변경
+        order.setStatus(OrderStatus.COMPLETED);
+
+        // 각 상품에 대해 주문 카운트 증가 (배송완료 시점)
+        order.getItems().forEach(item ->
+            productSummaryService.setOrderCount(item.getProduct().getId(), item.getQuantity())
+        );
+
+        return createOrderResponse(order);
+    }
 
 	@Transactional(readOnly = true)
 	public List<OrderResponse> getSellerOrders(Long sellerId) {
 		List<Order> orders = orderRepository.findBySellerId(sellerId);
-		// 👉 커스텀 쿼리 필요: OrderDetailProduct.product.member.id = :sellerId
+		// 커스텀 쿼리 필요: OrderDetailProduct.product.member.id = :sellerId
 
 		return orders.stream()
 			.map(this::createOrderResponse)
 			.toList();
-	}
-
-	@Transactional
-	public OrderResponse approveCancel(Long orderId, Long sellerId) {
-		Order order = orderRepository.findById(orderId)
-			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문 없음"));
-
-		boolean ownsProduct = order.getItems().stream()
-			.anyMatch(item -> item.getProduct().getMember().getId().equals(sellerId));
-		if (!ownsProduct) {
-			throw new BusinessException(ErrorCode.ACCESS_DENIED, "본인 상품 주문만 처리 가능");
-		}
-
-		if (!order.isCancelRequested()) {
-			throw new BusinessException(ErrorCode.CONFLICT, "현재 상태에서 취소 승인 불가");
-		}
-
-		order.setStatus(OrderStatus.CANCELED);
-		return createOrderResponse(order);
 	}
 
 	@Transactional
@@ -307,12 +336,18 @@ public class OrderService {
 		order.setStatus(OrderStatus.REFUNDED);
 		order.setRefundRequested(false);
 
+		//PG사에서 취소에 대한 정보를 받는 로직이 있어야하지만 현재는 임의로 진행
 		Payment payment = order.getPayment();
 		if (payment != null) {
 			payment.setStatus(PaymentStatus.REFUNDED);
 			payment.setRefundRequested(false);
 		}
 
+		// 재고 복구 (취소 시 재고 반환)
+		for (OrderDetailProduct orderDetailProduct : order.getItems()) {
+			Product product = orderDetailProduct.getProduct();
+			product.setStock(product.getStock() + orderDetailProduct.getQuantity());
+		}
 		return createOrderResponse(order);
 	}
 
@@ -330,8 +365,17 @@ public class OrderService {
 		order.setStatus(OrderStatus.CANCELED);
 		order.setRefundRequested(false);
 		Payment payment = order.getPayment();
-		payment.setStatus(PaymentStatus.REFUNDED);
-		payment.setRefundRequested(false);
+		if (payment != null) {
+			if (payment.getStatus() == PaymentStatus.APPROVED) {
+				payment.setStatus(PaymentStatus.REFUNDED);
+			}
+			payment.setRefundRequested(false);
+		}
+		// 재고 복구 (취소 시 재고 반환)
+		for (OrderDetailProduct orderDetailProduct : order.getItems()) {
+			Product product = orderDetailProduct.getProduct();
+			product.setStock(product.getStock() + orderDetailProduct.getQuantity());
+		}
 		return createOrderResponse(order);
 	}
 
@@ -342,8 +386,17 @@ public class OrderService {
 		order.setStatus(OrderStatus.REFUNDED);
 		order.setRefundRequested(false);
 		Payment payment = order.getPayment();
-		payment.setStatus(PaymentStatus.REFUNDED);
-		payment.setRefundRequested(false);
+		if (payment != null) {
+			if (payment.getStatus() == PaymentStatus.APPROVED) {
+				payment.setStatus(PaymentStatus.REFUNDED);
+			}
+			payment.setRefundRequested(false);
+		}
+		// 재고 복구 (취소 시 재고 반환)
+		for (OrderDetailProduct orderDetailProduct : order.getItems()) {
+			Product product = orderDetailProduct.getProduct();
+			product.setStock(product.getStock() + orderDetailProduct.getQuantity());
+		}
 		return createOrderResponse(order);
 	}
 }

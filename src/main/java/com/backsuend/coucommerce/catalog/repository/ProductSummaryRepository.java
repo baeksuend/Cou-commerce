@@ -3,6 +3,7 @@ package com.backsuend.coucommerce.catalog.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,14 +23,15 @@ public interface ProductSummaryRepository extends JpaRepository<ProductSummary, 
 	void incrementViewCount(long productId);
 
 	/**
-	 * 주문횟수 업데이트
+	 * 주문횟수 업데이트 (order_count += :quantity)
 	 * @param productId 상품아이디
+	 * @param quantity 증가 수량
 	 */
 	@Modifying
 	@Transactional
-	@Query(value = "Update product_summary p Set p.view_count = p.view_count+:quntity where p.product_id=:productId",
+	@Query(value = "UPDATE product_summary p SET p.order_count = p.order_count + :quantity WHERE p.product_id = :productId",
 		nativeQuery = true)
-	void incrementOrderCount(long productId, int quntity);
+	void incrementOrderCount(@Param("productId") long productId, @Param("quantity") int quantity);
 
 	/**
 	 * 찜횟수 업데이트

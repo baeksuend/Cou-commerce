@@ -146,7 +146,7 @@ public class PaymentService {
 			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "결제를 찾을 수 없습니다."));
 
 		// Buyer 본인 검증
-		if (!payment.getOrder().getId().equals(buyerId)) {
+		if (!payment.getOrder().getMember().getId().equals(buyerId)) {
 			throw new BusinessException(ErrorCode.ACCESS_DENIED, "본인 결제만 환불 요청할 수 있습니다.");
 		}
 
@@ -155,8 +155,9 @@ public class PaymentService {
 			payment.getOrder().getStatus() != OrderStatus.PAID) {
 			throw new BusinessException(ErrorCode.CONFLICT, "환불 요청이 불가능한 상태입니다.");
 		}
-
+		
 		// 상태 전이
+		payment.getOrder().setRefundRequested(true);
 		payment.setRefundRequested(true);
 		payment.setRefundReason(reason);
 

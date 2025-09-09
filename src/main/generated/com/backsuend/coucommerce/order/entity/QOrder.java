@@ -24,6 +24,8 @@ public class QOrder extends EntityPathBase<Order> {
 
     public final com.backsuend.coucommerce.common.entity.QBaseTimeEntity _super = new com.backsuend.coucommerce.common.entity.QBaseTimeEntity(this);
 
+    public final BooleanPath cancelRequested = createBoolean("cancelRequested");
+
     public final StringPath consumerName = createString("consumerName");
 
     public final StringPath consumerPhone = createString("consumerPhone");
@@ -36,7 +38,7 @@ public class QOrder extends EntityPathBase<Order> {
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
-    public final ListPath<OrderDetailProduct, QOrderProduct> items = this.<OrderDetailProduct, QOrderProduct>createList("items", OrderDetailProduct.class, QOrderProduct.class, PathInits.DIRECT2);
+    public final ListPath<OrderDetailProduct, QOrderDetailProduct> items = this.<OrderDetailProduct, QOrderDetailProduct>createList("items", OrderDetailProduct.class, QOrderDetailProduct.class, PathInits.DIRECT2);
 
     public final com.backsuend.coucommerce.auth.entity.QMember member;
 
@@ -50,7 +52,13 @@ public class QOrder extends EntityPathBase<Order> {
 
     public final StringPath receiverRoadName = createString("receiverRoadName");
 
+    public final BooleanPath refundRequested = createBoolean("refundRequested");
+
+    public final QShipment shipment;
+
     public final EnumPath<OrderStatus> status = createEnum("status", OrderStatus.class);
+
+    public final NumberPath<Integer> totalPrice = createNumber("totalPrice", Integer.class);
 
     //inherited
     public final DateTimePath<java.time.LocalDateTime> updatedAt = _super.updatedAt;
@@ -75,6 +83,7 @@ public class QOrder extends EntityPathBase<Order> {
         super(type, metadata, inits);
         this.member = inits.isInitialized("member") ? new com.backsuend.coucommerce.auth.entity.QMember(forProperty("member")) : null;
         this.payment = inits.isInitialized("payment") ? new com.backsuend.coucommerce.payment.entity.QPayment(forProperty("payment"), inits.get("payment")) : null;
+        this.shipment = inits.isInitialized("shipment") ? new QShipment(forProperty("shipment"), inits.get("shipment")) : null;
     }
 
 }

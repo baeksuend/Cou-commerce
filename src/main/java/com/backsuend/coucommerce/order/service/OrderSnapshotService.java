@@ -47,10 +47,8 @@ public class OrderSnapshotService {
 				.build();
 			order.addItem(op);
 
-			// 재고 차감 (낙관적 락)
-			product.reduceStock(item.getQuantity());
-			//상품 주문 횟수 카운트 증가
-			productSummaryRepository.incrementOrderCount(item.getProductId(), item.getQuantity());
+            // 재고 차감 (낙관적 락)
+            product.reduceStock(item.getQuantity());
 			totalPrice += product.getPrice() * item.getQuantity();
 		}
 

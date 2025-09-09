@@ -75,7 +75,7 @@ public class PaymentController {
 	@ApiResponses({
 		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "결제 내역 조회 성공")
 	})
-	@GetMapping("/my")
+	@GetMapping
 	public ResponseEntity<ApiResponse<Page<PaymentResponse>>> getMyPayments(
 		@AuthenticationPrincipal UserDetailsImpl userDetails,
 		@PageableDefault(size = 10) Pageable pageable
