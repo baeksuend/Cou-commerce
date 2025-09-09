@@ -19,6 +19,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
@@ -41,6 +42,7 @@ import com.backsuend.coucommerce.review.repository.ReviewRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
+@TestPropertySource(properties = "spring.batch.job.enabled=false")
 @AutoConfigureMockMvc
 @DisplayName("seller 통합테스트")
 @WithMockUser(roles = "SELLER")
