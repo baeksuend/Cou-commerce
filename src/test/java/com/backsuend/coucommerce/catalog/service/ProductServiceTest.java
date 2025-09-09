@@ -17,13 +17,11 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.test.web.servlet.MockMvc;
 
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.auth.entity.MemberStatus;
@@ -35,16 +33,11 @@ import com.backsuend.coucommerce.catalog.enums.ProductListType;
 import com.backsuend.coucommerce.catalog.enums.ProductReadType;
 import com.backsuend.coucommerce.catalog.repository.ProductRepository;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ProductService 단위 테스트")
 public class ProductServiceTest {
 
-	@Autowired
-	MockMvc mockMvc;
-	@Autowired
-	ObjectMapper objectMapper;
 	@Mock
 	ProductRepository productRepository;
 	@Mock
@@ -62,8 +55,15 @@ public class ProductServiceTest {
 	void setUp() {
 
 		//회원 테이블 생성
-		Member member = new Member(member_id, "hong@naver.com", "1111", "1112223333", "홍길동", Role.SELLER,
-			MemberStatus.ACTIVE);
+		Member member = Member.builder()
+			.id(member_id)
+			.email("hong@naver.com")
+			.password("1111")
+			.phone("1112223333")
+			.name("홍길동")
+			.role(Role.SELLER)
+			.status(MemberStatus.ACTIVE)
+			.build();
 
 		//product 생성
 		int page = 1;
@@ -144,7 +144,15 @@ public class ProductServiceTest {
 		long id = 1L;
 		long member_id = 1L;
 
-		Member member = new Member(1L, "hong@naver.com", "1111", "1112223333", "홍길동", Role.SELLER, MemberStatus.ACTIVE);
+		Member member = Member.builder()
+			.id(1L)
+			.email("hong@naver.com")
+			.password("1111")
+			.phone("1112223333")
+			.name("홍길동")
+			.role(Role.SELLER)
+			.status(MemberStatus.ACTIVE)
+			.build();
 
 		Product product = Product.builder().id(1L).member(member).name("바나나").detail("맛있는 바나나")
 			.stock(100).price(10000).category(Category.FOOD).visible(true).build();
@@ -288,7 +296,6 @@ public class ProductServiceTest {
 		ProductReadType readType = ProductReadType.SELLER_READ;
 		long product_id = 1L;
 		long member_id = 1L;
-
 
 		Product mockCont = mockPage.getContent().stream()
 			.filter(p -> p.getId().equals(product_id) && p.getMember().getId().equals(member_id))
