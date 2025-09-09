@@ -35,6 +35,7 @@ import com.backsuend.coucommerce.order.entity.Order;
 import com.backsuend.coucommerce.order.entity.OrderProduct;
 import com.backsuend.coucommerce.order.entity.OrderStatus;
 import com.backsuend.coucommerce.order.repository.OrderRepository;
+import com.backsuend.coucommerce.order.verification.OrderVerificationService;
 
 /**
  * @author rua
@@ -54,13 +55,20 @@ class OrderServiceTest {
 	@Mock
 	private CartService cartService;
 
+	@Mock
+	private OrderVerificationService orderVerificationService;
+
+	@Mock
+	private OrderSnapshotService orderSnapshotService;
+
 	@InjectMocks
 	private OrderService orderService;
 
 	@BeforeEach
 	void setUp() {
 		MockitoAnnotations.openMocks(this);
-		orderService = new OrderService(orderRepository, productRepository, memberRepository, cartService);
+		orderService = new OrderService(orderRepository, productRepository, memberRepository, cartService,
+			orderVerificationService, orderSnapshotService);
 	}
 
 	private Member createTestMember(Long id) {

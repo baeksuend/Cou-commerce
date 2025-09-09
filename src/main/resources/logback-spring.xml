@@ -20,12 +20,30 @@
         </rollingPolicy>
 
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>
+                {
+                "timestamp":"%d{yyyy-MM-dd HH:mm:ss.SSS}",
+                "level":"%p",
+                "traceId":"%X{traceId}",
+                "memberId":"%X{memberId}",
+                "service":"${springAppName:-application}",
+                "class":"%C{1}",
+                "message":"%msg",
+                "cartId":"%X{cartId}",
+                "productId":"%X{productId}",
+                "quantity":"%X{quantity}",
+                "orderId":"%X{orderId}",
+                "status":"%X{status}",
+                "totalAmount":"%X{totalAmount}",
+                "paymentId":"%X{paymentId}",
+                "method":"%X{method}"
+                }
+            </pattern>
         </encoder>
     </appender>
 
     <!-- 로그 레벨 설정 -->
-    <root level="DEBUUG">
+    <root level="DEBUG">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
     </root>

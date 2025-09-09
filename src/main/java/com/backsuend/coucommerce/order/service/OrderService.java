@@ -1,5 +1,7 @@
 package com.backsuend.coucommerce.order.service;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,8 @@ import com.backsuend.coucommerce.order.entity.Order;
 import com.backsuend.coucommerce.order.entity.OrderProduct;
 import com.backsuend.coucommerce.order.entity.OrderStatus;
 import com.backsuend.coucommerce.order.repository.OrderRepository;
+import com.backsuend.coucommerce.order.utill.PricingCalculator;
+import com.backsuend.coucommerce.order.verification.OrderVerificationService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -41,6 +45,8 @@ public class OrderService {
 	private final ProductRepository productRepository;
 	private final MemberRepository memberRepository;
 	private final CartService cartService;
+	private final OrderVerificationService orderVerificationService;
+	private final OrderSnapshotService orderSnapshotService;
 
 	/**
 	 * 장바구니에서 주문 생성
@@ -58,21 +64,8 @@ public class OrderService {
 
 		// 2. Redis에서 장바구니 가져오기
 		CartResponse cartResponse = cartService.getCart(memberId);
-		if (cartResponse.isEmpty()) {
-			throw new BusinessException(ErrorCode.NOT_FOUND, "장바구니가 비어 있습니다.");
-		}
-
-		// 2-1) 입력값 1차 검증
-		for (CartItem ci : cartResponse.getItems()) {
-			if (ci.getQuantity() <= 0) {
-				throw new BusinessException(ErrorCode.INVALID_INPUT,
-					"수량은 1 이상이어야 합니다. 상품ID: " + ci.getProductId());
-			}
-			if (ci.getPrice() < 0) {
-				throw new BusinessException(ErrorCode.INVALID_INPUT,
-					"가격이 유효하지 않습니다. 상품ID: " + ci.getProductId());
-			}
-		}
+		// 2-1) 최신 가격/재고 재검증
+		orderVerificationService.verify(cartResponse.getItems());
 
 		// 3. Order 엔티티 생성
 		Order order = Order.builder()
@@ -85,6 +78,11 @@ public class OrderService {
 			.receiverPostalCode(request.getReceiverPostalCode())
 			.build();
 
+		// 스냅샷 저장: Product.price -> OrderProduct.priceSnapshot, Product 참조 유지
+		List<OrderProduct> ops = orderSnapshotService.toOrderProducts(order, cartResponse.getItems());
+		for (OrderProduct op : ops) {
+			order.addItem(op);
+		}
 		System.out.println("	order.getId=" + order.getId());
 		System.out.println("	order.getConsumerName()=" + order.getConsumerName());
 		System.out.println("	order.consumerPhone()=" + order.getConsumerPhone());
@@ -233,7 +231,7 @@ public class OrderService {
 					.name(op.getProduct().getName())
 					.priceSnapshot(op.getPriceSnapshot())
 					.quantity(op.getQuantity())
-					.subtotal(op.getPriceSnapshot() * op.getQuantity())
+					.subtotal(PricingCalculator.subtotal(op))
 					.build())
 				.toList())
 			.build();
