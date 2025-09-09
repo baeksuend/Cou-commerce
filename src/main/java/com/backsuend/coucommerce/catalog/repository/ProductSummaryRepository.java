@@ -27,9 +27,9 @@ public interface ProductSummaryRepository extends JpaRepository<ProductSummary, 
 	 */
 	@Modifying
 	@Transactional
-	@Query(value = "Update product_summary p Set p.view_count = p.view_count+1 where p.product_id=:productId",
+	@Query(value = "Update product_summary p Set p.view_count = p.view_count+:quntity where p.product_id=:productId",
 		nativeQuery = true)
-	void incrementOrderCount(long productId);
+	void incrementOrderCount(long productId, int quntity);
 
 	/**
 	 * 찜횟수 업데이트

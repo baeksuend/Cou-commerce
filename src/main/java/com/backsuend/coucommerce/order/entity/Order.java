@@ -73,20 +73,39 @@ public class Order extends BaseTimeEntity {
 	@Column(name = "receiver_postal_code", nullable = false, length = 10)
 	private String receiverPostalCode;
 
+	@Column(name = "total_Price", nullable = false)
+	private int totalPrice;
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false, length = 20)
 	@Builder.Default
 	private OrderStatus status = OrderStatus.PLACED;
 
+	@Column(name = "cancel_requested", nullable = false)
+	@Builder.Default
+	private boolean cancelRequested = false;
+
+	@Column(name = "refund_requested", nullable = false)
+	@Builder.Default
+	private boolean refundRequested = false;
+
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
 	@Builder.Default
-	private List<OrderProduct> items = new ArrayList<>();
+	private List<OrderDetailProduct> items = new ArrayList<>();
 
 	@OneToOne(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	private Payment payment;
 
+	@OneToOne(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	private Shipment shipment;
+
+	public void setShipment(Shipment shipment) {
+		this.shipment = shipment;
+		shipment.setOrder(this);
+	}
+
 	// 편의 메서드
-	public void addItem(OrderProduct item) {
+	public void addItem(OrderDetailProduct item) {
 		items.add(item);
 		item.setOrder(this);
 	}

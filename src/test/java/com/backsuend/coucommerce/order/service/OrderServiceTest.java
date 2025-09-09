@@ -32,7 +32,7 @@ import com.backsuend.coucommerce.member.repository.MemberRepository;
 import com.backsuend.coucommerce.order.dto.OrderCreateRequest;
 import com.backsuend.coucommerce.order.dto.OrderResponse;
 import com.backsuend.coucommerce.order.entity.Order;
-import com.backsuend.coucommerce.order.entity.OrderProduct;
+import com.backsuend.coucommerce.order.entity.OrderDetailProduct;
 import com.backsuend.coucommerce.order.entity.OrderStatus;
 import com.backsuend.coucommerce.order.repository.OrderRepository;
 import com.backsuend.coucommerce.order.verification.OrderVerificationService;
@@ -67,8 +67,6 @@ class OrderServiceTest {
 	@BeforeEach
 	void setUp() {
 		MockitoAnnotations.openMocks(this);
-		orderService = new OrderService(orderRepository, productRepository, memberRepository, cartService,
-			orderVerificationService, orderSnapshotService);
 	}
 
 	private Member createTestMember(Long id) {
@@ -96,8 +94,8 @@ class OrderServiceTest {
 	private CartItem createTestCartItem(Long productId, String name, int price, int quantity) {
 		return CartItem.builder()
 			.productId(productId)
-			.name(name)
-			.price(price)
+			.productName(name)
+			.priceAtAdd(price)
 			.quantity(quantity)
 			.detail("색상: 블랙")
 			.build();
@@ -128,13 +126,13 @@ class OrderServiceTest {
 
 		order.setId(1L);
 
-		OrderProduct orderProduct = OrderProduct.builder()
+		OrderDetailProduct orderDetailProduct = OrderDetailProduct.builder()
 			.product(product)
 			.quantity(2)
 			.priceSnapshot(10000)
 			.build();
 
-		order.addItem(orderProduct);
+		order.addItem(orderDetailProduct);
 
 		return order;
 	}

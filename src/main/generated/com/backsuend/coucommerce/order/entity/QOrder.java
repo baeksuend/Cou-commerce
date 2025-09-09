@@ -36,7 +36,7 @@ public class QOrder extends EntityPathBase<Order> {
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
-    public final ListPath<OrderProduct, QOrderProduct> items = this.<OrderProduct, QOrderProduct>createList("items", OrderProduct.class, QOrderProduct.class, PathInits.DIRECT2);
+    public final ListPath<OrderDetailProduct, QOrderProduct> items = this.<OrderDetailProduct, QOrderProduct>createList("items", OrderDetailProduct.class, QOrderProduct.class, PathInits.DIRECT2);
 
     public final com.backsuend.coucommerce.auth.entity.QMember member;
 

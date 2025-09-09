@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -54,7 +55,7 @@ public class ApiValidationAdvice {
 		HttpServletRequest req) {
 		List<Map<String, Object>> errs = fieldErrors(ex.getBindingResult().getFieldErrors());
 		ApiResponse<Object> body = ApiResponse.error(HttpStatus.BAD_REQUEST, "요청 값이 유효하지 않습니다.",
-			Map.of("errors", errs));
+			Map.of("errors", errs, "path", req.getRequestURI(), "traceId", MDC.get("traceId")));
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
 	}
 
@@ -62,7 +63,8 @@ public class ApiValidationAdvice {
 	public ResponseEntity<ApiResponse<Object>> handleBindException(BindException ex,
 		HttpServletRequest req) {
 		List<Map<String, Object>> errs = fieldErrors(ex.getBindingResult().getFieldErrors());
-		ApiResponse<Object> body = ApiResponse.error(HttpStatus.BAD_REQUEST, "요청 바인딩에 실패했습니다.", Map.of("errors", errs));
+		ApiResponse<Object> body = ApiResponse.error(HttpStatus.BAD_REQUEST, "요청 바인딩에 실패했습니다.",
+			Map.of("errors", errs, "path", req.getRequestURI(), "traceId", MDC.get("traceId")));
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
 	}
 }

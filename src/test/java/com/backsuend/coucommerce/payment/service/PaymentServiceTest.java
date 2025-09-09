@@ -25,7 +25,7 @@ import com.backsuend.coucommerce.catalog.entity.Product;
 import com.backsuend.coucommerce.catalog.enums.Category;
 import com.backsuend.coucommerce.common.exception.BusinessException;
 import com.backsuend.coucommerce.order.entity.Order;
-import com.backsuend.coucommerce.order.entity.OrderProduct;
+import com.backsuend.coucommerce.order.entity.OrderDetailProduct;
 import com.backsuend.coucommerce.order.entity.OrderStatus;
 import com.backsuend.coucommerce.order.repository.OrderRepository;
 import com.backsuend.coucommerce.payment.dto.PaymentRequest;
@@ -51,7 +51,7 @@ class PaymentServiceTest {
 	private Member testMember;
 	private Product testProduct;
 	private Order testOrder;
-	private OrderProduct testOrderProduct;
+	private OrderDetailProduct testOrderDetailProduct;
 	private PaymentRequest paymentRequest;
 
 	@BeforeEach
@@ -73,7 +73,7 @@ class PaymentServiceTest {
 		testProduct.setVisible(true);
 		testProduct.setCategory(Category.DIGITAL);
 
-		testOrderProduct = OrderProduct.builder()
+		testOrderDetailProduct = OrderDetailProduct.builder()
 			.id(1L)
 			.product(testProduct)
 			.quantity(2)
@@ -92,8 +92,8 @@ class PaymentServiceTest {
 			.status(OrderStatus.PLACED)
 			.build();
 
-		testOrder.getItems().add(testOrderProduct);
-		testOrderProduct.setOrder(testOrder);
+		testOrder.getItems().add(testOrderDetailProduct);
+		testOrderDetailProduct.setOrder(testOrder);
 
 		paymentRequest = new PaymentRequest();
 		paymentRequest.setCardBrand(CardBrand.VISA);

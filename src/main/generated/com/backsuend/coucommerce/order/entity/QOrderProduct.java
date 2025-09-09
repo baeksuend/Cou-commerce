@@ -14,7 +14,7 @@ import com.querydsl.core.types.dsl.PathInits;
  * QOrderProduct is a Querydsl query type for OrderProduct
  */
 @Generated("com.querydsl.codegen.DefaultEntitySerializer")
-public class QOrderProduct extends EntityPathBase<OrderProduct> {
+public class QOrderProduct extends EntityPathBase<OrderDetailProduct> {
 
     private static final long serialVersionUID = -1147285319L;
 
@@ -44,10 +44,10 @@ public class QOrderProduct extends EntityPathBase<OrderProduct> {
     public final DateTimePath<java.time.LocalDateTime> updatedAt = _super.updatedAt;
 
     public QOrderProduct(String variable) {
-        this(OrderProduct.class, forVariable(variable), INITS);
+        this(OrderDetailProduct.class, forVariable(variable), INITS);
     }
 
-    public QOrderProduct(Path<? extends OrderProduct> path) {
+    public QOrderProduct(Path<? extends OrderDetailProduct> path) {
         this(path.getType(), path.getMetadata(), PathInits.getFor(path.getMetadata(), INITS));
     }
 
@@ -56,10 +56,10 @@ public class QOrderProduct extends EntityPathBase<OrderProduct> {
     }
 
     public QOrderProduct(PathMetadata metadata, PathInits inits) {
-        this(OrderProduct.class, metadata, inits);
+        this(OrderDetailProduct.class, metadata, inits);
     }
 
-    public QOrderProduct(Class<? extends OrderProduct> type, PathMetadata metadata, PathInits inits) {
+    public QOrderProduct(Class<? extends OrderDetailProduct> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
         this.order = inits.isInitialized("order") ? new QOrder(forProperty("order"), inits.get("order")) : null;
         this.product = inits.isInitialized("product") ? new com.backsuend.coucommerce.catalog.entity.QProduct(forProperty("product"), inits.get("product")) : null;

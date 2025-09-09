@@ -4,23 +4,17 @@ package com.backsuend.coucommerce.order.service;
  * @author rua
  */
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.backsuend.coucommerce.cart.dto.CartItem;
 import com.backsuend.coucommerce.catalog.entity.Product;
-import com.backsuend.coucommerce.catalog.repository.ProductRepository;
-import com.backsuend.coucommerce.common.exception.BusinessException;
-import com.backsuend.coucommerce.common.exception.ErrorCode;
+import com.backsuend.coucommerce.catalog.repository.ProductSummaryRepository;
 import com.backsuend.coucommerce.order.entity.Order;
-import com.backsuend.coucommerce.order.entity.OrderProduct;
+import com.backsuend.coucommerce.order.entity.OrderDetailProduct;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,43 +28,33 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class OrderSnapshotService {
 
-	private final ProductRepository productRepository;
+	private final ProductSummaryRepository productSummaryRepository;
 
 	@Transactional(readOnly = true)
-	public List<OrderProduct> toOrderProducts(Order order, List<CartItem> cartItems) {
-		Objects.requireNonNull(order, "order must not be null");
-		if (cartItems == null || cartItems.isEmpty())
-			return Collections.emptyList();
+	public Order toOrderProducts(Order order, List<CartItem> cartItems,
+		Map<Long, Product> productMap) {
+		int totalPrice = 0;
+		// cartItemsf를 사용해 OrderDetaileProduct 를 채워야 한다.
+		for (CartItem item : cartItems) {
+			Product product = productMap.get(item.getProductId());
+			if (product == null)
+				continue;
+			OrderDetailProduct op = OrderDetailProduct.builder()
+				.order(order)
+				.product(product)
+				.quantity(item.getQuantity()) // ✅ 주문자가 선택한 수량
+				.priceSnapshot(product.getPrice())  // ✅ 주문 시점 가격 스냅샷
+				.build();
+			order.addItem(op);
 
-		// 1) 기본 유효성
-		for (CartItem c : cartItems) {
-			if (c.getProductId() == null || c.getQuantity() <= 0) {
-				throw new BusinessException(ErrorCode.INVALID_INPUT, "잘못된 카트 항목: " + c);
-			}
+			// 재고 차감 (낙관적 락)
+			product.reduceStock(item.getQuantity());
+			//상품 주문 횟수 카운트 증가
+			productSummaryRepository.incrementOrderCount(item.getProductId(), item.getQuantity());
+			totalPrice += product.getPrice() * item.getQuantity();
 		}
 
-		// 2) 일괄 조회
-		List<Long> ids = cartItems.stream().map(CartItem::getProductId).distinct().collect(Collectors.toList());
-		List<Product> products = productRepository.findAllById(ids);
-		Map<Long, Product> productMap = products.stream().collect(Collectors.toMap(Product::getId, p -> p));
-
-		// 존재하지 않는 상품 방어
-		List<Long> missing = ids.stream().filter(id -> !productMap.containsKey(id)).collect(Collectors.toList());
-		if (!missing.isEmpty()) {
-			throw new BusinessException(ErrorCode.NOT_FOUND, "존재하지 않는 상품: " + missing);
-		}
-
-		// 3) 매핑
-		List<OrderProduct> result = new ArrayList<>();
-		for (CartItem c : cartItems) {
-			Product p = productMap.get(c.getProductId());
-			OrderProduct op = new OrderProduct();
-			op.setOrder(order);
-			op.setProduct(p);
-			op.setQuantity(c.getQuantity());
-			op.setPriceSnapshot(p.getPrice()); // 주문 시점 가격 스냅샷
-			result.add(op);
-		}
-		return result;
+		order.setTotalPrice(totalPrice);
+		return order;
 	}
 }
