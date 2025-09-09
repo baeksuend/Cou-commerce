@@ -29,6 +29,7 @@ import com.backsuend.coucommerce.payment.entity.Payment;
 import com.backsuend.coucommerce.payment.entity.PaymentStatus;
 import com.backsuend.coucommerce.payment.repository.PaymentRepository;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.backsuend.coucommerce.cart.service.CartService;
 
 @DisplayName("Order, Payment, Cart 통합 테스트")
 class OrderPaymentCartIntegrationTest extends BaseIntegrationTest {
@@ -48,6 +49,9 @@ class OrderPaymentCartIntegrationTest extends BaseIntegrationTest {
 	@Autowired
 	private AddressRepository addressRepository;
 
+	@Autowired
+	private CartService cartService; // Inject CartService
+
 	private String accessToken;
 	private Member testMember;
 	private Product testProduct1;
@@ -65,6 +69,9 @@ class OrderPaymentCartIntegrationTest extends BaseIntegrationTest {
 		// 회원가입 및 로그인
 		accessToken = registerAndLogin("test@example.com", "password123", "테스트 사용자", "010-1234-5678");
 		testMember = memberRepository.findByEmail("test@example.com").orElseThrow();
+
+		// 장바구니 초기화 (Redis)
+		cartService.clearCart(testMember.getId());
 
 		// 테스트 상품 생성
 		testProduct1 = createTestProduct("테스트 상품 1", 10000, 10, Category.DIGITAL);
