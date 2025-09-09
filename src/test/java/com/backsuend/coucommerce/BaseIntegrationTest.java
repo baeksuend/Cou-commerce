@@ -23,7 +23,6 @@ import com.backsuend.coucommerce.auth.dto.LoginRequest;
 import com.backsuend.coucommerce.auth.dto.SignupRequest;
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.auth.entity.Role;
-import com.backsuend.coucommerce.auth.jwt.JwtProvider;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -45,9 +44,6 @@ public abstract class BaseIntegrationTest {
 
 	@Autowired
 	protected PasswordEncoder passwordEncoder;
-
-	@Autowired
-	protected JwtProvider jwtProvider;
 
 	@Autowired
 	protected StringRedisTemplate redisTemplate;

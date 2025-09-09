@@ -18,7 +18,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class ReviewRespositoryImpl implements ReviewCustomRepository {
+public class ReviewCustomRepositoryImpl implements ReviewCustomRepository {
 
 	private final JPAQueryFactory queryFactory;
 

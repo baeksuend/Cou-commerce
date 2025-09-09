@@ -56,7 +56,7 @@ springdoc:
   use-fqn: true
 
 cors:
-  allowed-origins: http://localhost:3000, http://localhost:8080, http://192.168.0.5:8080
+  allowed-origins: http://localhost, http://localhost:3000, http://localhost:9090, http://localhost:8080, http://192.168.0.5:8080
 
 # Feature Flags
 feature:

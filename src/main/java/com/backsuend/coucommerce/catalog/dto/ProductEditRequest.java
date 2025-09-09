@@ -1,8 +1,13 @@
 package com.backsuend.coucommerce.catalog.dto;
 
+import java.util.List;
+
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+
+import org.springframework.web.multipart.MultipartFile;
 
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.catalog.entity.Product;
@@ -25,7 +30,7 @@ public class ProductEditRequest {
 	@Schema(description = "상품 아이디", example = "1")
 	private Long id;
 
-	@Schema(description = "상품명", example = "우리 현미쌀")
+	@Schema(description = "상품명", example = "우리농산물 잡곡")
 	@NotBlank(message = "상품명은 필수입니다.")
 	@Size(min = 2, max = 50, message = "상품명은 필수입니다.")
 	private String name;
@@ -34,11 +39,13 @@ public class ProductEditRequest {
 	@NotBlank(message = "상품내용은 필수입니다.")
 	private String detail;
 
-	@Schema(description = "재고수량", example = "434")
+	@Schema(description = "재고수량", example = "40000")
+	@Digits(integer = 5, fraction = 0, message = "숫자만 가능합니다.")
 	@NotNull(message = "재고수량은 필수입니다.")
 	private int stock;
 
 	@Schema(description = "가격", example = "40")
+	@Digits(integer = 10, fraction = 0, message = "숫자만 가능합니다.")
 	@NotNull(message = "가격은 필수입니다.")
 	private int price;
 
@@ -48,6 +55,9 @@ public class ProductEditRequest {
 
 	@Schema(description = "진열여부", example = "true")
 	private boolean visible;
+
+	@Schema(type = "첨부파일", format = "binary", description = "업로드 이미지")
+	private List<MultipartFile> images;
 
 	public Product toEntity(Member member) {
 		return Product.builder()

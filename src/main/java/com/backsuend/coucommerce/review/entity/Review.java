@@ -14,10 +14,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 import org.hibernate.annotations.ColumnDefault;
@@ -27,9 +25,6 @@ import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.catalog.entity.Product;
 import com.backsuend.coucommerce.common.entity.BaseTimeEntity;
 
-/**
- * @author rua
- */
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -65,8 +60,12 @@ public class Review extends BaseTimeEntity {
 
 	@Schema(description = "회원 아이디", example = "2")
 	@ManyToOne(cascade = CascadeType.PERSIST)//@ManyToOne(fetch=FetchType.LAZY)
-	@JoinColumn(name = "member_id", referencedColumnName = "id", nullable = true, updatable = false)
+	@JoinColumn(name = "member_id", referencedColumnName = "id", updatable = false)
 	private Member member;
+
+	@Schema(description = "리뷰 평점", example = "4.5")
+	@Column(name = "avg_review_score")
+	private double avgReviewScore;
 
 	@Schema(description = "리뷰 내용", example = "상세내용입니다.")
 	@Column
@@ -77,32 +76,26 @@ public class Review extends BaseTimeEntity {
 	@JoinColumn(name = "parent_review_id", updatable = false)
 	private Review parentReview;
 
+	@Schema(description = "부모 댓글 삭제 상태")
+	@ColumnDefault("FALSE")
+	@Column(name = "is_deleted", nullable = false)
+	private Boolean isDeleted = false;
+
 	@Schema(description = "대댓글 목록")
 	@OneToMany(mappedBy = "parentReview", orphanRemoval = true)
 	private List<Review> childReviews = new ArrayList<>();
 
-	@Schema(description = "부모 댓글 삭제 상태")
-	@ColumnDefault("FALSE")
-	@Column(name = "is_deleted", nullable = false)
-	private Boolean isDeleted;
-
 	/* 대댓글 조회용*/
 	@Builder
-	public Review(Long id, Member member, Product product, String content, Review parentReview,
-		LocalDateTime createdAt) {
+	public Review(Long id, Member member, Product product, String content,
+		double avgReviewScore, Review parentReview, LocalDateTime createdAt) {
 		this.id = id;
 		this.member = member;
 		this.product = product;
 		this.content = content;
+		this.avgReviewScore = avgReviewScore;
 		this.parentReview = parentReview;
 		this.createdAt = createdAt;
-	}
-
-	@PrePersist
-	public void prePersist() {
-		if (this.isDeleted == null)
-			this.isDeleted = false;
-		this.createdAt = LocalDateTime.now();
 	}
 
 	public void markAsDeleted() {
@@ -116,5 +109,9 @@ public class Review extends BaseTimeEntity {
 
 	public void updateReview(String content) {
 		this.content = content;
+	}
+
+	public void updateAvgReviewScore(double avgReviewScore) {
+		this.avgReviewScore = avgReviewScore;
 	}
 }

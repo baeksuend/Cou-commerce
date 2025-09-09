@@ -151,7 +151,7 @@ public class GlobalExceptionHandler {
 
 		System.out.println("Unhandled exception occurred: " + ex);
 
-		return build(ErrorCode.INTERNAL_ERROR, "예상치 못한 오류가 발생했습니다.", null, req);
+		return build(ErrorCode.INTERNAL_ERROR, "예상치 못한 오류가 발생했습니다.====", null, req);
 	}
 
 	/* ======= 공통 빌더 ======= */
