@@ -62,3 +62,4 @@ replay_pid*
 
 docs/
 .DS_Store
+application-local.yml
