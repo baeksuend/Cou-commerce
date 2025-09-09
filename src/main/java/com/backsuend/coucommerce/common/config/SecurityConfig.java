@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -113,6 +114,7 @@ public class SecurityConfig {
 			// - requestMatchers(WHITE_LIST).permitAll(): WHITE_LIST에 정의된 URL은 인증 없이 접근 허용
 			// - anyRequest().authenticated(): 그 외 모든 요청은 인증된 사용자만 접근 허용
 			.authorizeHttpRequests(auth -> auth
+				.requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
 				.requestMatchers(WHITE_LIST).permitAll()
 				.anyRequest().authenticated()
 			)
