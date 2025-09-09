@@ -1,13 +1,14 @@
 package com.backsuend.coucommerce.admin.controller;
 
-import java.util.List;
-
 import jakarta.validation.Valid;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -21,6 +22,7 @@ import com.backsuend.coucommerce.admin.dto.SellerRejectionRequest;
 import com.backsuend.coucommerce.admin.service.AdminService;
 import com.backsuend.coucommerce.auth.service.UserDetailsImpl;
 import com.backsuend.coucommerce.common.dto.ApiResponse;
+import com.backsuend.coucommerce.sellerregistration.dto.SellerRegistrationSearchRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -88,13 +90,20 @@ public class AdminController {
 		return ApiResponse.<Void>noContent().toResponseEntity();
 	}
 
-	@Operation(summary = "[관리자] 판매자 등록 신청 목록 조회", description = "상태가 'APPLIED' (신청)인 모든 판매자 전환 신청 목록을 조회합니다.")
+	@Operation(summary = "[관리자] 판매자 등록 신청 목록 검색 및 페이징 조회", description = "관리자가 다양한 조건으로 판매자 등록 신청 목록을 검색하고 페이징하여 조회합니다.")
 	@ApiResponses({
 		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공",
 			content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.class),
 				examples = @ExampleObject(
 					name = "OK",
-					value = "{\"success\":true,\"status\":200,\"message\":\"OK\",\"data\":[{\"registrationId\":1,\"userId\":2,\"username\":\"seller_user\",\"storeName\":\"My Awesome Store\",\"status\":\"APPLIED\",\"requestDate\":\"2025-09-01T14:00:00Z\"}],\"timestamp\":\"2025-09-02T10:30:00.123456Z\"}"
+					value = "{\"success\":true,\"status\":200,\"message\":\"OK\",\"data\":{\"content\":[{\"registrationId\":1,\"userEmail\":\"seller@example.com\",\"userName\":\"김상인\",\"storeName\":\"My Awesome Store\",\"businessRegistrationNumber\":\"123-45-67890\",\"status\":\"APPLIED\",\"createdAt\":\"2025-09-01T14:00:00\"}],\"pageable\":{\"pageNumber\":0,\"pageSize\":10,\"sort\":{\"empty\":false,\"sorted\":true,\"unsorted\":false},\"offset\":0,\"paged\":true,\"unpaged\":false},\"last\":true,\"totalPages\":1,\"totalElements\":1,\"size\":10,\"number\":0,\"sort\":{\"empty\":false,\"sorted\":true,\"unsorted\":false},\"first\":true,\"numberOfElements\":1,\"empty\":false},\"timestamp\":\"2025-09-02T10:30:00.123456Z\"}"
+				))
+		),
+		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청 파라미터",
+			content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiResponse.class),
+				examples = @ExampleObject(
+					name = "BAD_REQUEST",
+					value = "{\"success\":false,\"status\":400,\"message\":\"BAD_REQUEST\",\"data\":{\"code\":\"BAD_REQUEST\",\"message\":\"잘못된 요청 파라미터입니다.\",\"traceId\":null,\"path\":\"/api/v1/admin/seller-registrations\",\"errors\":null},\"timestamp\":\"2025-09-02T10:35:00.987654Z\"}"
 				))
 		),
 		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증되지 않은 사용자",
@@ -115,8 +124,10 @@ public class AdminController {
 	@SecurityRequirement(name = "Authorization")
 	@GetMapping("/seller-registrations")
 	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<ApiResponse<List<SellerRegistrationResponse>>> getPendingSellerRegistrations() {
-		List<SellerRegistrationResponse> response = adminService.getPendingSellerRegistrations();
+	public ResponseEntity<ApiResponse<Page<SellerRegistrationResponse>>> searchSellerRegistrations(
+		@Parameter(description = "판매자 등록 신청 검색 조건", required = false) @ModelAttribute SellerRegistrationSearchRequest request,
+		@Parameter(description = "페이징 정보 (page, size, sort)", required = false) Pageable pageable) {
+		Page<SellerRegistrationResponse> response = adminService.searchSellerRegistrations(request, pageable);
 		return ApiResponse.ok(response).toResponseEntity();
 	}
 
