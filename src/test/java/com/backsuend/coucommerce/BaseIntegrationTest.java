@@ -12,6 +12,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -27,6 +28,7 @@ import com.backsuend.coucommerce.member.repository.MemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
+@TestPropertySource(properties = "spring.batch.job.enabled=false")
 @AutoConfigureMockMvc
 @Transactional
 @ActiveProfiles("test")
@@ -92,7 +94,7 @@ public abstract class BaseIntegrationTest {
 
 	protected String login(String email, String password) throws Exception {
 		LoginRequest loginRequest = new LoginRequest(email, password);
-		System.out.println("login loginRequest="+loginRequest);
+		System.out.println("login loginRequest=" + loginRequest);
 		MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(loginRequest)))
@@ -100,7 +102,7 @@ public abstract class BaseIntegrationTest {
 		System.out.println("login 222");
 
 		String responseString = result.getResponse().getContentAsString();
-		System.out.println("login responseString =="+responseString);
+		System.out.println("login responseString ==" + responseString);
 		return objectMapper.readTree(responseString).get("data").get("accessToken").asText();
 	}
 
