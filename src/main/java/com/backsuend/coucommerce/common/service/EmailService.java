@@ -30,20 +30,32 @@ public class EmailService {
 	 * @param text 이메일 본문
 	 */
 	public void sendEmail(String to, String subject, String text) {
-		try {
-			MimeMessage message = mailSender.createMimeMessage();
-			MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+		/**
+		 * 간단한 텍스트 이메일을 발송합니다.
+		 * @param to 수신자 이메일 주소
+		 * @param subject 이메일 제목
+		 * @param text 이메일 본문
+		 * -
+		 * MDC-CONTEXT:
+		 * - 공통 필드: traceId, memberId (이메일), memberRole
+		 * - recipientEmail: 이메일 수신자 주소
+		 */
+		try (var ignored = MdcLogging.withContext("recipientEmail", to)) {
+			try {
+				MimeMessage message = mailSender.createMimeMessage();
+				MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
 
-			helper.setFrom(senderEmail, senderName);
-			helper.setTo(to);
-			helper.setSubject(subject);
-			helper.setText(text, false);
+				helper.setFrom(senderEmail, senderName);
+				helper.setTo(to);
+				helper.setSubject(subject);
+				helper.setText(text, false);
 
-			mailSender.send(message);
-			log.info("Sent email to {} from {} ({})", to, senderEmail, senderName);
-		} catch (Exception e) {
-			log.error("Failed to send email to {} from {} ({})", to, senderEmail, senderName, e);
-			throw new IllegalStateException("이메일 발송에 실패했습니다.");
+				mailSender.send(message);
+				log.info("{}에게 이메일 발송 완료 (발신: {} ({})).", to, senderEmail, senderName);
+			} catch (Exception e) {
+				log.error("{}에게 이메일 발송 실패 (발신: {} ({})).", to, senderEmail, senderName, e);
+				throw new IllegalStateException("이메일 발송에 실패했습니다.");
+			}
 		}
 	}
 }

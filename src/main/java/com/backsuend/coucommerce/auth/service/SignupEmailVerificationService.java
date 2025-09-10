@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.common.service.EmailService;
+import com.backsuend.coucommerce.common.service.MdcLogging;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,28 +28,34 @@ public class SignupEmailVerificationService {
 	/**
 	 * 회원가입 인증 이메일을 발송합니다.
 	 * @param member 인증 이메일을 받을 대상 회원
+	 * -
+	 * MDC-CONTEXT:
+	 * - 공통 필드: traceId, memberRole
+	 * - memberId: 사용자 이메일 (비동기 메서드이므로 직접 설정)
 	 */
 	@Async
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void sendVerificationEmail(Member member) {
-		// 1. 인증 코드 생성
-		String verificationCode = createVerificationCode();
+		try (var ignored = MdcLogging.withContext("memberId", member.getEmail())) {
+			// 1. 인증 코드 생성
+			String verificationCode = createVerificationCode();
 
-		// 2. Redis에 인증 코드 저장 (이메일을 키로 사용, 5분 유효)
-		String key = VERIFICATION_CODE_PREFIX + member.getEmail();
-		stringRedisTemplate.opsForValue().set(key, verificationCode, VERIFICATION_CODE_TTL);
-		log.info("Verification code for {} stored in Redis with key: {}", member.getEmail(), key);
+			// 2. Redis에 인증 코드 저장 (이메일을 키로 사용, 5분 유효)
+			String key = VERIFICATION_CODE_PREFIX + member.getEmail();
+			stringRedisTemplate.opsForValue().set(key, verificationCode, VERIFICATION_CODE_TTL);
+			log.info("{}의 인증 코드가 Redis에 키 {}로 저장되었습니다.", member.getEmail(), key);
 
-		// 3. 이메일 발송
-		String subject = "[Cou-commerce] 회원가입을 완료하려면 이메일을 인증해주세요.";
-		String text = "안녕하세요, " + member.getName() + "님!\n"
-			+ "Cou-commerce에 가입해주셔서 감사합니다.\n"
-			+ "회원가입을 완료하려면 인증코드를 입력해 이메일을 인증해주세요.\n"
-			+ "인증 코드: " + verificationCode;
+			// 3. 이메일 발송
+			String subject = "[Cou-commerce] 회원가입을 완료하려면 이메일을 인증해주세요.";
+			String text = "안녕하세요, " + member.getName() + "님!\n"
+				+ "Cou-commerce에 가입해주셔서 감사합니다.\n"
+				+ "회원가입을 완료하려면 인증코드를 입력해 이메일을 인증해주세요.\n"
+				+ "인증 코드: " + verificationCode;
 
-		emailService.sendEmail(member.getEmail(), subject, text);
+			emailService.sendEmail(member.getEmail(), subject, text);
 
-		log.info("Sent verification email to {}", member.getEmail());
+			log.info("{}에게 인증 이메일을 발송했습니다.", member.getEmail());
+		}
 	}
 
 	/**

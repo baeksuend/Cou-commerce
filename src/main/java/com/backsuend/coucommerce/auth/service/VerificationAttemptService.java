@@ -5,6 +5,8 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import com.backsuend.coucommerce.common.service.MdcLogging;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -32,24 +34,32 @@ public class VerificationAttemptService {
 	/**
 	 * 인증 실패 시 호출되어 실패 횟수를 증가시키고, 임계값 도달 시 계정을 잠급니다.
 	 * @param key 이메일 주소 등 고유 식별자
+	 * -
+	 * MDC-CONTEXT:
+	 * - 공통 필드: traceId, memberId (이메일), memberRole
+	 * - verificationKey: 인증 시도 대상 키 (일반적으로 memberId와 동일)
 	 */
 	public void handleFailedAttempt(String key) {
-		String attemptKey = ATTEMPT_PREFIX + key;
-		long attempts = redisTemplate.opsForValue().increment(attemptKey, 1);
+		try (var ignored = MdcLogging.withContext("verificationKey", key)) {
+			String attemptKey = ATTEMPT_PREFIX + key;
+			Long attemptsLong = redisTemplate.opsForValue().increment(attemptKey, 1);
+			long attempts = (attemptsLong != null) ? attemptsLong : 1L;
 
-		// 최초 실패 시, 실패 기록이 1시간 뒤에 사라지도록 설정 (계속 쌓이는 것을 방지)
-		if (attempts == 1) {
-			redisTemplate.expire(attemptKey, 1, TimeUnit.HOURS);
-		}
+			// 최초 실패 시, 실패 기록이 1시간 뒤에 사라지도록 설정 (계속 쌓이는 것을 방지)
+			if (attempts == 1) {
+				redisTemplate.expire(attemptKey, 1, TimeUnit.HOURS);
+			}
 
-		long lockoutSeconds = getLockoutSeconds(attempts);
-		if (lockoutSeconds != 0) {
-			String lockoutKey = LOCKOUT_PREFIX + key;
-			if (lockoutSeconds == -1) {
-				// 영구 정지 (실제로는 100년으로 설정)
-				redisTemplate.opsForValue().set(lockoutKey, String.valueOf(attempts), 100 * 365, TimeUnit.DAYS);
-			} else {
-				redisTemplate.opsForValue().set(lockoutKey, String.valueOf(attempts), lockoutSeconds, TimeUnit.SECONDS);
+			long lockoutSeconds = getLockoutSeconds(attempts);
+			if (lockoutSeconds != 0) {
+				String lockoutKey = LOCKOUT_PREFIX + key;
+				if (lockoutSeconds == -1) {
+					// 영구 정지 (실제로는 100년으로 설정)
+					redisTemplate.opsForValue().set(lockoutKey, String.valueOf(attempts), 100 * 365, TimeUnit.DAYS);
+				} else {
+					redisTemplate.opsForValue()
+						.set(lockoutKey, String.valueOf(attempts), lockoutSeconds, TimeUnit.SECONDS);
+				}
 			}
 		}
 	}
@@ -57,19 +67,31 @@ public class VerificationAttemptService {
 	/**
 	 * 인증 성공 시 호출되어 모든 실패 기록과 잠금 상태를 초기화합니다.
 	 * @param key 이메일 주소 등 고유 식별자
+	 * -
+	 * MDC-CONTEXT:
+	 * - 공통 필드: traceId, memberId (이메일), memberRole
+	 * - verificationKey: 인증 시도 대상 키 (일반적으로 memberId와 동일)
 	 */
 	public void resetAttempts(String key) {
-		redisTemplate.delete(ATTEMPT_PREFIX + key);
-		redisTemplate.delete(LOCKOUT_PREFIX + key);
+		try (var ignored = MdcLogging.withContext("verificationKey", key)) {
+			redisTemplate.delete(ATTEMPT_PREFIX + key);
+			redisTemplate.delete(LOCKOUT_PREFIX + key);
+		}
 	}
 
 	/**
 	 * 해당 키(이메일)가 현재 잠금 상태인지 확인합니다.
 	 * @param key 이메일 주소 등 고유 식별자
 	 * @return 잠금 상태 여부
+	 * -
+	 * MDC-CONTEXT:
+	 * - 공통 필드: traceId, memberId (이메일), memberRole
+	 * - verificationKey: 인증 시도 대상 키 (일반적으로 memberId와 동일)
 	 */
 	public boolean isBlocked(String key) {
-		return redisTemplate.hasKey(LOCKOUT_PREFIX + key);
+		try (var ignored = MdcLogging.withContext("verificationKey", key)) {
+			return redisTemplate.hasKey(LOCKOUT_PREFIX + key);
+		}
 	}
 
 	private long getLockoutSeconds(long attempts) {
