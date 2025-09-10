@@ -28,10 +28,10 @@ import com.backsuend.coucommerce.catalog.enums.ProductReadType;
 import com.backsuend.coucommerce.catalog.enums.ProductSortType;
 import com.backsuend.coucommerce.catalog.repository.ProductRepository;
 import com.backsuend.coucommerce.catalog.repository.ProductThumbnailRepository;
-import com.backsuend.coucommerce.common.config.MDCLogging;
 import com.backsuend.coucommerce.common.exception.CustomValidationException;
 import com.backsuend.coucommerce.common.exception.ErrorCode;
 import com.backsuend.coucommerce.common.exception.NotFoundException;
+import com.backsuend.coucommerce.common.service.MdcLogging;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -92,7 +92,7 @@ public class ProductServiceImpl implements ProductService {
 	public Page<Product> getProductsListTypeUser(ProductSortType sortType, long memberId,
 		String keyword, Category cate, Pageable pageable) {
 
-		try (var ignored = MDCLogging.withContexts(Map.of(
+		try (var ignored = MdcLogging.withContexts(Map.of(
 			"search_sortType", String.valueOf(sortType),
 			"search_keyword", String.valueOf(keyword),
 			"search_cate", String.valueOf(cate),
@@ -116,7 +116,7 @@ public class ProductServiceImpl implements ProductService {
 	public Page<Product> getProductsListTypeSeller(ProductSortType sortType, Member member,
 		String keyword, Category cate, Pageable pageable) {
 
-		try (var ignored = MDCLogging.withContexts(Map.of(
+		try (var ignored = MdcLogging.withContexts(Map.of(
 			"search_sortType", String.valueOf(sortType),
 			"search_keyword", String.valueOf(keyword),
 			"search_cate", String.valueOf(cate),
@@ -144,7 +144,7 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public Product getProductsReadType(ProductReadType readType, Member member, long productId, long memberId) {
 
-		try (var ignored = MDCLogging.withContexts(Map.of(
+		try (var ignored = MdcLogging.withContexts(Map.of(
 			"search_readType", String.valueOf(ProductReadType.USER_READ),
 			"productId", String.valueOf(productId),
 			"memberId", String.valueOf(memberId)
@@ -172,7 +172,7 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public Page<ProductResponse> getProductsMain(ProductMainDisplay mainDisplay, int pageSize) {
 
-		try (var ignored = MDCLogging.withContexts(Map.of(
+		try (var ignored = MdcLogging.withContexts(Map.of(
 		))) {
 			log.info("getProductsMain 메인 상품 보기 요청");
 
@@ -202,7 +202,7 @@ public class ProductServiceImpl implements ProductService {
 	public Page<ProductResponse> getProductsUser(ProductItemSearchRequest req,
 		Member member, Category cate) {
 
-		try (var ignored = MDCLogging.withContexts(Map.of(
+		try (var ignored = MdcLogging.withContexts(Map.of(
 			"search_keyword", String.valueOf(req.getKeyword()),
 			"memberEmail", String.valueOf(member.getEmail())
 		))) {
@@ -238,7 +238,7 @@ public class ProductServiceImpl implements ProductService {
 	public Page<ProductResponse> getProductsSeller(ProductItemSearchRequest req,
 		Member member, Category cate) {
 
-		try (var ignored = MDCLogging.withContexts(Map.of(
+		try (var ignored = MdcLogging.withContexts(Map.of(
 			"search_keyword", String.valueOf(req.getKeyword()),
 			"memberEmail", String.valueOf(member.getEmail())
 		))) {
@@ -269,7 +269,7 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public ProductResponse getRead(ProductReadType productReadType, long productId, long memberId) {
 
-		try (var ignored = MDCLogging.withContexts(Map.of(
+		try (var ignored = MdcLogging.withContexts(Map.of(
 			"productId", String.valueOf(productId),
 			"memberId", String.valueOf(memberId)
 		))) {
@@ -293,7 +293,7 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public ProductResponse getCreate(ProductRequest dto, long memberId, List<MultipartFile> images) {
 
-		try (var ignored = MDCLogging.withContexts(Map.of(
+		try (var ignored = MdcLogging.withContexts(Map.of(
 			"memberId", String.valueOf(memberId)
 		))) {
 
@@ -328,7 +328,7 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public ProductResponse getEdit(long productId, long memberId, ProductEditRequest dto, List<MultipartFile> images) {
 
-		try (var ignored = MDCLogging.withContexts(Map.of(
+		try (var ignored = MdcLogging.withContexts(Map.of(
 			"productId", String.valueOf(productId),
 			"memberId", String.valueOf(memberId)
 		))) {
@@ -369,7 +369,7 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public void getDelete(long productId, long memberId) {
 
-		try (var ignored = MDCLogging.withContexts(Map.of(
+		try (var ignored = MdcLogging.withContexts(Map.of(
 			"productId", String.valueOf(productId),
 			"memberId", String.valueOf(memberId)
 		))) {

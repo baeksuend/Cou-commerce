@@ -17,11 +17,11 @@ import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.catalog.entity.Product;
 import com.backsuend.coucommerce.catalog.repository.ProductRepository;
 import com.backsuend.coucommerce.catalog.service.ProductSummaryService;
-import com.backsuend.coucommerce.common.config.MDCLogging;
 import com.backsuend.coucommerce.common.exception.BusinessException;
 import com.backsuend.coucommerce.common.exception.CustomValidationException;
 import com.backsuend.coucommerce.common.exception.ErrorCode;
 import com.backsuend.coucommerce.common.exception.NotFoundException;
+import com.backsuend.coucommerce.common.service.MdcLogging;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
 import com.backsuend.coucommerce.review.dto.ReviewRequestDto;
 import com.backsuend.coucommerce.review.dto.ReviewResponseDto;
@@ -51,7 +51,7 @@ public class ReviewServiceImpl implements ReviewService {
 	@Transactional(readOnly = true)
 	public Page<ReviewResponseDto> getReviews(Long productId, int page, boolean isAsc) {
 
-		try (var ignored = MDCLogging.withContexts(Map.of(
+		try (var ignored = MdcLogging.withContexts(Map.of(
 			"productId", String.valueOf(productId)
 		))) {
 			log.info("getReviews 상품 리뷰 목록 요청");
@@ -90,7 +90,7 @@ public class ReviewServiceImpl implements ReviewService {
 	@Override
 	public ReviewResponseDto readView(Long productId, Long reviewId, long memberId) {
 
-		try (var ignored = MDCLogging.withContexts(Map.of(
+		try (var ignored = MdcLogging.withContexts(Map.of(
 			"productId", String.valueOf(productId),
 			"reviewId", String.valueOf(reviewId),
 			"memberId", String.valueOf(memberId)
@@ -119,7 +119,7 @@ public class ReviewServiceImpl implements ReviewService {
 	public ReviewResponseDto createReview(Long productId,
 		ReviewRequestDto requestDto, long memberId) {
 
-		try (var ignored = MDCLogging.withContexts(Map.of(
+		try (var ignored = MdcLogging.withContexts(Map.of(
 			"productId", String.valueOf(productId),
 			"memberId", String.valueOf(memberId)
 		))) {
@@ -175,7 +175,7 @@ public class ReviewServiceImpl implements ReviewService {
 	public ReviewResponseDto updateReview(Long productId, Long reviewId,
 		ReviewRequestDto requestDto, long memberId) {
 
-		try (var ignored = MDCLogging.withContexts(Map.of(
+		try (var ignored = MdcLogging.withContexts(Map.of(
 			"reviewId", String.valueOf(reviewId),
 			"memberId", String.valueOf(memberId)
 		))) {
@@ -210,7 +210,7 @@ public class ReviewServiceImpl implements ReviewService {
 	@Transactional
 	public void deleteReview(Long productId, Long reviewId, long memberId) {
 
-		try (var ignored = MDCLogging.withContexts(Map.of(
+		try (var ignored = MdcLogging.withContexts(Map.of(
 			"productId", String.valueOf(productId),
 			"reviewId", String.valueOf(reviewId),
 			"memberId", String.valueOf(memberId)
@@ -249,7 +249,7 @@ public class ReviewServiceImpl implements ReviewService {
 	public void deleteChildReview(Long productId, Long reviewId,
 		Long childReviewId, long memberId) {
 
-		try (var ignored = MDCLogging.withContexts(Map.of(
+		try (var ignored = MdcLogging.withContexts(Map.of(
 			"productId", String.valueOf(productId),
 			"reviewId", String.valueOf(reviewId),
 			"childReviewId", String.valueOf(childReviewId),

@@ -20,7 +20,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.Digits;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Min;
@@ -116,6 +115,7 @@ public class Product extends BaseTimeEntity {
 	@OneToOne(mappedBy = "product", cascade = CascadeType.ALL)
 	private ProductSummary productSummary;
 
+	@Builder.Default
 	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<ProductThumbnail> productThumbnails = new ArrayList<>();
 
