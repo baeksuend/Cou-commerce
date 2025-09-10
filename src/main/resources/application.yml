@@ -1,4 +1,7 @@
 spring:
+  batch:
+    job:
+      enabled: false
   profiles:
     default: dev
   application:
@@ -62,3 +65,16 @@ cors:
 feature:
   email-verification:
     enabled: false # 이메일 인증 기능 허용
+
+# Actuator 엔드포인트 구성
+management:
+  server:
+    port: 9091 # 관리용 포트 분리
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
