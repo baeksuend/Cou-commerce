@@ -62,8 +62,8 @@ public class OrderService {
 	private final CartService cartService;
 	private final OrderVerificationService orderVerificationService;
 	private final OrderSnapshotService orderSnapshotService;
-    private final OrderProductRepository orderProductRepository;
-    private final ProductSummaryService productSummaryService;
+	private final OrderProductRepository orderProductRepository;
+	private final ProductSummaryService productSummaryService;
 
 	/**
 	 * 장바구니에서 주문 생성 (옵션 A: 셀러별 주문 분할)
@@ -109,7 +109,6 @@ public class OrderService {
 				// 5. 그룹별로 Order 생성/저장
 				for (Map.Entry<Long, List<CartItem>> entry : itemsBySeller.entrySet()) {
 					List<CartItem> sellerItems = entry.getValue();
-
 					Order order = Order.builder()
 						.member(buyer)
 						.consumerName(request.getConsumerName())
@@ -249,7 +248,7 @@ public class OrderService {
 	}
 
 	@Transactional
-    public OrderResponse shipOrder(Long orderId, Long sellerId, ShipOrderRequest request) {
+	public OrderResponse shipOrder(Long orderId, Long sellerId, ShipOrderRequest request) {
 		Order order = orderRepository.findById(orderId)
 			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문 없음"));
 
@@ -276,36 +275,36 @@ public class OrderService {
 		order.setStatus(OrderStatus.SHIPPED);
 		order.setShipment(shipment); // 편의 메서드 추가 필요
 
-        return createOrderResponse(order);
-    }
+		return createOrderResponse(order);
+	}
 
-    @Transactional
-    public OrderResponse completeOrder(Long orderId, Long sellerId) {
-        Order order = orderRepository.findById(orderId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문 없음"));
+	@Transactional
+	public OrderResponse completeOrder(Long orderId, Long sellerId) {
+		Order order = orderRepository.findById(orderId)
+			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문 없음"));
 
-        // Seller 검증: 본인 상품 포함 여부 확인 (셀러 단위 주문이지만 방어적으로 확인)
-        boolean ownsProduct = order.getItems().stream()
-            .anyMatch(item -> item.getProduct().getMember().getId().equals(sellerId));
-        if (!ownsProduct) {
-            throw new BusinessException(ErrorCode.ACCESS_DENIED, "본인 상품 주문만 완료 처리 가능");
-        }
+		// Seller 검증: 본인 상품 포함 여부 확인 (셀러 단위 주문이지만 방어적으로 확인)
+		boolean ownsProduct = order.getItems().stream()
+			.anyMatch(item -> item.getProduct().getMember().getId().equals(sellerId));
+		if (!ownsProduct) {
+			throw new BusinessException(ErrorCode.ACCESS_DENIED, "본인 상품 주문만 완료 처리 가능");
+		}
 
-        // 상태 검증: SHIPPED 에서만 완료 처리 허용
-        if (order.getStatus() != OrderStatus.SHIPPED) {
-            throw new BusinessException(ErrorCode.CONFLICT, "배송완료 처리는 SHIPPED 상태에서만 가능");
-        }
+		// 상태 검증: SHIPPED 에서만 완료 처리 허용
+		if (order.getStatus() != OrderStatus.SHIPPED) {
+			throw new BusinessException(ErrorCode.CONFLICT, "배송완료 처리는 SHIPPED 상태에서만 가능");
+		}
 
-        // 상태 변경
-        order.setStatus(OrderStatus.COMPLETED);
+		// 상태 변경
+		order.setStatus(OrderStatus.COMPLETED);
 
-        // 각 상품에 대해 주문 카운트 증가 (배송완료 시점)
-        order.getItems().forEach(item ->
-            productSummaryService.setOrderCount(item.getProduct().getId(), item.getQuantity())
-        );
+		// 각 상품에 대해 주문 카운트 증가 (배송완료 시점)
+		order.getItems().forEach(item ->
+			productSummaryService.setOrderCount(item.getProduct().getId(), item.getQuantity())
+		);
 
-        return createOrderResponse(order);
-    }
+		return createOrderResponse(order);
+	}
 
 	@Transactional(readOnly = true)
 	public List<OrderResponse> getSellerOrders(Long sellerId) {

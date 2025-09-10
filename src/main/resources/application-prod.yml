@@ -1,0 +1,26 @@
+spring:
+  jpa:
+    hibernate:
+      naming:
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/coucommercedb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: app
+    password: app-secret
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+
+server:
+  port: 8080
+
+jwt:
+  secret: VGVzdFNlY3JldEtleUZvckpXVEF1dGhlbnRpY2F0aW9uVGVzdFNlY3JldEtleUZvckpXVEF1dGhlbnRpY2F0aW9u
+  access-token-expiration-time: 3600000 # 1시간
+  refresh-token-expiration-time: 86400000 # 24시간

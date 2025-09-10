@@ -60,6 +60,9 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
+    // Logging: Logstash encoder for JSON/TCP appender (ELK 연동)
+    implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
+
 }
 
 tasks.named('test') {
