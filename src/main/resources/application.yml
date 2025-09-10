@@ -3,7 +3,9 @@ spring:
     default: dev
   application:
     name: cou-commerce
-
+  batch:
+    job:
+      enabled: false
   jpa:
     open-in-view: false
     show-sql: true
@@ -28,6 +30,16 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: your-email@gmail.com
+    password: Gmail app password (계정 비밀번호 아님)
+    sender-name: Cou-commerce 서포트 팀
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
 server:
   port: 8080
 
@@ -46,4 +58,9 @@ springdoc:
   use-fqn: true
 
 cors:
-  allowed-origins: http://localhost, http://localhost:3000, http://localhost:9090, http://localhost:8080, http://192.168.0.5:8080
+  allowed-origins: http://localhost:3000, http://localhost:9090, http://localhost:8080, http://192.168.0.5:8080
+
+# Feature Flags
+feature:
+  email-verification:
+    enabled: false # 이메일 인증 기능 허용

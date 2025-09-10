@@ -55,7 +55,7 @@ public class ApiValidationAdvice {
 		HttpServletRequest req) {
 		List<Map<String, Object>> errs = fieldErrors(ex.getBindingResult().getFieldErrors());
 		ApiResponse<Object> body = ApiResponse.error(HttpStatus.BAD_REQUEST, "요청 값이 유효하지 않습니다.",
-			Map.of("errors", errs, "path", req.getRequestURI(), "traceId", MDC.get("traceId")));
+			Map.of("errors", errs));
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
 	}
 
@@ -63,8 +63,7 @@ public class ApiValidationAdvice {
 	public ResponseEntity<ApiResponse<Object>> handleBindException(BindException ex,
 		HttpServletRequest req) {
 		List<Map<String, Object>> errs = fieldErrors(ex.getBindingResult().getFieldErrors());
-		ApiResponse<Object> body = ApiResponse.error(HttpStatus.BAD_REQUEST, "요청 바인딩에 실패했습니다.",
-			Map.of("errors", errs, "path", req.getRequestURI(), "traceId", MDC.get("traceId")));
+		ApiResponse<Object> body = ApiResponse.error(HttpStatus.BAD_REQUEST, "요청 바인딩에 실패했습니다.", Map.of("errors", errs));
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
 	}
 }

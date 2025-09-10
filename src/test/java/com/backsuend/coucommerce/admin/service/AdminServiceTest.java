@@ -8,6 +8,14 @@ import static org.mockito.Mockito.*;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
+import com.backsuend.coucommerce.sellerregistration.dto.SellerRegistrationSearchRequest;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -225,20 +233,27 @@ class AdminServiceTest {
 		}
 
 		@Test
-		@DisplayName("성공 - 판매자 등록 신청 목록 조회")
-		void getPendingSellerRegistrations_success() {
+		@DisplayName("성공 - 판매자 등록 신청 목록 검색 및 페이징 조회")
+		void searchSellerRegistrations_success() {
 			// given
-			when(sellerRegistrationRepository.findByStatus(SellerRegistrationStatus.APPLIED)).thenReturn(List.of(registration));
+			SellerRegistrationSearchRequest searchRequest = SellerRegistrationSearchRequest.builder()
+				.status(SellerRegistrationStatus.APPLIED)
+				.build();
+			Pageable pageable = PageRequest.of(0, 10, Sort.by("createdAt").descending());
+			Page<SellerRegistration> page = new PageImpl<>(List.of(registration), pageable, 1);
+
+			when(sellerRegistrationRepository.search(searchRequest, pageable)).thenReturn(page);
 
 			// when
-			List<SellerRegistrationResponse> responses = adminService.getPendingSellerRegistrations();
+			Page<SellerRegistrationResponse> responses = adminService.searchSellerRegistrations(searchRequest, pageable);
 
 			// then
-			assertThat(responses).hasSize(1);
-			SellerRegistrationResponse response = responses.getFirst();
+			assertThat(responses.getContent()).hasSize(1);
+			SellerRegistrationResponse response = responses.getContent().getFirst();
 			assertThat(response.registrationId()).isEqualTo(registration.getId());
 			assertThat(response.userEmail()).isEqualTo(member.getEmail());
 			assertThat(response.storeName()).isEqualTo(registration.getStoreName());
+			verify(sellerRegistrationRepository, times(1)).search(searchRequest, pageable);
 		}
 
 		@Test

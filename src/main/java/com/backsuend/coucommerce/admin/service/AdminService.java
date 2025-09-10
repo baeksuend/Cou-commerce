@@ -1,8 +1,7 @@
 package com.backsuend.coucommerce.admin.service;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +14,7 @@ import com.backsuend.coucommerce.auth.service.RefreshTokenService;
 import com.backsuend.coucommerce.common.exception.BusinessException;
 import com.backsuend.coucommerce.common.exception.ErrorCode;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
+import com.backsuend.coucommerce.sellerregistration.dto.SellerRegistrationSearchRequest;
 import com.backsuend.coucommerce.sellerregistration.entity.SellerRegistration;
 import com.backsuend.coucommerce.sellerregistration.entity.SellerRegistrationStatus;
 import com.backsuend.coucommerce.sellerregistration.repository.SellerRegistrationRepository;
@@ -50,19 +50,18 @@ public class AdminService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<SellerRegistrationResponse> getPendingSellerRegistrations() {
-		List<SellerRegistration> registrations = sellerRegistrationRepository.findByStatus(SellerRegistrationStatus.APPLIED);
-		return registrations.stream()
-			.map(reg -> new SellerRegistrationResponse(
-				reg.getId(),
-				reg.getMember().getEmail(),
-				reg.getMember().getName(),
-				reg.getStoreName(),
-				reg.getBusinessRegistrationNumber(),
-				reg.getStatus(),
-				reg.getCreatedAt()
-			))
-			.collect(Collectors.toList());
+	public Page<SellerRegistrationResponse> searchSellerRegistrations(SellerRegistrationSearchRequest request,
+		Pageable pageable) {
+		Page<SellerRegistration> registrations = sellerRegistrationRepository.search(request, pageable);
+		return registrations.map(reg -> new SellerRegistrationResponse(
+			reg.getId(),
+			reg.getMember().getEmail(),
+			reg.getMember().getName(),
+			reg.getStoreName(),
+			reg.getBusinessRegistrationNumber(),
+			reg.getStatus(),
+			reg.getCreatedAt()
+		));
 	}
 
 	@Transactional
