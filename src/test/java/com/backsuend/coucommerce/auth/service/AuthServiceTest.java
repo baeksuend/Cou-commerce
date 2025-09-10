@@ -22,6 +22,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.backsuend.coucommerce.auth.dto.AuthResponse;
 import com.backsuend.coucommerce.auth.dto.LoginRequest;
@@ -31,6 +32,7 @@ import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.auth.entity.Role;
 import com.backsuend.coucommerce.auth.jwt.JwtProvider;
 import com.backsuend.coucommerce.common.exception.BusinessException;
+import com.backsuend.coucommerce.common.exception.EmailVerificationRequiredException;
 import com.backsuend.coucommerce.common.exception.ErrorCode;
 import com.backsuend.coucommerce.member.repository.AddressRepository;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
@@ -59,6 +61,9 @@ class AuthServiceTest {
 
 	@Mock
 	private UserDetailsServiceImpl userDetailsService;
+
+	@Mock
+	private SignupEmailVerificationService signupEmailVerificationService;
 
 	@InjectMocks
 	private AuthService authService;
@@ -94,12 +99,23 @@ class AuthServiceTest {
 	class RegisterTests {
 
 		@Test
-		@DisplayName("성공 - 새로운 사용자는 성공적으로 등록되고 토큰을 발급받는다")
+		@DisplayName("성공 (이메일 인증 OFF) - 새로운 사용자는 성공적으로 등록되고 토큰을 발급받는다")
 		void register_withNewUser_shouldSucceedAndReturnTokens() {
 			// Given
-			when(memberRepository.findByEmail(signupRequest.email())).thenReturn(Optional.empty());
+			// 이 테스트는 인증 기능이 꺼진 상태를 명시적으로 검증
+			ReflectionTestUtils.setField(authService, "emailVerificationEnabled", false);
+
+			when(memberRepository.findByEmail(signupRequest.email()))
+				.thenReturn(Optional.empty()) // First call returns empty
+				.thenReturn(Optional.of(member)); // Second call returns the member
+
 			when(passwordEncoder.encode(signupRequest.password())).thenReturn("encodedPassword");
-			when(memberRepository.save(any(Member.class))).thenReturn(member);
+			when(memberRepository.save(any(Member.class))).thenAnswer(invocation -> {
+				Member savedMember = invocation.getArgument(0);
+				// savedMember의 ID를 설정 (실제 DB 저장처럼)
+				ReflectionTestUtils.setField(savedMember, "id", 1L);
+				return savedMember;
+			});
 			when(addressRepository.save(any(Address.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 			UserDetailsImpl userDetails = UserDetailsImpl.build(member);
@@ -122,6 +138,8 @@ class AuthServiceTest {
 			verify(memberRepository, times(1)).save(any(Member.class));
 			verify(addressRepository, times(1)).save(any(Address.class));
 			verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
+			// 이메일 인증 기능이 꺼져 있으므로, 이메일 발송 서비스는 호출되지 않아야 함
+			verify(signupEmailVerificationService, never()).sendVerificationEmail(any(Member.class));
 		}
 
 		@Test
@@ -137,6 +155,8 @@ class AuthServiceTest {
 			assertThat(exception.errorCode()).isEqualTo(ErrorCode.CONFLICT);
 			verify(memberRepository, never()).save(any(Member.class));
 		}
+
+		
 	}
 
 	@Nested
@@ -154,6 +174,7 @@ class AuthServiceTest {
 
 			when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(
 				authentication);
+			when(memberRepository.findByEmail(anyString())).thenReturn(Optional.of(member)); // Add this line
 			when(jwtProvider.createAccessToken(anyString(), any(Role.class))).thenReturn("dummyAccessToken");
 			when(refreshTokenService.createRefreshToken(anyString(), anyLong())).thenReturn("dummyRefreshToken");
 

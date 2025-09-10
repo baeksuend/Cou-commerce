@@ -32,7 +32,7 @@
     <module name="LineLength">
         <property name="max" value="120"/>
         <property name="ignorePattern"
-                  value="^package.*|^import.*|a href|href|http://|https://|ftp://|&quot;&quot;&quot;"/>
+                  value="^package.*|^import.*|a href|href|http://|https://|ftp://|&quot;&quot;&quot;|@io.swagger.v3.oas.annotations.responses.ApiResponse|^\s*value\s*=\s*&quot;.*|@Operation|@ModelAttribute|.queryString"/>
         <message key="maxLineLen"
                  value="[line-length-120] Line is longer than {0,number,integer} characters (found {1,number,integer})"/>
     </module>
@@ -204,5 +204,10 @@
     <!-- Exclude module-info.java -->
     <module name="BeforeExecutionExclusionFileFilter">
         <property name="fileNamePattern" value="module\-info\.java$"/>
+    </module>
+
+    <!-- Exclude generated sources -->
+    <module name="BeforeExecutionExclusionFileFilter">
+        <property name="fileNamePattern" value="[\\/]generated[\\/].*"/>
     </module>
 </module>

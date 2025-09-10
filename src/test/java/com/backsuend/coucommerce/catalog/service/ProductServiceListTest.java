@@ -71,8 +71,15 @@ public class ProductServiceListTest {
 		Long productId = 1L;
 
 		//회원 테이블 생성
-		member = new Member(memberId, "hong@naver.com", "1111", "1112223333", "홍길동", Role.SELLER,
-			MemberStatus.ACTIVE);
+		member = Member.builder()
+			.id(memberId)
+			.email("hong@naver.com")
+			.password("1111")
+			.phone("1112223333")
+			.name("홍길동")
+			.role(Role.SELLER)
+			.status(MemberStatus.ACTIVE)
+			.build();
 
 		//product 생성
 		int page = 1;

@@ -178,15 +178,22 @@ public class AdminIntegrationTest extends BaseIntegrationTest {
 		}
 
 		@Test
-		@DisplayName("성공 - 판매자 등록 신청 목록을 조회한다")
-		void getSellerRegistrations_success() throws Exception {
+		@DisplayName("성공 - 판매자 등록 신청 목록을 검색 및 페이징 조회한다")
+		void searchSellerRegistrations_success() throws Exception {
 			// When & Then
 			mockMvc.perform(get("/api/v1/admin/seller-registrations")
-					.header("Authorization", "Bearer " + adminToken))
+					.header("Authorization", "Bearer " + adminToken)
+					.param("status", SellerRegistrationStatus.APPLIED.name()) // 검색 조건 추가
+					.param("page", "0") // 페이지 번호
+					.param("size", "10") // 페이지 크기
+					.param("sortBy", "createdAt") // 정렬 기준
+					.param("sortDirection", "desc")) // 정렬 방향
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data").isArray())
-				.andExpect(jsonPath("$.data[0].registrationId").value(registration.getId()))
-				.andExpect(jsonPath("$.data[0].userEmail").value(applicant.getEmail()));
+				.andExpect(jsonPath("$.data.content").isArray())
+				.andExpect(jsonPath("$.data.content[0].registrationId").value(registration.getId()))
+				.andExpect(jsonPath("$.data.content[0].userEmail").value(applicant.getEmail()))
+				.andExpect(jsonPath("$.data.totalElements").value(1)) // 전체 요소 수 확인
+				.andExpect(jsonPath("$.data.totalPages").value(1)); // 전체 페이지 수 확인
 		}
 
 		@Test

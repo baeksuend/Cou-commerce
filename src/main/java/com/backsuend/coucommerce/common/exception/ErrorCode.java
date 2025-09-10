@@ -31,6 +31,9 @@ public enum ErrorCode {
 
 	// 409
 	CONFLICT(HttpStatus.CONFLICT, "CONFLICT", "요청이 현재 리소스 상태와 충돌합니다."),
+	EMAIL_ALREADY_PENDING_VERIFICATION(HttpStatus.CONFLICT,
+		"EMAIL_ALREADY_PENDING_VERIFICATION",
+		"이미 인증 대기 중인 이메일입니다. 메일함을 확인해주세요."),
 	DATA_INTEGRITY_VIOLATION(HttpStatus.CONFLICT, "DATA_INTEGRITY_VIOLATION", "데이터 무결성 제약 위반입니다."),
 
 	// 415
@@ -38,6 +41,9 @@ public enum ErrorCode {
 
 	// 429
 	TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "TOO_MANY_REQUESTS", "요청 횟수가 너무 많습니다. 잠시 후 다시 시도해주세요."),
+
+	// 200 (특수 케이스)
+	EMAIL_VERIFICATION_REQUIRED(HttpStatus.OK, "EMAIL_VERIFICATION_REQUIRED", "회원가입이 요청되었습니다. 이메일을 확인하여 인증을 완료해주세요."),
 
 	// 500
 	INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "서버 내부 오류가 발생했습니다.");
