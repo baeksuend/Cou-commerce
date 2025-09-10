@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.auth.service.UserDetailsImpl;
 import com.backsuend.coucommerce.catalog.dto.PageResponse;
 import com.backsuend.coucommerce.catalog.dto.ProductEditRequest;
@@ -62,8 +63,8 @@ public class ProductSellerController {
 
 		log.info("[API] GET /api/v1/seller/products 호출");
 
-		long memberId = userDetails.getId();
-		Page<ProductResponse> pageList = productService.getProductsSeller(req, memberId, null);
+		Member member = Member.builder().id(userDetails.getId()).email(userDetails.getUsername()).build();
+		Page<ProductResponse> pageList = productService.getProductsSeller(req, member, null);
 		PageResponse<ProductResponse> productResponse = new PageResponse<>(pageList, req.getPageSize());
 
 		log.debug("[API] /api/v1/seller/products 결과 데이터: {}", productResponse); // 상세 데이터 (개발용)

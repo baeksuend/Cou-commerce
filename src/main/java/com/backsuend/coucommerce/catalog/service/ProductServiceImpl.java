@@ -1,6 +1,7 @@
 package com.backsuend.coucommerce.catalog.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.BeanUtils;
@@ -27,6 +28,7 @@ import com.backsuend.coucommerce.catalog.enums.ProductReadType;
 import com.backsuend.coucommerce.catalog.enums.ProductSortType;
 import com.backsuend.coucommerce.catalog.repository.ProductRepository;
 import com.backsuend.coucommerce.catalog.repository.ProductThumbnailRepository;
+import com.backsuend.coucommerce.common.config.MDCLogging;
 import com.backsuend.coucommerce.common.exception.CustomValidationException;
 import com.backsuend.coucommerce.common.exception.ErrorCode;
 import com.backsuend.coucommerce.common.exception.NotFoundException;
@@ -37,7 +39,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Tag(name = "상품 내용 ", description = "상품 등록, 수정, 조회, 삭제 기능")
-@Slf4j(topic = "상품 목록, 등록,  수정, 삭제")
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
@@ -90,16 +92,27 @@ public class ProductServiceImpl implements ProductService {
 	public Page<Product> getProductsListTypeUser(ProductSortType sortType, long memberId,
 		String keyword, Category cate, Pageable pageable) {
 
+		System.out.println("getProductsListTypeUser  1111");
+
 		log.debug("getProductsListTypeUser 호출: sortType={}, memberId={}, keyword={}, category={}, pageable={}",
 			sortType, memberId, keyword, cate, pageable);
 
-		return switch (sortType) {
-			case RECENT -> productRepository.userListCategory_RECENT(cate, keyword, pageable);
-			case LOW_PRICE -> productRepository.userListCategory_LOW_PRICE(cate, keyword, pageable);
-			case HIGH_PRICE -> productRepository.userListCategory_HIGH_PRICE(cate, keyword, pageable);
-			case SALE_COUNT_TOTAL -> productRepository.userListCategory_SALE_COUNT_TOTAL(cate, keyword, pageable);
-			case REVIEW_SCORE_TOTAL -> productRepository.userListCategory_REVIEW_SCORE_TOTAL(cate, keyword, pageable);
-		};
+		System.out.println("getProductsListTypeUser  2222");
+
+		try (var ignored = MDCLogging.withContexts(Map.of(
+		))) {
+
+			log.info("getProductsListTypeUser 사용자 목록 요청 ");
+
+			return switch (sortType) {
+				case RECENT -> productRepository.userListCategory_RECENT(cate, keyword, pageable);
+				case LOW_PRICE -> productRepository.userListCategory_LOW_PRICE(cate, keyword, pageable);
+				case HIGH_PRICE -> productRepository.userListCategory_HIGH_PRICE(cate, keyword, pageable);
+				case SALE_COUNT_TOTAL -> productRepository.userListCategory_SALE_COUNT_TOTAL(cate, keyword, pageable);
+				case REVIEW_SCORE_TOTAL ->
+					productRepository.userListCategory_REVIEW_SCORE_TOTAL(cate, keyword, pageable);
+			};
+		}
 	}
 
 	@Override
@@ -144,78 +157,95 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public Page<ProductResponse> getProductsMain(ProductMainDisplay mainDisplay, int pageSize) {
 
-		log.info("getProductsMain 호출: mainDisplay={}, pageSize={}", mainDisplay, pageSize);
+		try (var ignored = MDCLogging.withContexts(Map.of(
+		))) {
+			log.info("getProductsMain 메인 상품 보기 요청");
 
-		Pageable pageable = PageRequest.of(0, pageSize, Sort.by(Sort.Order.desc("createdAt")));
-		Page<Product> pageList;
-		if (mainDisplay.equals(ProductMainDisplay.MAIN_BEST)) {
-			pageList = productRepository.searchMainBestProducts(pageable);
-		} else {
-			pageList = productRepository.searchMainManyReviewProducts(pageable);
+			Pageable pageable = PageRequest.of(0, pageSize, Sort.by(Sort.Order.desc("createdAt")));
+			Page<Product> pageList;
+			if (mainDisplay.equals(ProductMainDisplay.MAIN_BEST)) {
+				pageList = productRepository.searchMainBestProducts(pageable);
+			} else {
+				pageList = productRepository.searchMainManyReviewProducts(pageable);
+			}
+			List<ProductResponse> dtoPage = pageList.stream().map(ProductResponse::fromEntity)
+				.collect(Collectors.toList());
+
+			// 최대 10개만 잘라서 반환
+			if (dtoPage.size() > pageSize) {
+				dtoPage = dtoPage.subList(0, pageSize);
+			}
+
+			log.info("getProductsMain 메인 상품 보기 완료");
+			return new PageImpl<>(dtoPage, pageable, Math.min(pageList.getTotalElements(), pageSize));
+
 		}
-		List<ProductResponse> dtoPage = pageList.stream().map(ProductResponse::fromEntity)
-			.collect(Collectors.toList());
-
-		// 최대 10개만 잘라서 반환
-		if (dtoPage.size() > pageSize) {
-			dtoPage = dtoPage.subList(0, pageSize);
-		}
-
-		log.debug("getProductsMain 결과: dtoPageSize={}, totalElements={}",
-			dtoPage.size(), pageList.getTotalElements());
-
-		return new PageImpl<>(dtoPage, pageable, Math.min(pageList.getTotalElements(), pageSize));
 	}
 
 	@Transactional
 	@Override
 	public Page<ProductResponse> getProductsUser(ProductItemSearchRequest req,
-		long memberId, Category cate) {
+		Member member, Category cate) {
 
-		log.info("getProductsUser 호출: memberId={}, category={}, page={}, pageSize={}",
-			memberId, cate, req.getPage(), req.getPageSize());
+		try (var ignored = MDCLogging.withContexts(Map.of(
+			"search_keyword", String.valueOf(req.getKeyword()),
+			"memberEmail", String.valueOf(member.getEmail())
+		))) {
 
-		Sort.Order order = Sort.Order.desc("createdAt");
-		Pageable pageable = PageRequest.of(req.getPage() - 1,
-			req.getPageSize(), Sort.by(order));
+			log.info("getProductsUser 사용자 상품 목록 요청");
 
-		//ListType 내용 가져오기
-		Page<Product> pageList = getProductsListTypeUser(req.getSort(), memberId, req.getKeyword(), cate, pageable);
+			System.out.println("getProductsUser 111");
 
-		List<ProductResponse> dtoPage = pageList.stream().map(ProductResponse::fromEntity)
-			.collect(Collectors.toList());
+			Sort.Order order = Sort.Order.desc("createdAt");
+			Pageable pageable = PageRequest.of(req.getPage() - 1,
+				req.getPageSize(), Sort.by(order));
 
-		log.debug("getProductsUser 결과: pageSize={}, pageable={}, totalElements={}",
-			dtoPage.size(), pageable, pageList.getTotalElements());
+			System.out.println("getProductsUser 222");
 
-		return new PageImpl<>(dtoPage, pageable, pageList.getTotalElements());
+			//ListType 내용 가져오기
+			Page<Product> pageList = getProductsListTypeUser(req.getSort(), member.getId(), req.getKeyword(), cate,
+				pageable);
+
+			System.out.println("getProductsUser 333");
+
+			List<ProductResponse> dtoPage = pageList.stream().map(ProductResponse::fromEntity)
+				.collect(Collectors.toList());
+
+			System.out.println("getProductsUser 444");
+
+			log.info("getProductsUser 사용자 상품 목록 요청 완료");
+			return new PageImpl<>(dtoPage, pageable, pageList.getTotalElements());
+		}
 	}
 
 	@Transactional
 	@Override
 	public Page<ProductResponse> getProductsSeller(ProductItemSearchRequest req,
-		long memberId, Category cate) {
+		Member member, Category cate) {
 
-		log.info("getProductsSeller 호출: req={}, memberId={}, cate={}",
-			req, memberId, cate);
+		try (var ignored = MDCLogging.withContexts(Map.of(
+			"search_keyword", String.valueOf(req.getKeyword()),
+			"memberEmail", String.valueOf(member.getEmail())
+		))) {
+			log.info("getProductsUser 판매자 상품 목록 요청");
 
-		Sort.Order order = Sort.Order.desc("createdAt");
-		Pageable pageable = PageRequest.of(req.getPage() - 1,
-			req.getPageSize(), Sort.by(order));
+			Sort.Order order = Sort.Order.desc("createdAt");
+			Pageable pageable = PageRequest.of(req.getPage() - 1,
+				req.getPageSize(), Sort.by(order));
 
-		Member member = memberRepository.findById(memberId)
-			.orElseThrow(() -> new CustomValidationException(ErrorCode.ACCESS_DENIED, "접근이 불가합니다."));
+			Member member2 = memberRepository.findById(member.getId())
+				.orElseThrow(() -> new CustomValidationException(ErrorCode.ACCESS_DENIED, "접근이 불가합니다."));
 
-		//ListType 내용 가져오기
-		Page<Product> pageList = getProductsListTypeSeller(req.getSort(), member, req.getKeyword(), cate, pageable);
+			//ListType 내용 가져오기
+			Page<Product> pageList = getProductsListTypeSeller(req.getSort(), member2, req.getKeyword(), cate,
+				pageable);
 
-		List<ProductResponse> dtoPage = pageList.stream().map(ProductResponse::fromEntity)
-			.collect(Collectors.toList());
+			List<ProductResponse> dtoPage = pageList.stream().map(ProductResponse::fromEntity)
+				.collect(Collectors.toList());
 
-		log.debug("getProductsSeller 결과: pageSize={}, pageable={}, totalElements={}",
-			dtoPage.size(), pageable, pageList.getTotalElements());
-
-		return new PageImpl<>(dtoPage, pageable, pageList.getTotalElements());
+			log.info("getProductsUser 판매자 상품 목록 요청 완료");
+			return new PageImpl<>(dtoPage, pageable, pageList.getTotalElements());
+		}
 	}
 
 	/**
@@ -224,19 +254,22 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public ProductResponse getRead(ProductReadType productReadType, long productId, long memberId) {
 
-		log.info("getRead 호출: productReadType={}, productId={}, memberId={}",
-			productReadType, productId, memberId);
+		try (var ignored = MDCLogging.withContexts(Map.of(
+			"productId", String.valueOf(productId),
+			"memberId", String.valueOf(memberId)
+		))) {
+			log.info("getRead 상품 상세 보기 요청 ");
 
-		Member member = memberRepository.findById(memberId).orElse(null);
-		//ReadType 형식별로 상품내용 가져오기
-		Product product = getProductsReadType(productReadType, member, productId, memberId);
+			Member member = memberRepository.findById(memberId).orElse(null);
+			//ReadType 형식별로 상품내용 가져오기
+			Product product = getProductsReadType(productReadType, member, productId, memberId);
 
-		//** 추가 productSummary에 상품조회수 업데이트 / viewCount +1
-		productSummaryService.setViewCount(product.getId());
+			//** 추가 productSummary에 상품조회수 업데이트 / viewCount +1
+			productSummaryService.setViewCount(product.getId());
 
-		log.debug("getProductsSeller 결과: product id={}", product.getId());
-
-		return ProductResponse.fromEntity(product);
+			log.info("getRead 상품 상세 보기 요청 완료 ");
+			return ProductResponse.fromEntity(product);
+		}
 	}
 
 	/**
@@ -245,27 +278,33 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public ProductResponse getCreate(ProductRequest dto, long memberId, List<MultipartFile> images) {
 
-		log.info("getCreate 호출: memberId={}, productName={}", memberId, dto.getName());
+		try (var ignored = MDCLogging.withContexts(Map.of(
+			"memberId", String.valueOf(memberId)
+		))) {
 
-		Member member = checkMember(memberId);
-		Product product = dto.toEntity(member);
+			log.info("getCreate 상품 등록 요청");
 
-		ProductSummary summary = new ProductSummary();
-		summary.setProduct(product);  // ProductSummary가 외래키 주인
-		product.setProductSummary(summary);
+			Member member = checkMember(memberId);
+			Product product = dto.toEntity(member);
 
-		Product saved = productRepository.save(product);
+			ProductSummary summary = new ProductSummary();
+			summary.setProduct(product);  // ProductSummary가 외래키 주인
+			product.setProductSummary(summary);
 
-		//** 추가 - 썸네일 저장 메서드 실행
-		productThumbnailService.uploadThumbnail(product, images);
+			Product saved = productRepository.save(product);
 
-		//저장된 내용 가져오기
-		List<ProductThumbnail> productThumbnail = productThumbnailRepository.findByProduct_Id(saved.getId());
-		saved.setProductThumbnails(productThumbnail);
+			//** 추가 - 썸네일 저장 메서드 실행
+			productThumbnailService.uploadThumbnail(product, images);
 
-		log.info("getCreate 완료: productId={}, thumbnails={}", saved.getId(), productThumbnail.size());
+			//저장된 내용 가져오기
+			List<ProductThumbnail> productThumbnail = productThumbnailRepository.findByProduct_Id(saved.getId());
+			saved.setProductThumbnails(productThumbnail);
 
-		return ProductResponse.fromEntity(saved);
+			log.info("getCreate 상품 등록 요청 완료");
+			return ProductResponse.fromEntity(saved);
+
+		}
+
 	}
 
 	/**
@@ -274,33 +313,39 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public ProductResponse getEdit(long productId, long memberId, ProductEditRequest dto, List<MultipartFile> images) {
 
-		log.info("getEdit 호출: productId={}, memberId={}", productId, memberId);
+		try (var ignored = MDCLogging.withContexts(Map.of(
+			"productId", String.valueOf(productId),
+			"memberId", String.valueOf(memberId)
+		))) {
 
-		//수정, 삭제시에 본인글 여부 체크
-		checkExistsProduct(productId, memberId);
+			log.info("getEdit 상품 수정 요청");
 
-		//기존 등록 상품 조회
-		Product product = productRepository.findById(productId)
-			.orElseThrow(() -> new RuntimeException("등록된 상품이 없음11"));
+			//수정, 삭제시에 본인글 여부 체크
+			checkExistsProduct(productId, memberId);
 
-		//내용복사
-		BeanUtils.copyProperties(dto, product, "id", "productSummary");
+			//기존 등록 상품 조회
+			Product product = productRepository.findById(productId)
+				.orElseThrow(() -> new RuntimeException("등록된 상품이 없음11"));
 
-		//수정
-		Product saved = productRepository.save(product);
+			//내용복사
+			BeanUtils.copyProperties(dto, product, "id", "productSummary");
 
-		//** (추가) 기존에 이미지가 있고 선택된 이미지 있으면 삭제
-		boolean exists = productThumbnailRepository.existsByProduct_Id(productId);
-		if (exists && !images.isEmpty()) {
-			productThumbnailService.deleteProductImages(product.getId());
+			//수정
+			Product saved = productRepository.save(product);
+
+			//** (추가) 기존에 이미지가 있고 선택된 이미지 있으면 삭제
+			boolean exists = productThumbnailRepository.existsByProduct_Id(productId);
+			if (exists && !images.isEmpty()) {
+				productThumbnailService.deleteProductImages(product.getId());
+			}
+
+			//** 추가 - 썸네일 저장 메서드 실행
+			productThumbnailService.uploadThumbnail(product, images);
+
+			log.info("getEdit 상품 수정 요청 완료");
+			return ProductResponse.fromEntity(saved);
+
 		}
-
-		//** 추가 - 썸네일 저장 메서드 실행
-		productThumbnailService.uploadThumbnail(product, images);
-
-		log.info("새 썸네일 업로드 완료: productId={}, imagesCount={}", product.getId(), images.size());
-
-		return ProductResponse.fromEntity(saved);
 	}
 
 	/**
@@ -309,24 +354,30 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public void getDelete(long productId, long memberId) {
 
-		log.info("getDelete 호출: productId={}, memberId={}", productId, memberId);
+		try (var ignored = MDCLogging.withContexts(Map.of(
+			"productId", String.valueOf(productId),
+			"memberId", String.valueOf(memberId)
+		))) {
 
-		//수정, 삭제시에 본인글 여부 체크
-		checkExistsProduct(productId, memberId);
+			log.info("getDelete 상품 삭제 요청");
 
-		Member member = memberRepository.findById(memberId).orElse(null);
-		Product product = productRepository.findSellerRead(member, productId)
-			.orElseThrow(() -> new CustomValidationException(ErrorCode.NOT_FOUND, "관련 상품이 없습니다.2"));
+			//수정, 삭제시에 본인글 여부 체크
+			checkExistsProduct(productId, memberId);
 
-		//삭제처리
-		product.delete();
+			Member member = memberRepository.findById(memberId).orElse(null);
+			Product product = productRepository.findSellerRead(member, productId)
+				.orElseThrow(() -> new CustomValidationException(ErrorCode.NOT_FOUND, "관련 상품이 없습니다.2"));
 
-		//** (추가) 보관을 위해서 이미지 삭제 X
+			//삭제처리
+			product.delete();
 
-		//deletedAt 날짜 등록후 저장
-		productRepository.save(product);
+			//** (추가) 보관을 위해서 이미지 삭제 X
 
-		log.info("상품 삭제 처리 완료: productId={}", productId);
+			//deletedAt 날짜 등록후 저장
+			productRepository.save(product);
+
+			log.info("getDelete 상품 삭제 요청 완료");
+		}
 
 	}
 

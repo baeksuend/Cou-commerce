@@ -3,7 +3,6 @@ plugins {
     id 'checkstyle'
     id 'org.springframework.boot' version '3.5.5'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'org.jetbrains.kotlin.jvm'
 }
 
 group = 'com.backsuend'
@@ -114,4 +113,14 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'io.micrometer:micrometer-core'
     implementation 'io.micrometer:micrometer-registry-prometheus'
+}
+//logback encode
+dependencies {
+    implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
+}
+
+//엘라스틱서치
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
+    implementation 'co.elastic.clients:elasticsearch-java:8.11.0' // Elasticsearch 8 Java Client
 }

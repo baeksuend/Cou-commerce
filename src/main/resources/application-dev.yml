@@ -17,6 +17,10 @@ spring:
       port: 6379
       timeout: 2000ms
 
+    elasticsearch:
+      client:
+        endpoints: localhost:9200
+
 server:
   port: 8080
 
@@ -24,3 +28,14 @@ jwt:
   secret: VGVzdFNlY3JldEtleUZvckpXVEF1dGhlbnRpY2F0aW9uVGVzdFNlY3JldEtleUZvckpXVEF1dGhlbnRpY2F0aW9u
   access-token-expiration-time: 3600000 # 1시간
   refresh-token-expiration-time: 86400000 # 24시간
+
+
+##
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus
+  endpoint:
+    prometheus:
+  ##

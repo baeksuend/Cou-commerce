@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.catalog.dto.PageResponse;
 import com.backsuend.coucommerce.catalog.dto.ProductItemSearchRequest;
 import com.backsuend.coucommerce.catalog.dto.ProductResponse;
@@ -81,7 +82,8 @@ public class ProductController {
 		log.info("[API] GET /api/v1/products/category/{}?page={}&pageSize={}&sort={}&keyword={} 호출",
 			category, req.getPage(), req.getPageSize(), req.getSort(), req.getKeyword());
 
-		Page<ProductResponse> pageList = productService.getProductsUser(req, 0L, category);
+		Member member = Member.builder().id(0L).build();
+		Page<ProductResponse> pageList = productService.getProductsUser(req, member, category);
 		PageResponse<ProductResponse> productResponse = new PageResponse<>(pageList, req.getPageSize());
 
 		log.debug("[API] category 내용 결과 데이터: {}", productResponse);

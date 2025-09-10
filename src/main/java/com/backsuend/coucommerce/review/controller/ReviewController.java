@@ -162,7 +162,7 @@ public class ReviewController {
 		@PathVariable Long reviewId, @PathVariable Long childReviewId,
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
-		log.info("[API] DELETE /api/v1//products/{}/reviews/{}/child/{childReviewId}{} 자식리뷰 호출",
+		log.info("[API] DELETE /api/v1/products/{}/reviews/{}/child/{childReviewId}{} 자식리뷰 호출",
 			productId, reviewId, childReviewId);
 
 		reviewService.deleteChildReview(productId, reviewId, childReviewId, userDetails.getId());

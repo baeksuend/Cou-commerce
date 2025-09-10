@@ -18,8 +18,8 @@ spring:
 
   security:
     user:
-      name: admin
-      password: password
+      name: prometheus@gmail.com
+      password: prometheus4523
 
   jackson:
     deserialization:
@@ -33,9 +33,27 @@ server:
 
 logging:
   level:
-    org.hibernate.type.descriptor.sql.BasicBinder: trace
-    org.springframework.core.env: DEBUG
-    org.springframework.security: DEBUG #시큐리티 로깅보기
+    #org.hibernate.type.descriptor.sql.BasicBinder: trace
+    #org.springframework.core.env: DEBUG
+    #org.springframework.security: DEBUG #시큐리티 로깅보기
+
+    # Spring MVC HandlerMapping DEBUG 로그 끄기
+    org.springframework.web.servlet.handler: INFO
+    org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping: INFO
+
+    # Hibernate DEBUG 로그 끄기 (엔티티 매핑, 속성 바인딩)
+    org.hibernate: INFO
+    org.hibernate.type: INFO
+    org.hibernate.SQL: DEBUG           # SQL 쿼리만 보고 싶으면 DEBUG 유지, 안 보려면 INFO
+    org.hibernate.format_sql: INFO     # SQL 포맷팅 로그
+
+    # HikariCP DEBUG 로그 끄기 (커넥션 풀 관련)
+    com.zaxxer.hikari: INFO
+
+    # Spring Security DEBUG 로그 끄고 싶으면
+    org.springframework.security: INFO
+
+
 springdoc:
   api-docs:
     enabled: true
@@ -47,3 +65,4 @@ springdoc:
 
 cors:
   allowed-origins: http://localhost, http://localhost:3000, http://localhost:9090, http://localhost:8080, http://192.168.0.5:8080
+

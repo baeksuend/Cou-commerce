@@ -155,7 +155,8 @@ public class ProductServiceListTest {
 			.getProductsListTypeUser(eq(sortType), eq(memberId), eq(keyword), eq(cate), eq(pageable));
 
 		// when
-		Page<ProductResponse> result = productService.getProductsUser(req, memberId, cate);
+		Member member = Member.builder().id(memberId).build();
+		Page<ProductResponse> result = productService.getProductsUser(req, member, cate);
 
 		// then
 		assertThat(result).isNotNull();
@@ -185,7 +186,8 @@ public class ProductServiceListTest {
 			.getProductsListTypeSeller(eq(sortType), eq(member), eq(keyword), eq(cate), eq(pageable));
 
 		// when
-		Page<ProductResponse> result = productService.getProductsSeller(req, memberId, cate);
+		Member member = Member.builder().id(memberId).build();
+		Page<ProductResponse> result = productService.getProductsSeller(req, member, cate);
 
 		// then
 		assertThat(result).isNotNull();
