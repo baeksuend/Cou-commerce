@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -60,6 +61,16 @@ public class SecurityConfig {
 		this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
 		this.jwtAccessDeniedHandler = jwtAccessDeniedHandler;
 		this.rateLimitingFilter = rateLimitingFilter;
+	}
+
+	@Bean
+	@Order(1)
+	public SecurityFilterChain actuatorSecurityFilterChain(HttpSecurity http) throws Exception {
+		http
+			.securityMatcher("/actuator/**")
+			.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+			.csrf(AbstractHttpConfigurer::disable);
+		return http.build();
 	}
 
 	@Bean
