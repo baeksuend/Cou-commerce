@@ -8,11 +8,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.Min;
 
-import com.backsuend.coucommerce.catalog.entity.Product;
 import com.backsuend.coucommerce.common.entity.BaseTimeEntity;
 
 import lombok.AllArgsConstructor;
@@ -24,37 +22,33 @@ import lombok.Setter;
 /**
  * @author rua
  */
-
 @Entity
-@Table(name = "order_product",
+@Table(name = "shipment",
 	indexes = {
-		@Index(name = "idx_order_product_order", columnList = "order_id"),
-		@Index(name = "idx_order_product_product", columnList = "product_id")
+		@Index(name = "idx_shipment_order", columnList = "order_id"),
+		@Index(name = "idx_shipment_tracking", columnList = "trackingNo")
 	})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class OrderProduct extends BaseTimeEntity {
+public class Shipment extends BaseTimeEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "order_id", nullable = false)
+	/** 어떤 주문의 배송인지 */
+	@OneToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "order_id", nullable = false, unique = true)
 	private Order order;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "product_id", nullable = false)
-	private Product product;
+	/** 운송장 번호 */
+	@Column(name = "trackingNo", nullable = false, length = 100)
+	private String trackingNo;
 
-	@Min(1)
-	@Column(name = "quantity", nullable = false)
-	private int quantity;
-
-	@Column(name = "price_snapshot", nullable = false)
-	private int priceSnapshot; // 주문 당시 가격 스냅샷
+	/** 택배사 */
+	@Column(name = "carrier", nullable = false, length = 50)
+	private String carrier;
 }
-

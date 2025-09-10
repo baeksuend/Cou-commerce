@@ -25,6 +25,9 @@ import lombok.RequiredArgsConstructor;
  * Payment Service
  * - 주문에 대한 결제 처리 담당
  * - Mock API 기반 승인/실패 시뮬레이션
+ *
+ * ToDo
+ * 1. PaymentLog : 트랜잭션 추적성 확보 (누가 언제 어떤 결제 이벤트 발생시켰는지 기록), 추후 Admin 모니터링/디버깅 용도
  */
 @Service
 @RequiredArgsConstructor
@@ -135,5 +138,31 @@ public class PaymentService {
 	public Page<PaymentResponse> getMyPayments(Long memberId, Pageable pageable) {
 		Page<Payment> payments = paymentRepository.findByOrderMemberId(memberId, pageable);
 		return payments.map(PaymentResponse::from);
+	}
+
+	@Transactional
+	public PaymentResponse requestRefund(Long buyerId, Long paymentId, String reason) {
+		Payment payment = paymentRepository.findById(paymentId)
+			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "결제를 찾을 수 없습니다."));
+
+		// Buyer 본인 검증
+		if (!payment.getOrder().getMember().getId().equals(buyerId)) {
+			throw new BusinessException(ErrorCode.ACCESS_DENIED, "본인 결제만 환불 요청할 수 있습니다.");
+		}
+
+		// 상태 검증
+		if (payment.getStatus() != PaymentStatus.APPROVED ||
+			payment.getOrder().getStatus() != OrderStatus.PAID) {
+			throw new BusinessException(ErrorCode.CONFLICT, "환불 요청이 불가능한 상태입니다.");
+		}
+		
+		// 상태 전이
+		payment.getOrder().setRefundRequested(true);
+		payment.setRefundRequested(true);
+		payment.setRefundReason(reason);
+
+		// TODO: PaymentLog 기록 (추후 5.2 작업에서 추가)
+
+		return PaymentResponse.from(payment);
 	}
 }

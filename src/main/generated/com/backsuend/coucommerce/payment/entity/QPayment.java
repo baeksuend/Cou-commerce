@@ -26,6 +26,8 @@ public class QPayment extends EntityPathBase<Payment> {
 
     public final NumberPath<Integer> amount = createNumber("amount", Integer.class);
 
+    public final BooleanPath cancelRequested = createBoolean("cancelRequested");
+
     public final EnumPath<CardBrand> cardBrand = createEnum("cardBrand", CardBrand.class);
 
     //inherited
@@ -37,6 +39,10 @@ public class QPayment extends EntityPathBase<Payment> {
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
     public final com.backsuend.coucommerce.order.entity.QOrder order;
+
+    public final StringPath refundReason = createString("refundReason");
+
+    public final BooleanPath refundRequested = createBoolean("refundRequested");
 
     public final EnumPath<PaymentStatus> status = createEnum("status", PaymentStatus.class);
 

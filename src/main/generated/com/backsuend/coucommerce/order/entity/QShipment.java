@@ -11,18 +11,20 @@ import com.querydsl.core.types.dsl.PathInits;
 
 
 /**
- * QOrderProduct is a Querydsl query type for OrderProduct
+ * QShipment is a Querydsl query type for Shipment
  */
 @Generated("com.querydsl.codegen.DefaultEntitySerializer")
-public class QOrderProduct extends EntityPathBase<OrderProduct> {
+public class QShipment extends EntityPathBase<Shipment> {
 
-    private static final long serialVersionUID = -1147285319L;
+    private static final long serialVersionUID = -1105800046L;
 
     private static final PathInits INITS = PathInits.DIRECT2;
 
-    public static final QOrderProduct orderProduct = new QOrderProduct("orderProduct");
+    public static final QShipment shipment = new QShipment("shipment");
 
     public final com.backsuend.coucommerce.common.entity.QBaseTimeEntity _super = new com.backsuend.coucommerce.common.entity.QBaseTimeEntity(this);
+
+    public final StringPath carrier = createString("carrier");
 
     //inherited
     public final DateTimePath<java.time.LocalDateTime> createdAt = _super.createdAt;
@@ -34,35 +36,30 @@ public class QOrderProduct extends EntityPathBase<OrderProduct> {
 
     public final QOrder order;
 
-    public final NumberPath<Integer> priceSnapshot = createNumber("priceSnapshot", Integer.class);
-
-    public final com.backsuend.coucommerce.catalog.entity.QProduct product;
-
-    public final NumberPath<Integer> quantity = createNumber("quantity", Integer.class);
+    public final StringPath trackingNo = createString("trackingNo");
 
     //inherited
     public final DateTimePath<java.time.LocalDateTime> updatedAt = _super.updatedAt;
 
-    public QOrderProduct(String variable) {
-        this(OrderProduct.class, forVariable(variable), INITS);
+    public QShipment(String variable) {
+        this(Shipment.class, forVariable(variable), INITS);
     }
 
-    public QOrderProduct(Path<? extends OrderProduct> path) {
+    public QShipment(Path<? extends Shipment> path) {
         this(path.getType(), path.getMetadata(), PathInits.getFor(path.getMetadata(), INITS));
     }
 
-    public QOrderProduct(PathMetadata metadata) {
+    public QShipment(PathMetadata metadata) {
         this(metadata, PathInits.getFor(metadata, INITS));
     }
 
-    public QOrderProduct(PathMetadata metadata, PathInits inits) {
-        this(OrderProduct.class, metadata, inits);
+    public QShipment(PathMetadata metadata, PathInits inits) {
+        this(Shipment.class, metadata, inits);
     }
 
-    public QOrderProduct(Class<? extends OrderProduct> type, PathMetadata metadata, PathInits inits) {
+    public QShipment(Class<? extends Shipment> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
         this.order = inits.isInitialized("order") ? new QOrder(forProperty("order"), inits.get("order")) : null;
-        this.product = inits.isInitialized("product") ? new com.backsuend.coucommerce.catalog.entity.QProduct(forProperty("product"), inits.get("product")) : null;
     }
 
 }

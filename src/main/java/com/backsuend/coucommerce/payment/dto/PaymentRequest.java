@@ -26,6 +26,12 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class PaymentRequest {
+	/**
+	 * 주문 ID
+	 * - 어떤 주문에 대한 결제인지 지정
+	 */
+	@NotNull(message = "주문 ID는 필수 입력입니다.")
+	private Long orderId;
 
 	/**
 	 * 카드 브랜드 (KB, SH, KAKAO)
