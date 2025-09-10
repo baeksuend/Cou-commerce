@@ -1,12 +1,11 @@
 spring:
-  batch:
-    job:
-      enabled: false
   profiles:
     default: dev
   application:
     name: cou-commerce
-
+  batch:
+    job:
+      enabled: false
   jpa:
     open-in-view: false
     show-sql: true
@@ -64,7 +63,7 @@ cors:
 # Feature Flags
 feature:
   email-verification:
-    enabled: false # 이메일 인증 기능 허용
+    enabled: false # 이메일 인증 기능 비허용
 
 # Actuator 엔드포인트 구성
 management:
