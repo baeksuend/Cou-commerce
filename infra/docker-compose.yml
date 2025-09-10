@@ -48,7 +48,6 @@ services:
   #    networks:
   #      - cou-commerce-net
 
-
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.24
     environment:
@@ -97,13 +96,13 @@ services:
     ports:
       - "9090:9090"
 
-
   grafana:
     image: grafana/grafana
     ports:
       - "3000:3000"
     volumes:
       - grafana-data:/var/lib/grafana
+
 
 #networks:
 #  cou-commerce-net:

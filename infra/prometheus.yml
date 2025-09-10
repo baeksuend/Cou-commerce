@@ -8,11 +8,14 @@ scrape_configs:
       - targets: [ 'host.docker.internal:9090' ]
 
   # Spring Boot 모니터링
-  - job_name: 'spring-boot'
+  - job_name: 'service'
     metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s
     static_configs:
       - targets: [ 'host.docker.internal:8080' ]
 
     basic_auth:
       username: 'prometheus@gmail.com'
       password: 'prometheus4523'
+
+
