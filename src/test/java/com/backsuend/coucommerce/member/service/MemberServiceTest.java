@@ -23,6 +23,7 @@ import com.backsuend.coucommerce.auth.entity.MemberStatus;
 import com.backsuend.coucommerce.auth.entity.Role;
 import com.backsuend.coucommerce.auth.service.RefreshTokenService;
 import com.backsuend.coucommerce.common.exception.BusinessException;
+import com.backsuend.coucommerce.common.service.AuthorizationService;
 import com.backsuend.coucommerce.member.dto.AddressChangeRequest;
 import com.backsuend.coucommerce.member.dto.PasswordChangeRequest;
 import com.backsuend.coucommerce.member.dto.UserProfileResponse;
@@ -44,6 +45,9 @@ class MemberServiceTest {
 
 	@Mock
 	private RefreshTokenService refreshTokenService;
+
+	@Mock
+	private AuthorizationService authorizationService;
 
 	@InjectMocks
 	private MemberService memberService;
@@ -75,6 +79,11 @@ class MemberServiceTest {
 	@Nested
 	@DisplayName("프로필 조회")
 	class GetUserProfile {
+
+		@BeforeEach
+		void setUp() {
+			doNothing().when(authorizationService).authorizeCurrentUser(anyLong());
+		}
 
 		@Test
 		@DisplayName("성공 - 사용자 ID로 프로필 정보를 성공적으로 조회한다")
@@ -114,6 +123,11 @@ class MemberServiceTest {
 	@Nested
 	@DisplayName("주소 변경")
 	class ChangeAddress {
+
+		@BeforeEach
+		void setUp() {
+			doNothing().when(authorizationService).authorizeCurrentUser(anyLong());
+		}
 
 		@Test
 		@DisplayName("성공 - 주소 변경 요청 시 주소 정보가 업데이트된다")
@@ -170,6 +184,11 @@ class MemberServiceTest {
 	@Nested
 	@DisplayName("비밀번호 변경")
 	class ChangePassword {
+
+		@BeforeEach
+		void setUp() {
+			doNothing().when(authorizationService).authorizeCurrentUser(anyLong());
+		}
 
 		@Test
 		@DisplayName("성공 - 현재 비밀번호가 일치하면 새 비밀번호로 변경된다")

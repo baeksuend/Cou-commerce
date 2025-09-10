@@ -12,6 +12,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -26,6 +27,7 @@ import com.backsuend.coucommerce.member.repository.MemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
+@TestPropertySource(properties = "spring.batch.job.enabled=false")
 @AutoConfigureMockMvc
 @Transactional
 @ActiveProfiles("test")
@@ -53,14 +55,8 @@ public abstract class BaseIntegrationTest {
 	protected PlatformTransactionManager transactionManager;
 
 	@BeforeEach
-	void clearRateLimitKeys() {
-		// Clear rate limit keys for auth endpoints before each test
-		// This assumes the RateLimitingFilter uses "rate_limit:IP:URI" format
-		// and that tests run from 127.0.0.1
-		String registerKey = "rate_limit:127.0.0.1:/api/v1/auth/register";
-		String loginKey = "rate_limit:127.0.0.1:/api/v1/auth/login";
-		redisTemplate.delete(registerKey);
-		redisTemplate.delete(loginKey);
+	void clearRedisData() {
+		redisTemplate.getConnectionFactory().getConnection().flushAll();
 	}
 
 	protected String registerAndLogin(String email, String password, String name, String phone) throws Exception {

@@ -36,10 +36,10 @@ public interface ProductService {
 		String keyword, Category cate, Pageable pageable);
 
 	Page<ProductResponse> getProductsUser(ProductItemSearchRequest req,
-		long memberId, Category cate);
+		Member member, Category cate);
 
 	Page<ProductResponse> getProductsSeller(ProductItemSearchRequest req,
-		long memberId, Category cate);
+		Member member, Category cate);
 
 	ProductResponse getRead(ProductReadType productReadType, long productId, long memberId);
 

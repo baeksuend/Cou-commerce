@@ -1,6 +1,7 @@
 package com.backsuend.coucommerce.common.service;
 
 import java.time.Duration;
+import java.util.Map;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -22,18 +23,33 @@ public class RateLimitingService {
 	 * @return 요청이 허용되면 true, 속도 제한에 걸리면 false
 	 */
 	public boolean allowRequest(String key, int maxRequests, int windowSeconds) {
-		String countKey = "rate_limit:" + key;
-		Long currentCount = redisTemplate.opsForValue().increment(countKey);
+		/**
+		 * 지정된 키에 대한 요청 속도를 확인하고 제한합니다.
+		 * -
+		 * MDC-CONTEXT:
+		 * - 공통 필드: traceId, memberId (이메일), memberRole
+		 * - rateLimitKey: 속도 제한을 적용할 고유 키
+		 * - maxRequests: 허용되는 최대 요청 수
+		 * - windowSeconds: 속도 제한 윈도우 (초)
+		 */
+		try (var ignored = MdcLogging.withContexts(Map.of(
+			"rateLimitKey", key,
+			"maxRequests", String.valueOf(maxRequests),
+			"windowSeconds", String.valueOf(windowSeconds)
+		))) {
+			String countKey = "rate_limit:" + key;
+			Long currentCount = redisTemplate.opsForValue().increment(countKey);
 
-		if (currentCount == null) {
-			currentCount = 1L;
+			if (currentCount == null) {
+				currentCount = 1L;
+			}
+
+			if (currentCount == 1) {
+				// 윈도우의 첫 번째 요청이면 만료 시간 설정
+				redisTemplate.expire(countKey, Duration.ofSeconds(windowSeconds));
+			}
+
+			return currentCount <= maxRequests;
 		}
-
-		if (currentCount == 1) {
-			// 윈도우의 첫 번째 요청이면 만료 시간 설정
-			redisTemplate.expire(countKey, Duration.ofSeconds(windowSeconds));
-		}
-
-		return currentCount <= maxRequests;
 	}
 }

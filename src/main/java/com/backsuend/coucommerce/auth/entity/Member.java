@@ -1,5 +1,7 @@
 package com.backsuend.coucommerce.auth.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -70,6 +72,9 @@ public class Member extends BaseTimeEntity {
 	@Builder.Default
 	private MemberStatus status = MemberStatus.ACTIVE;
 
+	@Column(name = "lastLoggedInAt")
+	private LocalDateTime lastLoggedInAt;
+
 	public void updatePassword(String newPassword) {
 		this.password = newPassword;
 	}
@@ -82,4 +87,7 @@ public class Member extends BaseTimeEntity {
 		this.role = newRole;
 	}
 
+	public void updateLastLoggedInAt() {
+		this.lastLoggedInAt = LocalDateTime.now();
+	}
 }

@@ -32,6 +32,12 @@ spring:
   main:
     allow-bean-definition-overriding: true
 
+  batch:
+    job:
+      enabled: false
+    jdbc:
+      initialize-schema: always
+
 # --- Logging Settings ---
 logging:
   level:
@@ -49,3 +55,8 @@ jwt:
   secret: VGVzdFNlY3JldEtleUZvckpXVEF1dGhlbnRpY2F0aW9uVGVzdFNlY3JldEtleUZvckpXVEF1dGhlbnRpY2F0aW9u
   access-token-expiration-time: 3600000 # 1시간
   refresh-token-expiration-time: 86400000 # 24시간
+
+# Feature Flags
+feature:
+  email-verification:
+    enabled: false # 테스트 환경에서 이메일 인증 기능 비허용

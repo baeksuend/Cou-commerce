@@ -149,6 +149,11 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleDataIntegrity(
 		DataIntegrityViolationException ex, HttpServletRequest req) {
 
+		// "idx_member_email" 문자열을 포함하는 경우, 이메일 중복으로 간주
+		if (ex.getMessage() != null && ex.getMessage().contains("idx_member_email")) {
+			return build(ErrorCode.CONFLICT, "이미 등록된 이메일입니다.", null, req);
+		}
+
 		return build(ErrorCode.DATA_INTEGRITY_VIOLATION, "데이터 제약조건 위반", null, req);
 	}
 

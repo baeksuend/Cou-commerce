@@ -1,6 +1,6 @@
 package com.backsuend.coucommerce.payment.dto;
 
-import org.jetbrains.annotations.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
