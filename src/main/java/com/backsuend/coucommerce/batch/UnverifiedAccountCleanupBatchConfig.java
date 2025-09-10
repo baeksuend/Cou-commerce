@@ -88,17 +88,17 @@ public class UnverifiedAccountCleanupBatchConfig {
 				return;
 			}
 
-			log.info("Bulk deleting {} unverified members and their addresses. Member IDs: {}", memberIds.size(),
+			log.info("미인증 회원 {}명과 해당 주소를 일괄 삭제합니다. 회원 ID: {}", memberIds.size(),
 				memberIds);
 
-			// Address Bulk Delete (JPQL)
-			// Note: JPQL bulk operations do not cascade. We must delete related entities manually.
+			// 주소 일괄 삭제 (JPQL)
+			// 참고: JPQL 벌크 작업은 캐스케이드를 지원하지 않습니다. 관련 엔티티를 수동으로 삭제해야 합니다.
 			String addressDeleteQuery = "DELETE FROM Address a WHERE a.member.id IN :memberIds";
 			entityManager.createQuery(addressDeleteQuery)
 				.setParameter("memberIds", memberIds)
 				.executeUpdate();
 
-			// Member Bulk Delete (JPQL)
+			// 회원 일괄 삭제 (JPQL)
 			String memberDeleteQuery = "DELETE FROM Member m WHERE m.id IN :memberIds";
 			entityManager.createQuery(memberDeleteQuery)
 				.setParameter("memberIds", memberIds)

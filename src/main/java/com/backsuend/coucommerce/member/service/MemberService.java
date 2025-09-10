@@ -9,6 +9,8 @@ import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.auth.service.RefreshTokenService;
 import com.backsuend.coucommerce.common.exception.BusinessException;
 import com.backsuend.coucommerce.common.exception.ErrorCode;
+import com.backsuend.coucommerce.common.service.AuthorizationService;
+import com.backsuend.coucommerce.common.service.MdcLogging;
 import com.backsuend.coucommerce.member.dto.AddressChangeRequest;
 import com.backsuend.coucommerce.member.dto.PasswordChangeRequest;
 import com.backsuend.coucommerce.member.dto.UserProfileResponse;
@@ -28,55 +30,87 @@ public class MemberService {
 	private final AddressRepository addressRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final RefreshTokenService refreshTokenService;
+	private final AuthorizationService authorizationService;
 
 	public UserProfileResponse getUserProfile(Long userId) {
-		Member member = memberRepository.findById(userId)
-			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+		/**
+		 * 사용자 프로필 정보를 조회합니다.
+		 * -
+		 * MDC-CONTEXT:
+		 * - 공통 필드: traceId, memberId (이메일), memberRole
+		 * - targetMemberId: 조회 대상 사용자 ID
+		 */
+		try (var ignored = MdcLogging.withContext("targetMemberId", userId.toString())) {
+			authorizationService.authorizeCurrentUser(userId);
+			Member member = memberRepository.findById(userId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
-		Address address = addressRepository.findByMember(member)
-			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "사용자의 주소 정보를 찾을 수 없습니다."));
+			Address address = addressRepository.findByMember(member)
+				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "사용자의 주소 정보를 찾을 수 없습니다."));
 
-		return new UserProfileResponse(
-			member.getEmail(),
-			member.getName(),
-			member.getPhone(),
-			member.getRole(),
-			member.getStatus(),
-			member.getCreatedAt(),
-			address.getPostalCode(),
-			address.getRoadName(),
-			address.getDetail()
-		);
+			return new UserProfileResponse(
+				member.getEmail(),
+				member.getName(),
+				member.getPhone(),
+				member.getRole(),
+				member.getStatus(),
+				member.getCreatedAt(),
+				address.getPostalCode(),
+				address.getRoadName(),
+				address.getDetail()
+			);
+		}
 	}
 
 	@Transactional
 	public void changeAddress(Long userId, AddressChangeRequest request) {
-		Member member = memberRepository.findById(userId)
-			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+		/**
+		 * 회원의 주소 정보를 변경합니다.
+		 * -
+		 * MDC-CONTEXT:
+		 * - 공통 필드: traceId, memberId (이메일), memberRole
+		 * - targetMemberId: 주소 변경 대상 사용자 ID
+		 */
+		try (var ignored = MdcLogging.withContext("targetMemberId", userId.toString())) {
+			authorizationService.authorizeCurrentUser(userId);
+			Member member = memberRepository.findById(userId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
-		Address address = addressRepository.findByMember(member)
-			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "사용자의 주소 정보를 찾을 수 없습니다."));
+			Address address = addressRepository.findByMember(member)
+				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "사용자의 주소 정보를 찾을 수 없습니다."));
 
-		address.updateAddress(request.postalCode(), request.roadName(), request.detail());
-		addressRepository.save(address);
+			address.updateAddress(request.postalCode(), request.roadName(), request.detail());
+			addressRepository.save(address);
+			log.info("회원 주소 정보가 변경되었습니다.");
+		}
 	}
 
 	@Transactional
 	public void changePassword(Long userId, PasswordChangeRequest request) {
-		Member member = memberRepository.findById(userId)
-			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+		/**
+		 * 회원의 비밀번호를 변경합니다.
+		 * -
+		 * MDC-CONTEXT:
+		 * - 공통 필드: traceId, memberId (이메일), memberRole
+		 * - targetMemberId: 비밀번호 변경 대상 사용자 ID
+		 */
+		try (var ignored = MdcLogging.withContext("targetMemberId", userId.toString())) {
+			authorizationService.authorizeCurrentUser(userId);
+			Member member = memberRepository.findById(userId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
-		// 이전 비밀번호 확인
-		if (!passwordEncoder.matches(request.oldPassword(), member.getPassword())) {
-			throw new BusinessException(ErrorCode.INVALID_INPUT, "현재 비밀번호가 일치하지 않습니다.");
+			// 이전 비밀번호 확인
+			if (!passwordEncoder.matches(request.oldPassword(), member.getPassword())) {
+				throw new BusinessException(ErrorCode.INVALID_INPUT, "현재 비밀번호가 일치하지 않습니다.");
+			}
+
+			// 비밀번호 업데이트
+			member.updatePassword(passwordEncoder.encode(request.newPassword()));
+			memberRepository.save(member);
+
+			// 보안을 위해 모든 리프레시 토큰 무효화
+			refreshTokenService.deleteAllTokensForUser(userId);
+			log.info("사용자 비밀번호가 변경되었습니다. 보안을 위해 모든 리프레시 토큰이 무효화되었습니다.");
 		}
-
-		// 비밀번호 업데이트
-		member.updatePassword(passwordEncoder.encode(request.newPassword()));
-		memberRepository.save(member);
-
-		// 보안을 위해 모든 리프레시 토큰 무효화
-		refreshTokenService.deleteAllTokensForUser(userId);
-		log.info("사용자 {}가 비밀번호를 변경했습니다. 모든 리프레시 토큰이 무효화되었습니다.", userId);
 	}
 }

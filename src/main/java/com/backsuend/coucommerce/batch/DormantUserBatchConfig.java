@@ -66,8 +66,8 @@ public class DormantUserBatchConfig {
 		parameters.put("threshold", threshold);
 
 		String queryString = "SELECT m FROM Member m WHERE m.status = :status AND m.createdAt < :threshold AND (m.lastLoggedInAt IS NULL OR m.lastLoggedInAt < :threshold)";
-		log.info("DormantUserReader: Querying with status = {} and threshold = {}", MemberStatus.ACTIVE, threshold);
-		log.info("DormantUserReader: Query string = {}", queryString);
+		log.info("DormantUserReader: 상태 = {} 및 임계값 = {}로 쿼리 중", MemberStatus.ACTIVE, threshold);
+		log.info("DormantUserReader: 쿼리 문자열 = {}", queryString);
 
 		JpaPagingItemReader<Member> reader = new JpaPagingItemReaderBuilder<Member>()
 			.name("dormantUserReader")
@@ -85,11 +85,11 @@ public class DormantUserBatchConfig {
 	@Bean
 	public ItemProcessor<Member, Member> dormantUserProcessor() {
 		return member -> {
-			log.info("DormantUserProcessor: Processing member with email: {}, current status: {}", member.getEmail(),
+			log.info("DormantUserProcessor: 이메일: {}, 현재 상태: {}인 회원 처리 중", member.getEmail(),
 				member.getStatus());
 			if (member.getStatus() == MemberStatus.ACTIVE) {
 				member.updateStatus(MemberStatus.DORMANT);
-				log.info("DormantUserProcessor: Member {} status updated to DORMANT.", member.getEmail());
+				log.info("DormantUserProcessor: 회원 {}의 상태가 휴면으로 업데이트되었습니다.", member.getEmail());
 			}
 			return member;
 		};
@@ -100,9 +100,9 @@ public class DormantUserBatchConfig {
 		JpaItemWriter<Member> jpaItemWriter = new JpaItemWriter<Member>() {
 			@Override
 			public void write(Chunk<? extends Member> chunk) {
-				log.info("DormantUserWriter: Writing {} items.", chunk.size());
+				log.info("DormantUserWriter: {}개 항목 작성 중.", chunk.size());
 				chunk.forEach(
-					member -> log.info("DormantUserWriter: Writing member: {} with status: {}", member.getEmail(),
+					member -> log.info("DormantUserWriter: 회원: {} 상태: {} 작성 중", member.getEmail(),
 						member.getStatus()));
 				super.write(chunk);
 			}

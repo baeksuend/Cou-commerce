@@ -6,11 +6,14 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,8 +30,8 @@ import com.backsuend.coucommerce.auth.entity.MemberStatus;
 import com.backsuend.coucommerce.auth.entity.Role;
 import com.backsuend.coucommerce.auth.jwt.JwtProvider;
 import com.backsuend.coucommerce.common.exception.BusinessException;
-import com.backsuend.coucommerce.common.exception.EmailVerificationRequiredException;
 import com.backsuend.coucommerce.common.exception.ErrorCode;
+import com.backsuend.coucommerce.common.service.MdcLogging;
 import com.backsuend.coucommerce.member.repository.AddressRepository;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
 
@@ -42,6 +45,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AuthService {
+
+	private static final Logger securityLogger = LoggerFactory.getLogger("securityLogger");
 
 	private static final String VERIFICATION_CODE_PREFIX = "email_verification:";
 	private static final String RESEND_LIMIT_PREFIX = "email_resend_daily_limit:";
@@ -98,11 +103,12 @@ public class AuthService {
 
 		if (emailVerificationEnabled) {
 			signupEmailVerificationService.sendVerificationEmail(newMember);
-			log.info("Email verification is enabled. User {} registered and verification email sent.", newMember.getEmail());
+			log.info("이메일 인증이 활성화되었습니다. 사용자 {}의 가입 및 인증 이메일 발송이 완료되었습니다.",
+				newMember.getEmail());
 			// 토큰 없이 null을 반환하여 컨트롤러에서 인증 필요 상태를 처리하도록 함
 			return null;
 		} else {
-			log.info("Email verification is disabled. Proceeding with auto-login for {}", newMember.getEmail());
+			log.info("이메일 인증이 비활성화되었습니다. {} 계정으로 자동 로그인을 진행합니다.", newMember.getEmail());
 			return login(new LoginRequest(request.email(), request.password()));
 		}
 	}
@@ -137,7 +143,7 @@ public class AuthService {
 
 		stringRedisTemplate.delete(key);
 		verificationAttemptService.resetAttempts(request.email());
-		log.info("Email {} successfully verified and account activated.", request.email());
+		log.info("이메일 {}의 인증 및 계정 활성화가 성공적으로 완료되었습니다.", request.email());
 	}
 
 	@Transactional
@@ -149,7 +155,7 @@ public class AuthService {
 		}
 
 		String verificationCodeKey = VERIFICATION_CODE_PREFIX + request.email();
-		if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(verificationCodeKey))) {
+		if (stringRedisTemplate.hasKey(verificationCodeKey)) {
 			throw new BusinessException(ErrorCode.CONFLICT, "아직 유효한 인증 코드가 존재합니다. 5분 후에 다시 시도해주세요.");
 		}
 
@@ -161,7 +167,7 @@ public class AuthService {
 		}
 
 		signupEmailVerificationService.sendVerificationEmail(member);
-		log.info("Resent verification email to {}", request.email());
+		log.info("{} 주소로 인증 이메일을 재발송했습니다.", request.email());
 	}
 
 	private void checkDailyResendLimit(String email) {
@@ -182,24 +188,45 @@ public class AuthService {
 		}
 	}
 
+	/**
+	 * 로그인을 처리하고, 성공 시 새로운 Access/Refresh 토큰을 발급합니다.
+	 * -
+	 * MDC-CONTEXT:
+	 * - 공통 필드: traceId, memberRole
+	 * - memberId: 사용자 이메일 (로그인 시점에는 인증 전이므로 직접 설정)
+	 */
 	@Transactional
 	public AuthResponse login(LoginRequest request) {
-		Authentication authentication = authenticationManager.authenticate(
-			new UsernamePasswordAuthenticationToken(request.email(), request.password())
-		);
+		try (var ignored = MdcLogging.withContext("memberId", request.email())) {
+			try {
+				Authentication authentication = authenticationManager.authenticate(
+					new UsernamePasswordAuthenticationToken(request.email(), request.password())
+				);
 
-		UserDetailsImpl userDetails = (UserDetailsImpl)authentication.getPrincipal();
+				// --- 로그인 성공 ---
+				log.info("사용자 로그인 성공");
+				securityLogger.info("로그인 성공: 사용자 '{}'", request.email());
 
-		Member member = memberRepository.findByEmail(userDetails.getUsername())
-			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+				UserDetailsImpl userDetails = (UserDetailsImpl)authentication.getPrincipal();
 
-		if (member.getStatus() == MemberStatus.PENDING_VERIFICATION) {
-			throw new BusinessException(ErrorCode.UNAUTHORIZED, "이메일 인증이 완료되지 않았습니다.");
+				Member member = memberRepository.findByEmail(userDetails.getUsername())
+					.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+
+				if (member.getStatus() == MemberStatus.PENDING_VERIFICATION) {
+					throw new BusinessException(ErrorCode.UNAUTHORIZED, "이메일 인증이 완료되지 않았습니다.");
+				}
+
+				member.updateLastLoggedInAt();
+
+				return generateTokens(userDetails);
+
+			} catch (AuthenticationException e) {
+				// --- 로그인 실패 ---
+				log.warn("사용자 로그인 실패: {}", e.getMessage());
+				securityLogger.warn("로그인 실패: 사용자 '{}', 원인: {}", request.email(), e.getMessage());
+				throw e; // 예외를 다시 던져서 GlobalExceptionHandler 또는 Spring Security에서 처리하도록 함
+			}
 		}
-
-		member.updateLastLoggedInAt();
-
-		return generateTokens(userDetails);
 	}
 
 	public AuthResponse generateTokens(UserDetailsImpl userDetails) {
@@ -220,49 +247,66 @@ public class AuthService {
 		return new AuthResponse(accessToken, refreshToken);
 	}
 
+	/**
+	 * 만료된 Access Token을 새로운 토큰으로 갱신합니다.
+	 * -
+	 * MDC-CONTEXT:
+	 * - 공통 필드: traceId, memberId (이메일), memberRole
+	 * - refreshTokenHint: 리프레시 토큰의 일부 (앞 10자리)
+	 */
 	@Transactional
 	public AuthResponse refreshAccessToken(String requestRefreshToken) {
-		// 1. JWT 유효성 검증 (만료 여부, 서명 유효성 등)
-		try {
-			jwtProvider.validateToken(requestRefreshToken);
-		} catch (ExpiredJwtException e) {
-			log.warn("Refresh token expired: {}", requestRefreshToken);
-			// 만료된 토큰은 Redis에서도 삭제
+		try (var ignored = MdcLogging.withContext("refreshTokenHint",
+			requestRefreshToken != null && requestRefreshToken.length() > 10 ? requestRefreshToken.substring(0, 10)
+				: requestRefreshToken)) {
+			// 1. JWT 유효성 검증 (만료 여부, 서명 유효성 등)
+			try {
+				jwtProvider.validateToken(requestRefreshToken);
+			} catch (ExpiredJwtException e) {
+				log.warn("리프레시 토큰이 만료되었습니다: {}", requestRefreshToken);
+				// 만료된 토큰은 Redis에서도 삭제
+				refreshTokenService.deleteByToken(requestRefreshToken);
+				throw new BusinessException(ErrorCode.TOKEN_EXPIRED, "리프레시 토큰이 만료되었습니다.");
+			} catch (JwtException | IllegalArgumentException e) {
+				log.warn("유효하지 않은 JWT 토큰입니다: {}", e.getMessage());
+				throw new BusinessException(ErrorCode.TOKEN_INVALID, "유효하지 않은 리프레시 토큰입니다.");
+			}
+
+			// 2. Redis에서 리프레시 토큰 정보 조회
+			RefreshTokenService.RefreshTokenInfo refreshTokenInfo = refreshTokenService.findByToken(requestRefreshToken)
+				.orElseThrow(() -> {
+					log.warn("Redis에서 리프레시 토큰을 찾을 수 없거나 이미 사용된 토큰입니다: {}", requestRefreshToken);
+					// Redis에 없는 토큰은 유효하지 않거나 이미 사용된 것으로 간주
+					return new BusinessException(ErrorCode.TOKEN_INVALID, "유효하지 않거나 이미 사용된 리프레시 토큰입니다.");
+				});
+
+			if (refreshTokenInfo.used()) {
+				log.warn("사용자 {}의 리프레시 토큰 재사용이 감지되었습니다. 모든 토큰을 무효화합니다.", refreshTokenInfo.userId());
+				refreshTokenService.deleteAllTokensForUser(refreshTokenInfo.userId());
+				throw new BusinessException(ErrorCode.TOKEN_INVALID, "리프레시 토큰이 이미 사용되었습니다. 모든 세션이 종료됩니다.");
+			}
+
+			// 3. 토큰에서 이메일 추출 및 사용자 정보 로드
+			String email = jwtProvider.getEmailFromToken(requestRefreshToken);
+			UserDetailsImpl userDetails = userDetailsService.getUserDetailsByEmail(email);
+
+			// 4. 토큰 정보와 사용자 정보 일치 여부 확인
+			if (!email.equals(refreshTokenInfo.email())) {
+				log.warn("리프레시 토큰의 이메일이 일치하지 않습니다. 토큰 이메일: {}, 사용자 이메일: {}", refreshTokenInfo.email(), email);
+				// 불일치 시 해당 토큰 삭제 (보안 강화)
+				refreshTokenService.deleteByToken(requestRefreshToken);
+				throw new BusinessException(ErrorCode.TOKEN_INVALID, "리프레시 토큰의 사용자 정보가 일치하지 않습니다.");
+			}
+
+			// 5. 기존 리프레시 토큰 무효화 (토큰 로테이션)
 			refreshTokenService.deleteByToken(requestRefreshToken);
-			throw new BusinessException(ErrorCode.TOKEN_EXPIRED, "리프레시 토큰이 만료되었습니다.");
-		} catch (JwtException | IllegalArgumentException e) {
-			log.warn("Invalid JWT token: {}", e.getMessage());
-			throw new BusinessException(ErrorCode.TOKEN_INVALID, "유효하지 않은 리프레시 토큰입니다.");
+			log.info("사용자 {}의 기존 리프레시 토큰을 무효화했습니다.", email);
+
+			// 6. 새로운 Access Token 및 Refresh Token 발급
+			AuthResponse newTokens = generateTokens(userDetails);
+			log.info("사용자 {}에게 새로운 액세스 토큰과 리프레시 토큰을 발급했습니다.", email);
+
+			return newTokens;
 		}
-
-		// 2. Redis에서 리프레시 토큰 정보 조회
-		RefreshTokenService.RefreshTokenInfo refreshTokenInfo = refreshTokenService.findByToken(requestRefreshToken)
-			.orElseThrow(() -> {
-				log.warn("Refresh token not found in Redis or already used: {}", requestRefreshToken);
-				// Redis에 없는 토큰은 유효하지 않거나 이미 사용된 것으로 간주
-				return new BusinessException(ErrorCode.TOKEN_INVALID, "유효하지 않거나 이미 사용된 리프레시 토큰입니다.");
-			});
-
-		// 3. 토큰에서 이메일 추출 및 사용자 정보 로드
-		String email = jwtProvider.getEmailFromToken(requestRefreshToken);
-		UserDetailsImpl userDetails = userDetailsService.getUserDetailsByEmail(email);
-
-		// 4. 토큰 정보와 사용자 정보 일치 여부 확인
-		if (!email.equals(refreshTokenInfo.email())) {
-			log.warn("Refresh token email mismatch. Token email: {}, User email: {}", refreshTokenInfo.email(), email);
-			// 불일치 시 해당 토큰 삭제 (보안 강화)
-			refreshTokenService.deleteByToken(requestRefreshToken);
-			throw new BusinessException(ErrorCode.TOKEN_INVALID, "리프레시 토큰의 사용자 정보가 일치하지 않습니다.");
-		}
-
-		// 5. 기존 리프레시 토큰 무효화 (토큰 로테이션)
-		refreshTokenService.deleteByToken(requestRefreshToken);
-		log.info("Old refresh token invalidated for user: {}", email);
-
-		// 6. 새로운 Access Token 및 Refresh Token 발급
-		AuthResponse newTokens = generateTokens(userDetails);
-		log.info("New access and refresh tokens issued for user: {}", email);
-
-		return newTokens;
 	}
 }

@@ -3,6 +3,7 @@ package com.backsuend.coucommerce.member.controller;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -63,6 +64,7 @@ public class MemberController {
 		)
 	})
 	@SecurityRequirement(name = "Authorization")
+	@PreAuthorize("isAuthenticated()")
 	@GetMapping("/me")
 	public ResponseEntity<ApiResponse<UserProfileResponse>> getProfile(
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
@@ -106,6 +108,7 @@ public class MemberController {
 		)
 	})
 	@SecurityRequirement(name = "Authorization")
+	@PreAuthorize("isAuthenticated()")
 	@PutMapping("/me/address")
 	public ResponseEntity<ApiResponse<Void>> changeAddress(@Valid @RequestBody AddressChangeRequest request,
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
@@ -141,6 +144,7 @@ public class MemberController {
 		)
 	})
 	@SecurityRequirement(name = "Authorization")
+	@PreAuthorize("isAuthenticated()")
 	@PostMapping("/me/password-change")
 	public ResponseEntity<ApiResponse<Void>> changePassword(@Valid @RequestBody PasswordChangeRequest request,
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
