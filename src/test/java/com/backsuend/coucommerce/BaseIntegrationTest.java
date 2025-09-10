@@ -55,14 +55,8 @@ public abstract class BaseIntegrationTest {
 	protected PlatformTransactionManager transactionManager;
 
 	@BeforeEach
-	void clearRateLimitKeys() {
-		// Clear rate limit keys for auth endpoints before each test
-		// This assumes the RateLimitingFilter uses "rate_limit:IP:URI" format
-		// and that tests run from 127.0.0.1
-		String registerKey = "rate_limit:127.0.0.1:/api/v1/auth/register";
-		String loginKey = "rate_limit:127.0.0.1:/api/v1/auth/login";
-		redisTemplate.delete(registerKey);
-		redisTemplate.delete(loginKey);
+	void clearRedisData() {
+		redisTemplate.getConnectionFactory().getConnection().flushAll();
 	}
 
 	protected String registerAndLogin(String email, String password, String name, String phone) throws Exception {
