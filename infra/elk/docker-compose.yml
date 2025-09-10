@@ -71,14 +71,19 @@ services:
     container_name: filebeat
     volumes:
       # Mount the application's log directory from the host into the Filebeat container
-      - /Users/goorm/Desktop/team/Cou-commerce/logs:/usr/share/filebeat/logs:ro
+      #- /Users/goorm/Desktop/team/Cou-commerce/logs:/usr/share/filebeat/logs:ro
       # Mount the filebeat.yml configuration file
+      #- ./filebeat-docker.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ../../logs:/usr/share/filebeat/logs:ro
       - ./filebeat-docker.yml:/usr/share/filebeat/filebeat.yml:ro
-    command: ["filebeat", "-e", "-c", "/usr/share/filebeat/filebeat.yml"]
+    command: [ "filebeat", "-e", "-c", "/usr/share/filebeat/filebeat.yml" ]
     depends_on:
       - logstash # Ensure Logstash is up before Filebeat starts sending logs
     networks:
       - cou-commerce-net
+    #entrypoint: /bin/sh -c "chmod go-w /usr/share/filebeat/filebeat.yml && filebeat -e -strict.perms=false"  #리눅스용
+    entrypoint: /bin/sh -c "filebeat -e -strict.perms=false"  #윈도우용
+
 
 volumes:
   esdata: # Volume for Elasticsearch persistent data

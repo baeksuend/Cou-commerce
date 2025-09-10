@@ -11,6 +11,8 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Digits;
 
+import org.hibernate.annotations.ColumnDefault;
+
 import com.backsuend.coucommerce.common.entity.BaseTimeEntity;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -42,32 +44,36 @@ public class ProductSummary extends BaseTimeEntity {
 
 	@Schema(description = "조회수", example = "412")
 	@Digits(integer = 10, fraction = 0, message = "숫자만 입력가능합니다.")
+	@ColumnDefault("'0'")
 	@Column(name = "view_count")
-	private int viewCount = 0;
+	private int viewCount;
 
 	@Schema(description = "구매 수량", example = "1")
 	@Digits(integer = 10, fraction = 0, message = "숫자만 입력가능합니다.")
+	@ColumnDefault("'0'")
 	@Column(name = "order_count")
-	private int orderCount = 0;
+	private int orderCount;
 
 	@Schema(description = "찜", example = "2")
 	@Digits(integer = 10, fraction = 0, message = "숫자만 입력가능합니다.")
+	@ColumnDefault("'0'")
 	@Column(name = "zim_count")
-	private int zimCount = 0;
+	private int zimCount;
 
 	@Schema(description = "리뷰 개수", example = "3")
 	@Digits(integer = 10, fraction = 0, message = "숫자만 입력가능합니다.")
+	@ColumnDefault("'0'")
 	@Column(name = "review_count")
-	private int reviewCount = 0;
+	private int reviewCount;
 
 	@Schema(description = "평균 총점", example = "10.5")
-	//@Digits(integer = 10, fraction = 1, message = "숫자만 입력가능합니다.")
+	@ColumnDefault("'0'")
 	@Column(name = "review_total_score")
-	private double reviewTotalScore = 0;
+	private double reviewTotalScore;
 
 	@Schema(description = "평균 평점", example = "3.5")
-	//@Digits(integer = 10, fraction = 1, message = "숫자만 입력가능합니다.")
+	@ColumnDefault("'0'")
 	@Column(name = "review_avg_score")
-	private double reviewAvgScore = 0;
+	private double reviewAvgScore;
 
 }

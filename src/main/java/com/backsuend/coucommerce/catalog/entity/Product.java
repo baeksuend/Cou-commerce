@@ -115,6 +115,7 @@ public class Product extends BaseTimeEntity {
 	@OneToOne(mappedBy = "product", cascade = CascadeType.ALL)
 	private ProductSummary productSummary;
 
+	@Builder.Default
 	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<ProductThumbnail> productThumbnails = new ArrayList<>();
 

@@ -71,6 +71,7 @@ public class ProductServiceListTest {
 		Long productId = 1L;
 
 		//회원 테이블 생성
+		//회원 테이블 생성
 		member = Member.builder()
 			.id(memberId)
 			.email("hong@naver.com")
@@ -80,7 +81,7 @@ public class ProductServiceListTest {
 			.role(Role.SELLER)
 			.status(MemberStatus.ACTIVE)
 			.build();
-
+		
 		//product 생성
 		int page = 1;
 		int pageSize = 10;
@@ -162,7 +163,8 @@ public class ProductServiceListTest {
 			.getProductsListTypeUser(eq(sortType), eq(memberId), eq(keyword), eq(cate), eq(pageable));
 
 		// when
-		Page<ProductResponse> result = productService.getProductsUser(req, memberId, cate);
+		Member member = Member.builder().id(memberId).build();
+		Page<ProductResponse> result = productService.getProductsUser(req, member, cate);
 
 		// then
 		assertThat(result).isNotNull();
@@ -192,7 +194,8 @@ public class ProductServiceListTest {
 			.getProductsListTypeSeller(eq(sortType), eq(member), eq(keyword), eq(cate), eq(pageable));
 
 		// when
-		Page<ProductResponse> result = productService.getProductsSeller(req, memberId, cate);
+		Member member = Member.builder().id(memberId).build();
+		Page<ProductResponse> result = productService.getProductsSeller(req, member, cate);
 
 		// then
 		assertThat(result).isNotNull();
