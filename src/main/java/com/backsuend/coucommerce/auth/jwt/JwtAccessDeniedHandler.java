@@ -28,7 +28,7 @@ public class JwtAccessDeniedHandler implements AccessDeniedHandler {
 	public void handle(HttpServletRequest request, HttpServletResponse response,
 		AccessDeniedException accessDeniedException)
 		throws IOException {
-		log.warn("Access denied for user: {}, path: {}", request.getRemoteUser(), request.getRequestURI());
+		log.warn("사용자 접근 거부: {}, 경로: {}", request.getRemoteUser(), request.getRequestURI());
 
 		response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
