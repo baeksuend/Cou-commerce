@@ -53,7 +53,7 @@ public class ReviewController {
 		Page<ReviewResponseDto> responseDto = reviewService.getReviews(productId, page - 1, isAsc);
 		PageResponse<ReviewResponseDto> reviewResponseDto = new PageResponse<>(responseDto, 10);
 
-		log.debug("[API] 리뷰목록 호출 결과 데이터: {}", reviewResponseDto); // 상세 데이터 (개발용)
+		log.debug("[API] 리뷰목록 호출 결과 데이터: {}", reviewResponseDto.getTotalElements()); // 상세 데이터 (개발용)
 
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(200),
@@ -78,7 +78,7 @@ public class ReviewController {
 		ReviewResponseDto responseDto
 			= reviewService.readView(productId, reviewId, userDetails.getId());
 
-		log.debug("[API] 리뷰내용 호출 결과 데이터: {}", responseDto);
+		log.debug("[API] 리뷰내용 호출 결과 데이터: {}", responseDto.getId());
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(200),
 				"내용조회 성공",
@@ -102,7 +102,7 @@ public class ReviewController {
 		ReviewResponseDto responseDto
 			= reviewService.createReview(productId, requestDto, userDetails.getId());    //, userDetails
 
-		log.debug("[API] 리뷰등록 결과 데이터: {}", responseDto);
+		log.debug("[API] 리뷰등록 결과 데이터: {}", responseDto.getId());
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(201),
 				"등록 성공",
@@ -125,7 +125,7 @@ public class ReviewController {
 		ReviewResponseDto responseDto
 			= reviewService.updateReview(productId, reviewId, requestDto, userDetails.getId());
 
-		log.debug("[API] 리뷰수정 결과 데이터 : {}", responseDto);
+		log.debug("[API] 리뷰수정 결과 데이터 : {}", responseDto.getId());
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(200),
 				"수정 성공",

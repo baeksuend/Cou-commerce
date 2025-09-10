@@ -92,14 +92,11 @@ public class ProductServiceImpl implements ProductService {
 	public Page<Product> getProductsListTypeUser(ProductSortType sortType, long memberId,
 		String keyword, Category cate, Pageable pageable) {
 
-		System.out.println("getProductsListTypeUser  1111");
-
-		log.debug("getProductsListTypeUser 호출: sortType={}, memberId={}, keyword={}, category={}, pageable={}",
-			sortType, memberId, keyword, cate, pageable);
-
-		System.out.println("getProductsListTypeUser  2222");
-
 		try (var ignored = MDCLogging.withContexts(Map.of(
+			"search_sortType", String.valueOf(sortType),
+			"search_keyword", String.valueOf(keyword),
+			"search_cate", String.valueOf(cate),
+			"memberId", String.valueOf(memberId)
 		))) {
 
 			log.info("getProductsListTypeUser 사용자 목록 요청 ");
@@ -119,16 +116,24 @@ public class ProductServiceImpl implements ProductService {
 	public Page<Product> getProductsListTypeSeller(ProductSortType sortType, Member member,
 		String keyword, Category cate, Pageable pageable) {
 
-		log.debug("getProductsListTypeSeller 호출: sortType={}, member={}, keyword={}, category={}, pageable={}",
-			sortType, member, keyword, cate, pageable);
+		try (var ignored = MDCLogging.withContexts(Map.of(
+			"search_sortType", String.valueOf(sortType),
+			"search_keyword", String.valueOf(keyword),
+			"search_cate", String.valueOf(cate),
+			"memberId", String.valueOf(member.getId())
+		))) {
 
-		return switch (sortType) {
-			case RECENT -> productRepository.sellerListCategory_RECENT(member, keyword, cate, pageable);
-			case LOW_PRICE -> productRepository.userListCategory_LOW_PRICE(cate, keyword, pageable);
-			case HIGH_PRICE -> productRepository.userListCategory_HIGH_PRICE(cate, keyword, pageable);
-			case SALE_COUNT_TOTAL -> productRepository.userListCategory_SALE_COUNT_TOTAL(cate, keyword, pageable);
-			case REVIEW_SCORE_TOTAL -> productRepository.userListCategory_REVIEW_SCORE_TOTAL(cate, keyword, pageable);
-		};
+			log.info("getProductsListTypeSeller 판매자 목록 요청 ");
+
+			return switch (sortType) {
+				case RECENT -> productRepository.sellerListCategory_RECENT(member, keyword, cate, pageable);
+				case LOW_PRICE -> productRepository.userListCategory_LOW_PRICE(cate, keyword, pageable);
+				case HIGH_PRICE -> productRepository.userListCategory_HIGH_PRICE(cate, keyword, pageable);
+				case SALE_COUNT_TOTAL -> productRepository.userListCategory_SALE_COUNT_TOTAL(cate, keyword, pageable);
+				case REVIEW_SCORE_TOTAL ->
+					productRepository.userListCategory_REVIEW_SCORE_TOTAL(cate, keyword, pageable);
+			};
+		}
 	}
 
 	/**
@@ -139,15 +144,25 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public Product getProductsReadType(ProductReadType readType, Member member, long productId, long memberId) {
 
-		log.debug("getProductsReadType 호출: readType={}, productId={}, memberId={}",
-			readType, productId, memberId);
-
-		return switch (readType) {
-			case ProductReadType.USER_READ -> productRepository.findUserRead(productId)
-				.orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND, "관련 상품이 없습니다."));
-			case ProductReadType.SELLER_READ -> productRepository.findSellerRead(member, productId)
-				.orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND, "관련 상품이 없습니다."));
-		};
+		try (var ignored = MDCLogging.withContexts(Map.of(
+			"search_readType", String.valueOf(ProductReadType.USER_READ),
+			"productId", String.valueOf(productId),
+			"memberId", String.valueOf(memberId)
+		))) {
+			log.info("getProductsReadType 상품 내용보기 요청");
+			return switch (readType) {
+				case ProductReadType.USER_READ -> productRepository.findUserRead(productId)
+					.orElseThrow(() -> {
+						log.info("사용자가 요청한 관련 상품이 없습니다.");
+						return new NotFoundException(ErrorCode.NOT_FOUND, "관련 상품이 없습니다.");
+					});
+				case ProductReadType.SELLER_READ -> productRepository.findSellerRead(member, productId)
+					.orElseThrow(() -> {
+						log.info("판매자가 요청한 관련 상품이 없습니다.");
+						return new NotFoundException(ErrorCode.NOT_FOUND, "관련 상품이 없습니다.");
+					});
+			};
+		}
 	}
 
 	/**

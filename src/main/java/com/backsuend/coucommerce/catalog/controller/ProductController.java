@@ -47,7 +47,7 @@ public class ProductController {
 		Page<ProductResponse> pageList = productService.getProductsMain(ProductMainDisplay.MAIN_BEST, page);
 		PageResponse<ProductResponse> productResponse = new PageResponse<>(pageList, page);
 
-		log.debug("[API] 메인인기상품 main_best 결과 데이터: {}", productResponse); // 상세 데이터 (개발용)
+		log.debug("[API] 메인인기상품 main_best 결과 데이터: {}", productResponse.getTotalElements()); // 상세 데이터 (개발용)
 
 		return ResponseEntity.ok().body(ApiResponse.ok(productResponse));
 	}
@@ -66,7 +66,7 @@ public class ProductController {
 		Page<ProductResponse> pageList = productService.getProductsMain(ProductMainDisplay.MAIN_GOOD_REVIEW, page);
 		PageResponse<ProductResponse> productResponse = new PageResponse<>(pageList, page);
 
-		log.debug("[API] 메인 리뷰많은순 good_view 결과 데이터: {}", productResponse); // 상세 데이터 (개발용)
+		log.debug("[API] 메인 리뷰많은순 good_view 결과 데이터: {}", productResponse.getTotalElements()); // 상세 데이터 (개발용)
 
 		return ResponseEntity.ok().body(ApiResponse.ok(productResponse));
 	}
@@ -86,7 +86,7 @@ public class ProductController {
 		Page<ProductResponse> pageList = productService.getProductsUser(req, member, category);
 		PageResponse<ProductResponse> productResponse = new PageResponse<>(pageList, req.getPageSize());
 
-		log.debug("[API] category 내용 결과 데이터: {}", productResponse);
+		log.debug("[API] category 내용 결과 데이터: {}", productResponse.getTotalElements());
 
 		return ResponseEntity.ok().body(ApiResponse.ok(productResponse));
 
@@ -104,7 +104,7 @@ public class ProductController {
 
 		ProductResponse productResponse = productService.getRead(ProductReadType.USER_READ, productId, 0L);
 
-		log.debug("[API] 상품상세내용 결과 데이터: {}", productResponse);
+		log.debug("[API] 상품상세내용 결과 데이터: {}", productResponse.getId());
 
 		return ResponseEntity.ok().body(ApiResponse.ok(productResponse));
 	}

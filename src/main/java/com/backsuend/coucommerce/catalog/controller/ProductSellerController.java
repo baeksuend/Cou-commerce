@@ -67,7 +67,7 @@ public class ProductSellerController {
 		Page<ProductResponse> pageList = productService.getProductsSeller(req, member, null);
 		PageResponse<ProductResponse> productResponse = new PageResponse<>(pageList, req.getPageSize());
 
-		log.debug("[API] /api/v1/seller/products 결과 데이터: {}", productResponse); // 상세 데이터 (개발용)
+		log.debug("[API] /api/v1/seller/products 결과 데이터: {}", productResponse.getTotalElements()); // 상세 데이터 (개발용)
 
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(200),
@@ -94,7 +94,7 @@ public class ProductSellerController {
 		long memberId = userDetails.getId();
 		ProductResponse productResponse = productService.getRead(ProductReadType.SELLER_READ, productId, memberId);
 
-		log.info("[API] /api/v1/seller/products/ 결과 데이터: {}", productResponse);
+		log.info("[API] /api/v1/seller/products/ 결과 데이터: {}", productResponse.getId());
 
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(200),
@@ -127,7 +127,7 @@ public class ProductSellerController {
 		long memberId = userDetails.getId();
 		ProductResponse productResponse = productService.getCreate(dto, memberId, images);
 
-		log.info("[API] /api/v1/seller/products 등록 결과 데이터: {}", productResponse);
+		log.info("[API] /api/v1/seller/products 등록 결과 데이터: {}", productResponse.getId());
 
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(201),
@@ -161,7 +161,7 @@ public class ProductSellerController {
 		long memberId = userDetails.getId();
 		ProductResponse productResponse = productService.getEdit(productId, memberId, dto, images);
 
-		log.info("[API] /api/v1/seller/products 수정결과 데이터: {}", productResponse);
+		log.info("[API] /api/v1/seller/products 수정결과 데이터: {}", productResponse.getId());
 
 		return ResponseEntity.ok().body(ApiResponse.ok(productResponse));
 	}
