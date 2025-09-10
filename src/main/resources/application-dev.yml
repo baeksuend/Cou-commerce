@@ -17,10 +17,6 @@ spring:
       port: 6379
       timeout: 2000ms
 
-    elasticsearch:
-      client:
-        endpoints: localhost:9200
-
 server:
   port: 8080
 
@@ -29,13 +25,7 @@ jwt:
   access-token-expiration-time: 3600000 # 1시간
   refresh-token-expiration-time: 86400000 # 24시간
 
-
-##
-management:
-  endpoints:
-    web:
-      exposure:
-        include: prometheus
-  endpoint:
-    prometheus:
-  ##
+# Feature Flags
+feature:
+  email-verification:
+    enabled: false # 개발 환경에서 이메일 인증 기능 허용

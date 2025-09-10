@@ -21,6 +21,8 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Digits;
+import jakarta.persistence.Version;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -28,6 +30,8 @@ import jakarta.validation.constraints.Size;
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.catalog.enums.Category;
 import com.backsuend.coucommerce.common.entity.BaseTimeEntity;
+import com.backsuend.coucommerce.common.exception.BusinessException;
+import com.backsuend.coucommerce.common.exception.ErrorCode;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -103,6 +107,9 @@ public class Product extends BaseTimeEntity {
 	@Column(name = "is_status", nullable = false)
 	private boolean visible;
 
+	@Version
+	private Long version;
+
 	/**
 	 *  summery 엔티티와 1:1 동일하게 세팅
 	 * */
@@ -117,4 +124,15 @@ public class Product extends BaseTimeEntity {
 		this.deletedAt = LocalDateTime.now();
 	}
 
+	/**재고 감소 + 유효성 검증**/
+	public void reduceStock(int quantity) {
+		if (quantity <= 0) {
+			throw new IllegalArgumentException("차감할 수량은 0보다 커야 합니다.");
+		}
+		if (this.stock < quantity) {
+			throw new BusinessException(ErrorCode.INVALID_INPUT,
+				"재고가 부족합니다. 요청수량=" + quantity + ", 남은재고=" + this.stock);
+		}
+		this.stock -= quantity;
+	}
 }

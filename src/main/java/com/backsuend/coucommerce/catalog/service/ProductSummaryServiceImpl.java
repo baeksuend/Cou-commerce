@@ -22,10 +22,10 @@ public class ProductSummaryServiceImpl implements ProductSummaryService {
 	}
 
 	@Override
-	public void setOrderCount(Long productId, int count) {
-		log.info("상품 주문수 증가 요청: productId={}, count={}", productId, count);
-		productSummaryRepository.incrementOrderCount(productId, count);
-		log.debug("상품 주문수 증가 완료: productId={}, count={}", productId, count);
+	public void setOrderCount(Long productId, int quantity) {
+		log.info("상품 주문수 증가 요청: productId={}", productId);
+		productSummaryRepository.incrementOrderCount(productId, quantity);
+		log.debug("상품 주문수 증가 완료: productId={}", productId);
 	}
 
 	//@Override

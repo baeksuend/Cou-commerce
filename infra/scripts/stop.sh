@@ -17,6 +17,8 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 COMPOSE_DIRS=(
   "${ROOT_DIR}/mysql"
   "${ROOT_DIR}/redis"
+  "${ROOT_DIR}/monitoring"
+  "${ROOT_DIR}/elk"
 )
 
 for d in "${COMPOSE_DIRS[@]}"; do

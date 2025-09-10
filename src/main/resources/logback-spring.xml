@@ -69,7 +69,7 @@
 
     <!-- 로거 설정 -->
     <!-- 보안 관련 로거 -->
-    <logger name="securityLogger" level="DEBUG" additivity="false">
+    <logger name="securityLogger" level="INFO" additivity="false">
         <appender-ref ref="SECURITY_FILE"/>
         <!-- 개발 환경에서는 콘솔에도 출력 -->
         <appender-ref ref="STDOUT_JSON"/>

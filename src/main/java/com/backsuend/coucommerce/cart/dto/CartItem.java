@@ -1,5 +1,10 @@
 package com.backsuend.coucommerce.cart.dto;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,9 +21,19 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class CartItem {
+	@NotNull
+	@Positive
 	private Long productId;     // Product.id
-	private String name;        // 담을 당시 상품 이름 스냅샷
-	private int price;          // 담을 당시 가격 스냅샷
-	private int quantity;       // 담은 수량
+
+	@Size(max = 255)
+	private String productName;        // 담을 당시 상품 이름 스냅샷
+
+	@Min(0)
+	private int priceAtAdd;          // 담을 당시 가격 스냅샷
+
+	@Min(1)
+	private int quantity;       // 담은 수량 (1 이상)
+
+	@Size(max = 255)
 	private String detail;      // 사용자가 선택한 옵션 (문자열)
 }

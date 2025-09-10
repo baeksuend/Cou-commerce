@@ -1,5 +1,7 @@
 package com.backsuend.coucommerce.cart.config;
 
+import java.time.Duration;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -14,6 +16,13 @@ import com.backsuend.coucommerce.cart.dto.CartItem;
  */
 @Configuration
 public class CartRedisConfig {
+	/**
+	 * Cart 기본 TTL(Duration): 30일.
+	 * 실제 TTL 적용은 서비스 계층(write 시점)에서 보장하며,
+	 * 설정 상수는 참조/주입 용도로 사용합니다.
+	 */
+
+	public static final Duration CART_TTL = Duration.ofDays(30);
 
 	@Bean(name = "cartRedisTemplate")
 	public RedisTemplate<String, CartItem> cartRedisTemplate(RedisConnectionFactory cf) {

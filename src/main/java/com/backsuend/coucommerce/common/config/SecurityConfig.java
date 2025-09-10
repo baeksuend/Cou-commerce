@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -34,7 +36,6 @@ public class SecurityConfig {
 
 	private static final String[] WHITE_LIST = {
 		"/api/v1/auth/**",    // Auth API
-		"/api/v1/products/**",    // Products API
 		"/uploads/**",    // 이미지 업로드 경로
 		"/static/**",    // 정적 이미지 경로
 		"/swagger-ui/**",     // Swagger UI
@@ -60,6 +61,16 @@ public class SecurityConfig {
 		this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
 		this.jwtAccessDeniedHandler = jwtAccessDeniedHandler;
 		this.rateLimitingFilter = rateLimitingFilter;
+	}
+
+	@Bean
+	@Order(1)
+	public SecurityFilterChain actuatorSecurityFilterChain(HttpSecurity http) throws Exception {
+		http
+			.securityMatcher("/actuator/**")
+			.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+			.csrf(AbstractHttpConfigurer::disable);
+		return http.build();
 	}
 
 	@Bean
@@ -113,6 +124,7 @@ public class SecurityConfig {
 			// - requestMatchers(WHITE_LIST).permitAll(): WHITE_LIST에 정의된 URL은 인증 없이 접근 허용
 			// - anyRequest().authenticated(): 그 외 모든 요청은 인증된 사용자만 접근 허용
 			.authorizeHttpRequests(auth -> auth
+				.requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
 				.requestMatchers(WHITE_LIST).permitAll()
 				.anyRequest().authenticated()
 			)

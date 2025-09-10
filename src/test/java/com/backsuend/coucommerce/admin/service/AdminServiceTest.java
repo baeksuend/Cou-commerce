@@ -16,6 +16,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import com.backsuend.coucommerce.admin.dto.SellerRegistrationResponse;
 import com.backsuend.coucommerce.admin.dto.SellerRejectionRequest;
@@ -23,9 +28,12 @@ import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.auth.entity.MemberStatus;
 import com.backsuend.coucommerce.auth.entity.Role;
 import com.backsuend.coucommerce.auth.service.RefreshTokenService;
+import com.backsuend.coucommerce.auth.service.UserDetailsImpl;
 import com.backsuend.coucommerce.common.exception.BusinessException;
 import com.backsuend.coucommerce.common.exception.ErrorCode;
+import com.backsuend.coucommerce.common.service.AuthorizationService;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
+import com.backsuend.coucommerce.sellerregistration.dto.SellerRegistrationSearchRequest;
 import com.backsuend.coucommerce.sellerregistration.entity.SellerRegistration;
 import com.backsuend.coucommerce.sellerregistration.entity.SellerRegistrationStatus;
 import com.backsuend.coucommerce.sellerregistration.repository.SellerRegistrationRepository;
@@ -42,6 +50,9 @@ class AdminServiceTest {
 
 	@Mock
 	private SellerRegistrationRepository sellerRegistrationRepository;
+
+	@Mock
+	private AuthorizationService authorizationService;
 
 	@InjectMocks
 	private AdminService adminService;
@@ -225,26 +236,37 @@ class AdminServiceTest {
 		}
 
 		@Test
-		@DisplayName("성공 - 판매자 등록 신청 목록 조회")
-		void getPendingSellerRegistrations_success() {
+		@DisplayName("성공 - 판매자 등록 신청 목록 검색 및 페이징 조회")
+		void searchSellerRegistrations_success() {
 			// given
-			when(sellerRegistrationRepository.findByStatus(SellerRegistrationStatus.APPLIED)).thenReturn(List.of(registration));
+			doNothing().when(authorizationService).authorizeAdmin();
+			when(authorizationService.getCurrentUser()).thenReturn(UserDetailsImpl.build(admin));
+			SellerRegistrationSearchRequest searchRequest = SellerRegistrationSearchRequest.builder()
+				.status(SellerRegistrationStatus.APPLIED)
+				.build();
+			Pageable pageable = PageRequest.of(0, 10, Sort.by("createdAt").descending());
+			Page<SellerRegistration> page = new PageImpl<>(List.of(registration), pageable, 1);
+
+			when(sellerRegistrationRepository.search(searchRequest, pageable)).thenReturn(page);
 
 			// when
-			List<SellerRegistrationResponse> responses = adminService.getPendingSellerRegistrations();
+			Page<SellerRegistrationResponse> responses = adminService.searchSellerRegistrations(searchRequest,
+				pageable);
 
 			// then
-			assertThat(responses).hasSize(1);
-			SellerRegistrationResponse response = responses.getFirst();
+			assertThat(responses.getContent()).hasSize(1);
+			SellerRegistrationResponse response = responses.getContent().getFirst();
 			assertThat(response.registrationId()).isEqualTo(registration.getId());
 			assertThat(response.userEmail()).isEqualTo(member.getEmail());
 			assertThat(response.storeName()).isEqualTo(registration.getStoreName());
+			verify(sellerRegistrationRepository, times(1)).search(searchRequest, pageable);
 		}
 
 		@Test
 		@DisplayName("성공 - 판매자 등록 신청 승인")
 		void approveSellerRegistration_success() {
 			// given
+			doNothing().when(authorizationService).authorizeAdmin();
 			when(sellerRegistrationRepository.findById(registration.getId())).thenReturn(Optional.of(registration));
 			when(memberRepository.findById(admin.getId())).thenReturn(Optional.of(admin));
 
@@ -263,6 +285,7 @@ class AdminServiceTest {
 		@DisplayName("실패 - 이미 처리된 신청을 승인")
 		void approveSellerRegistration_fail_alreadyProcessed() {
 			// given
+			doNothing().when(authorizationService).authorizeAdmin();
 			registration.approve(admin); // 이미 승인된 상태로 변경
 			when(sellerRegistrationRepository.findById(registration.getId())).thenReturn(Optional.of(registration));
 			when(memberRepository.findById(admin.getId())).thenReturn(Optional.of(admin));
@@ -278,6 +301,7 @@ class AdminServiceTest {
 		@DisplayName("성공 - 판매자 등록 신청 거절")
 		void rejectSellerRegistration_success() {
 			// given
+			doNothing().when(authorizationService).authorizeAdmin();
 			SellerRejectionRequest request = new SellerRejectionRequest("서류 미비");
 			when(sellerRegistrationRepository.findById(registration.getId())).thenReturn(Optional.of(registration));
 			when(memberRepository.findById(admin.getId())).thenReturn(Optional.of(admin));

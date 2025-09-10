@@ -8,6 +8,7 @@ public enum OrderStatus {
 	PAID,       // 결제 완료
 	SHIPPED,    // 배송중
 	COMPLETED,  // 배송완료
-	CANCELED    // 취소됨
+	CANCELED,    // 취소됨
+	REFUNDED    // 환불됨
 }
 

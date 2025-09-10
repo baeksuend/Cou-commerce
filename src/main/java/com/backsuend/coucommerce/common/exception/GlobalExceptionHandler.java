@@ -40,6 +40,19 @@ public class GlobalExceptionHandler {
 		return (s == null || s.isBlank()) ? null : s;
 	}
 
+	/**
+	 * 에러 코드 매핑 표준화
+	 * - 400: 잘못된 요청(검증 실패, 타입 불일치, 잘못된 인자 등)
+	 * - 401: 인증 실패
+	 * - 403: 권한 없음
+	 * - 404: 리소스 없음
+	 * - 409: 충돌(비즈니스 규칙 위반 등)
+	 * - 500: 내부 서버 오류
+	 *
+	 * 검증 계층(MethodArgumentNotValid 등)은 ApiValidationAdvice가 우선 처리(@Order(HIGHEST_PRECEDENCE)).
+	 * 본 핸들러는 그 외 전역 예외를 표준 스키마로 응답합니다.
+	 */
+
 	/* ======= BusinessException ======= */
 	@ExceptionHandler(BusinessException.class)
 	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleBusiness(
@@ -135,6 +148,11 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(DataIntegrityViolationException.class)
 	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleDataIntegrity(
 		DataIntegrityViolationException ex, HttpServletRequest req) {
+
+		// "idx_member_email" 문자열을 포함하는 경우, 이메일 중복으로 간주
+		if (ex.getMessage() != null && ex.getMessage().contains("idx_member_email")) {
+			return build(ErrorCode.CONFLICT, "이미 등록된 이메일입니다.", null, req);
+		}
 
 		return build(ErrorCode.DATA_INTEGRITY_VIOLATION, "데이터 제약조건 위반", null, req);
 	}

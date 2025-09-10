@@ -6,7 +6,7 @@ public interface ProductSummaryService {
 	void setViewCount(Long productId);
 
 	//주문완료시 업데이트
-	void setOrderCount(Long productId, int count);
+	void setOrderCount(Long productId, int quntity);
 
 	//좋아요 클릭시 업데이트
 	//void setZimCount(Long productId);

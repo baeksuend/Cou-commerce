@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.backsuend.coucommerce.auth.entity.Member;
 import com.backsuend.coucommerce.auth.entity.Role;
 import com.backsuend.coucommerce.common.exception.BusinessException;
+import com.backsuend.coucommerce.common.service.AuthorizationService;
 import com.backsuend.coucommerce.member.repository.MemberRepository;
 import com.backsuend.coucommerce.sellerregistration.dto.CreateSellerRegistrationRequest;
 import com.backsuend.coucommerce.sellerregistration.entity.SellerRegistration;
@@ -38,9 +40,18 @@ class SellerRegistrationServiceTest {
 	@Mock
 	private SellerRegistrationRepository sellerRegistrationRepository;
 
+	@Mock
+	private AuthorizationService authorizationService;
+
 	@Nested
 	@DisplayName("판매자 전환 신청 (apply) 테스트")
 	class ApplyForSellerTest {
+
+		@BeforeEach
+		void setUp() {
+			doNothing().when(authorizationService).authorizeCurrentUser(anyLong());
+		}
+
 		@Test
 		@DisplayName("성공")
 		void apply_success() {

@@ -33,23 +33,27 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'org.springframework.boot:spring-boot-starter-batch'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
-    compileOnly 'org.projectlombok:lombok'
+    compileOnly 'org.projectlombok:lombok:1.18.38'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'com.mysql:mysql-connector-j'
-    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok:1.18.38'
 
     // 테스트 의존성
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.batch:spring-batch-test:5.1.2'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'org.mockito:mockito-inline:5.2.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testCompileOnly 'org.projectlombok:lombok:1.18.38'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.38'
 
     //JWT
     implementation 'io.jsonwebtoken:jjwt-impl:0.13.0'
@@ -57,8 +61,12 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
 
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
+    // 로깅, 모니터링 관련
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
+    implementation 'io.micrometer:micrometer-core'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 }
 
 tasks.named('test') {
@@ -107,20 +115,4 @@ clean {
 //** compileTestJava 문제발생해서 추가함.
 tasks.named('checkstyleMain') {
     dependsOn tasks.named('compileTestJava')
-}
-//엑추에이터 프로메테우스 관련 의존성 추가
-dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'io.micrometer:micrometer-core'
-    implementation 'io.micrometer:micrometer-registry-prometheus'
-}
-//logback encode
-dependencies {
-    implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
-}
-
-//엘라스틱서치
-dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
-    implementation 'co.elastic.clients:elasticsearch-java:8.11.0' // Elasticsearch 8 Java Client
 }

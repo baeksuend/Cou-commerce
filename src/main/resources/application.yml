@@ -3,7 +3,9 @@ spring:
     default: dev
   application:
     name: cou-commerce
-
+  batch:
+    job:
+      enabled: false
   jpa:
     open-in-view: false
     show-sql: true
@@ -18,8 +20,8 @@ spring:
 
   security:
     user:
-      name: prometheus@gmail.com
-      password: prometheus4523
+      name: admin
+      password: password
 
   jackson:
     deserialization:
@@ -28,32 +30,24 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: your-email@gmail.com
+    password: Gmail app password (계정 비밀번호 아님)
+    sender-name: Cou-commerce 서포트 팀
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
 server:
   port: 8080
 
 logging:
   level:
-    #org.hibernate.type.descriptor.sql.BasicBinder: trace
-    #org.springframework.core.env: DEBUG
-    #org.springframework.security: DEBUG #시큐리티 로깅보기
-
-    # Spring MVC HandlerMapping DEBUG 로그 끄기
-    org.springframework.web.servlet.handler: INFO
-    org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping: INFO
-
-    # Hibernate DEBUG 로그 끄기 (엔티티 매핑, 속성 바인딩)
-    org.hibernate: INFO
-    org.hibernate.type: INFO
-    org.hibernate.SQL: DEBUG           # SQL 쿼리만 보고 싶으면 DEBUG 유지, 안 보려면 INFO
-    org.hibernate.format_sql: INFO     # SQL 포맷팅 로그
-
-    # HikariCP DEBUG 로그 끄기 (커넥션 풀 관련)
-    com.zaxxer.hikari: INFO
-
-    # Spring Security DEBUG 로그 끄고 싶으면
-    org.springframework.security: INFO
-
-
+    org.hibernate.type.descriptor.sql.BasicBinder: trace
+    org.springframework.core.env: DEBUG
+    org.springframework.security: DEBUG #시큐리티 로깅보기
 springdoc:
   api-docs:
     enabled: true
@@ -64,5 +58,22 @@ springdoc:
   use-fqn: true
 
 cors:
-  allowed-origins: http://localhost, http://localhost:3000, http://localhost:9090, http://localhost:8080, http://192.168.0.5:8080
+  allowed-origins: http://localhost:3000, http://localhost:9090, http://localhost:8080, http://192.168.0.5:8080
 
+# Feature Flags
+feature:
+  email-verification:
+    enabled: false # 이메일 인증 기능 비허용
+
+# Actuator 엔드포인트 구성
+management:
+  server:
+    port: 9091 # 관리용 포트 분리
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true

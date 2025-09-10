@@ -72,6 +72,16 @@ public class Payment extends BaseTimeEntity {
 	@Builder.Default
 	private PaymentStatus status = PaymentStatus.PENDING;
 
+	@Column(name = "cancel_requested", nullable = false)
+	@Builder.Default
+	private boolean cancelRequested = false;
+
+	@Column(name = "refund_requested", nullable = false)
+	@Builder.Default
+	private boolean refundRequested = false;
+
+	private String refundReason;
+	
 	/** 외부 PG사 트랜잭션 번호 (Mock일 경우 가짜 ID 발급) */
 	@Column(name = "transaction_id", length = 100, unique = true)
 	private String transactionId;

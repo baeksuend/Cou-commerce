@@ -11,7 +11,8 @@ import com.backsuend.coucommerce.sellerregistration.entity.SellerRegistration;
 import com.backsuend.coucommerce.sellerregistration.entity.SellerRegistrationStatus;
 
 @Repository
-public interface SellerRegistrationRepository extends JpaRepository<SellerRegistration, Long> {
+public interface SellerRegistrationRepository
+	extends JpaRepository<SellerRegistration, Long>, SellerRegistrationRepositoryCustom {
 	Optional<SellerRegistration> findByMember(Member member);
 
 	boolean existsByMember(Member member);
