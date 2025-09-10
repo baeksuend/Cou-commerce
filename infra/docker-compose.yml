@@ -1,0 +1,114 @@
+name: cou-commerce
+
+services:
+  #
+  #  mysql:
+  #    image: mysql:8.4        # LTS(장기지원) 라인 권장
+  #    container_name: mysql   # 공유 네트워크에서 호스트명으로 사용 (개발 편의)
+  #    environment:
+  #      MYSQL_DATABASE: ${MYSQL_DATABASE:-coucommercedb}
+  #      MYSQL_USER: ${MYSQL_USER:-app}
+  #      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-app-secret}
+  #      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-secret}
+  #      TZ: Asia/Seoul
+  #    command:
+  #      - --character-set-server=utf8mb4
+  #      - --collation-server=utf8mb4_0900_ai_ci
+  #      - --default-time-zone=+09:00
+  #      - --max_connections=200
+  #    ports:
+  #      - "${MYSQL_PORT:-3306}:3306"
+  #    volumes:
+  #      - mysql-data:/var/lib/mysql
+  #    healthcheck:
+  #      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD || exit 1" ]
+  #      interval: 5s
+  #      timeout: 5s
+  #      retries: 20
+  #      start_period: 20s
+  #    restart: unless-stopped
+  #    networks:
+  #      - cou-commerce-net
+  #
+  #  redis:
+  #    image: redis:7.4        # 최신 7.4 계열 권장
+  #    container_name: redis   # 공유 네트워크에서 호스트명으로 사용 (개발 편의)
+  #    command: [ "sh","-c","exec redis-server --appendonly ${REDIS_AOF:-yes}" ]
+  #    ports:
+  #      - "${REDIS_PORT:-6379}:6379"
+  #    volumes:
+  #      - redis-data:/data
+  #    healthcheck:
+  #      test: [ "CMD", "redis-cli", "ping" ]
+  #      interval: 5s
+  #      timeout: 3s
+  #      retries: 20
+  #      start_period: 10s
+  #    restart: unless-stopped
+  #    networks:
+  #      - cou-commerce-net
+
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.24
+    environment:
+      - discovery.type=single-node
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.24
+    ports:
+      - "5601:5601"
+    environment:
+      #- ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - elasticsearch
+
+  logstash:
+    image: logstash:7.17.3
+    container_name: logstash
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+    ports:
+      - "5044:5044"
+    depends_on:
+      - elasticsearch
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:7.17.24
+    container_name: filebeat
+    user: root
+    volumes:
+      - ./logs:/usr/share/filebeat/logs:ro
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+    depends_on:
+      - logstash
+    #entrypoint: /bin/sh -c "chmod go-w /usr/share/filebeat/filebeat.yml && filebeat -e -strict.perms=false"  #리눅스용
+    entrypoint: /bin/sh -c "filebeat -e -strict.perms=false"  #윈도우용
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./token.jwt:/etc/prometheus/token.jwt  # 필요한 경우
+    ports:
+      - "9090:9090"
+
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+#networks:
+#  cou-commerce-net:
+#    external: true
+
+volumes:
+  data:
+  grafana-data:

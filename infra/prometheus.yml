@@ -1,0 +1,18 @@
+global:
+  scrape_interval: 15s  # 수집 주기
+
+scrape_configs:
+  # Prometheus 자기 자신 모니터링
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: [ 'host.docker.internal:9090' ]
+
+  # Spring Boot 모니터링
+  - job_name: 'spring-boot'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'host.docker.internal:8080' ]
+
+    basic_auth:
+      username: 'prometheus@gmail.com'
+      password: 'prometheus4523'
