@@ -125,8 +125,8 @@ public class AdminController {
 	@GetMapping("/seller-registrations")
 	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<ApiResponse<Page<SellerRegistrationResponse>>> searchSellerRegistrations(
-		@Parameter(description = "판매자 등록 신청 검색 조건", required = false) @ModelAttribute SellerRegistrationSearchRequest request,
-		@Parameter(description = "페이징 정보 (page, size, sort)", required = false) Pageable pageable) {
+		@Parameter(description = "판매자 등록 신청 검색 조건") @ModelAttribute SellerRegistrationSearchRequest request,
+		@Parameter(description = "페이징 정보 (page, size, sort)") Pageable pageable) {
 		Page<SellerRegistrationResponse> response = adminService.searchSellerRegistrations(request, pageable);
 		return ApiResponse.ok(response).toResponseEntity();
 	}
