@@ -67,6 +67,7 @@ public class ProductSellerController {
 		Page<ProductResponse> pageList = productService.getProductsSeller(req, member, null);
 		PageResponse<ProductResponse> productResponse = new PageResponse<>(pageList, req.getPageSize());
 
+		log.info("[판매자] 상품 목록 호출 완료");
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(200),
 				"상품목록 조회 성공",
@@ -124,7 +125,7 @@ public class ProductSellerController {
 		long memberId = userDetails.getId();
 		ProductResponse productResponse = productService.getCreate(dto, memberId, images);
 
-		log.info("[판매자] 상품등록 요청 완료");
+	  log.info("[판매자] 상품등록 요청 완료");
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(201),
 				"상품등록 완료",
