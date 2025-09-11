@@ -61,13 +61,11 @@ public class ProductSellerController {
 		@AuthenticationPrincipal UserDetailsImpl userDetails
 	) {
 
-		log.info("[API] GET /api/v1/seller/products 호출");
+		log.info("[판매자] 상품 목록 호출 GET /api/v1/seller/products 호출");
 
 		Member member = Member.builder().id(userDetails.getId()).email(userDetails.getUsername()).build();
 		Page<ProductResponse> pageList = productService.getProductsSeller(req, member, null);
 		PageResponse<ProductResponse> productResponse = new PageResponse<>(pageList, req.getPageSize());
-
-		log.debug("[API] /api/v1/seller/products 결과 데이터: {}", productResponse.getTotalElements()); // 상세 데이터 (개발용)
 
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(200),
@@ -89,13 +87,12 @@ public class ProductSellerController {
 		@AuthenticationPrincipal UserDetailsImpl userDetails
 	) {
 
-		log.info("[API] GET /api/v1/seller/products/{} 호출", productId);
+		log.info("[판매자] 상품상세내용 호출  GET /api/v1/seller/products/{} 호출", productId);
 
 		long memberId = userDetails.getId();
 		ProductResponse productResponse = productService.getRead(ProductReadType.SELLER_READ, productId, memberId);
 
-		log.info("[API] /api/v1/seller/products/ 결과 데이터: {}", productResponse.getId());
-
+		log.info("[판매자] 상품상세내용 호출 완료");
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(200),
 				"상품내용 조회 성공",
@@ -118,7 +115,7 @@ public class ProductSellerController {
 		@AuthenticationPrincipal UserDetailsImpl userDetails
 	) {
 
-		log.info("[API] POST /api/v1/seller/products 호출");
+		log.info("[판매자] 상품등록 요청 POST /api/v1/seller/products 호출");
 
 		if (images == null) {
 			images = new ArrayList<>();
@@ -127,8 +124,7 @@ public class ProductSellerController {
 		long memberId = userDetails.getId();
 		ProductResponse productResponse = productService.getCreate(dto, memberId, images);
 
-		log.info("[API] /api/v1/seller/products 등록 결과 데이터: {}", productResponse.getId());
-
+		log.info("[판매자] 상품등록 요청 완료");
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(201),
 				"상품등록 완료",
@@ -152,7 +148,7 @@ public class ProductSellerController {
 		@AuthenticationPrincipal UserDetailsImpl userDetails
 	) {
 
-		log.info("[API] PUT /api/v1/seller/products/{} 호출", productId);
+		log.info("[판매자] 상품수정 요청 PUT /api/v1/seller/products/{} 호출", productId);
 
 		if (images == null) {
 			images = new ArrayList<>();
@@ -161,8 +157,7 @@ public class ProductSellerController {
 		long memberId = userDetails.getId();
 		ProductResponse productResponse = productService.getEdit(productId, memberId, dto, images);
 
-		log.info("[API] /api/v1/seller/products 수정결과 데이터: {}", productResponse.getId());
-
+		log.info("[판매자] 상품수정 요청 완료");
 		return ResponseEntity.ok().body(ApiResponse.ok(productResponse));
 	}
 
@@ -179,13 +174,12 @@ public class ProductSellerController {
 		@AuthenticationPrincipal UserDetailsImpl userDetails
 	) {
 
-		log.info("[API] DELETE /api/v1/seller/products/{} 호출", productId);
+		log.info("[판매자] 상품삭제 요청 DELETE /api/v1/seller/products/{} 호출", productId);
 
 		long memberId = userDetails.getId();
 		productService.getDelete(productId, memberId);
 
-		log.info("[API] productId ={} 삭제성공", productId);
-
+		log.info("[판매자] 상품삭제 요청 완료");
 		return ResponseEntity.noContent().build();
 	}
 
