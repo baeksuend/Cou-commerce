@@ -16,11 +16,11 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ReviewRequestDto {
 
-	@Schema(description = "리뷰내용", example = "리뷰내용입니다.")
+	@Schema(description = "리뷰내용", example = "리뷰내용입니다.11")
 	@NotBlank(message = "리뷰내용은 필수입니다.")
 	private String content;
 
-	@Schema(description = "부모 아이디값", example = "2", nullable = true)
+	@Schema(description = "부모 아이디값", example = "\"\"", nullable = true)
 	@Digits(fraction = 1, integer = 1, message = "숫자만 가능합니다.")
 	private Long parentReviewId;
 

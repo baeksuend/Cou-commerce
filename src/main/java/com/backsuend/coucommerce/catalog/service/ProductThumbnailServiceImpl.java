@@ -165,7 +165,6 @@ public class ProductThumbnailServiceImpl implements ProductThumbnailService {
 
 			String relativePath = img.getImagePath(); // "/uploads/products/26/thumbnails/..."
 			Path filePath = rootLocation_delete.resolve(relativePath.substring(1)); // 앞 / 제거
-
 			File thumb = filePath.toFile();
 
 			// 파일 삭제
@@ -175,8 +174,8 @@ public class ProductThumbnailServiceImpl implements ProductThumbnailService {
 				//db에서 이미지 삭제
 				productThumbnailRepository.delete(img);
 
-				if (!deleted) {
-					log.debug("파일 삭제 성공: {}", thumb.getAbsolutePath());
+				if (deleted) {
+					log.info("파일 삭제 성공: {}", thumb.getAbsolutePath());
 				} else {
 					log.error("파일 삭제 실패: {}", thumb.getAbsolutePath());
 				}
