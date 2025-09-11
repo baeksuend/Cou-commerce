@@ -48,13 +48,11 @@ public class ReviewController {
 		@RequestParam(value = "page", defaultValue = "1") int page
 	) {
 
-		log.info("[API] GET /api/v1/products/{}/reviews 목록 호출", productId);  // 요청 들어옴 기록
-
+		log.info("[리뷰] 리뷰목록 요청 /api/v1/products/{}/reviews 목록 호출", productId);
 		Page<ReviewResponseDto> responseDto = reviewService.getReviews(productId, page - 1, isAsc);
 		PageResponse<ReviewResponseDto> reviewResponseDto = new PageResponse<>(responseDto, 10);
 
-		log.debug("[API] 리뷰목록 호출 결과 데이터: {}", reviewResponseDto.getTotalElements()); // 상세 데이터 (개발용)
-
+		log.info("[리뷰] 리뷰목록 요청 완료");
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(200),
 				"목록조회 성공",
@@ -73,12 +71,11 @@ public class ReviewController {
 		@PathVariable Long reviewId,
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
-		log.info("[API] GET /api/v1/products/{}/reviews/{} 목록 호출", productId, reviewId);
-
+		log.info("[리뷰] 리뷰 상세내용 요청 /api/v1/products/{}/reviews/{} ", productId, reviewId);
 		ReviewResponseDto responseDto
 			= reviewService.readView(productId, reviewId, userDetails.getId());
 
-		log.debug("[API] 리뷰내용 호출 결과 데이터: {}", responseDto.getId());
+		log.info("[리뷰] 리뷰 상세내용 요청 완료");
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(200),
 				"내용조회 성공",
@@ -97,12 +94,11 @@ public class ReviewController {
 	public ResponseEntity<ApiResponse<ReviewResponseDto>> createReview(@PathVariable Long productId,
 		@RequestBody ReviewRequestDto requestDto, @AuthenticationPrincipal UserDetailsImpl userDetails) {
 
-		log.info("[API] POST /api/v1/products/{}/reviews 등록 호출", productId);
-
+		log.info("[리뷰] 사용자 리뷰 등록 요청 /api/v1/products/{}/reviews 등록 호출", productId);
 		ReviewResponseDto responseDto
 			= reviewService.createReview(productId, requestDto, userDetails.getId());    //, userDetails
 
-		log.debug("[API] 리뷰등록 결과 데이터: {}", responseDto.getId());
+		log.info("[리뷰] 사용자 리뷰 등록 요청 완료");
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(201),
 				"등록 성공",
@@ -120,12 +116,11 @@ public class ReviewController {
 	public ResponseEntity<?> updateReview(@PathVariable Long productId, @PathVariable Long reviewId,
 		@RequestBody ReviewRequestDto requestDto, @AuthenticationPrincipal UserDetailsImpl userDetails) {
 
-		log.info("[API] PUT /api/v1/products/{}/reviews/{} 수정 호출", productId, reviewId);
-
+		log.info("[리뷰] 리뷰수정 요청 /api/v1/products/{}/reviews/{} 수정 호출", productId, reviewId);
 		ReviewResponseDto responseDto
 			= reviewService.updateReview(productId, reviewId, requestDto, userDetails.getId());
 
-		log.debug("[API] 리뷰수정 결과 데이터 : {}", responseDto.getId());
+		log.info("[리뷰] 리뷰수정 요청 완료");
 		return ApiResponse.of(true,
 				HttpStatus.valueOf(200),
 				"수정 성공",
@@ -143,11 +138,10 @@ public class ReviewController {
 	public ResponseEntity<?> deleteReview(@PathVariable Long productId, @PathVariable Long reviewId,
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
-		log.info("[API] DELETE /api/v1/products/{}/reviews/{} 수정 호출", productId, reviewId);
-
+		log.info("[리뷰] 부모리뷰 삭제 요청 /api/v1/products/{}/reviews/{} 삭제 호출", productId, reviewId);
 		reviewService.deleteReview(productId, reviewId, userDetails.getId());
 
-		log.info("[API] 리뷰 삭제 결과  productId ={} 삭제성공", reviewId);
+		log.info("[리뷰] 부모리뷰 삭제 요청 완료");
 		return ResponseEntity.noContent().build();
 	}
 
@@ -162,12 +156,12 @@ public class ReviewController {
 		@PathVariable Long reviewId, @PathVariable Long childReviewId,
 		@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
-		log.info("[API] DELETE /api/v1/products/{}/reviews/{}/child/{childReviewId}{} 자식리뷰 호출",
+		log.info("[리뷰] 자식리뷰 삭제 요청 /api/v1/products/{}/reviews/{}/child/{childReviewId}{} 자식리뷰 호출",
 			productId, reviewId, childReviewId);
 
 		reviewService.deleteChildReview(productId, reviewId, childReviewId, userDetails.getId());
 
-		log.info("[API] 자식리뷰 삭제 결과  productId ={} 삭제성공", reviewId);
+		log.info("[리뷰] 자식리뷰 삭제 요청 완료");
 		return ResponseEntity.noContent().build();
 	}
 

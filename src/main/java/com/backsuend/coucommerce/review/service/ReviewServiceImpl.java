@@ -3,7 +3,6 @@ package com.backsuend.coucommerce.review.service;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
@@ -54,7 +53,7 @@ public class ReviewServiceImpl implements ReviewService {
 		try (var ignored = MdcLogging.withContexts(Map.of(
 			"productId", String.valueOf(productId)
 		))) {
-			log.info("getReviews 상품 리뷰 목록 요청");
+			log.info("상품 리뷰 목록 요청");
 
 			// 조회 시에는 유저 정보 검증 x
 
@@ -67,7 +66,7 @@ public class ReviewServiceImpl implements ReviewService {
 			// 페이징 처리
 			Page<Review> reviewPage = reviewRepository.findByProductAndParentReviewIsNull(product, pageable);
 
-			log.info("getReviews 상품 리뷰 목록 요청 완료  - reviewPage.getTotalElements={}", reviewPage.getTotalElements());
+			log.debug("상품 리뷰 목록 요청 완료  - reviewPage.getTotalElements={}", reviewPage.getTotalElements());
 
 			// 대댓글 정보를 포함하여 DTO 변환
 			return reviewPage.map(Review -> {
@@ -92,10 +91,9 @@ public class ReviewServiceImpl implements ReviewService {
 
 		try (var ignored = MdcLogging.withContexts(Map.of(
 			"productId", String.valueOf(productId),
-			"reviewId", String.valueOf(reviewId),
-			"memberId", String.valueOf(memberId)
+			"reviewId", String.valueOf(reviewId)
 		))) {
-			log.info("getReviews 상품 리뷰 내용보기 요청");
+			log.info("상품 리뷰 내용보기 요청");
 
 			// 회원 정보가져오기
 			findAuthenticatedUser(memberId);
@@ -104,10 +102,10 @@ public class ReviewServiceImpl implements ReviewService {
 			validateProduct(productId);
 
 			//저장된데이터 불러오기
-			Review saved = reviewRepository.findById(reviewId).orElse(null);
+			Review saved = reviewRepository.findById(reviewId)
+				.orElseThrow(() -> new CustomValidationException(ErrorCode.NOT_FOUND, "등록된 리뷰 내용이 없습니다."));
 
-			log.info("getReviews 상품 리뷰 내용보기 요청 완료");
-			return new ReviewResponseDto(Objects.requireNonNull(saved));
+			return new ReviewResponseDto(saved);
 		}
 	}
 
@@ -120,10 +118,9 @@ public class ReviewServiceImpl implements ReviewService {
 		ReviewRequestDto requestDto, long memberId) {
 
 		try (var ignored = MdcLogging.withContexts(Map.of(
-			"productId", String.valueOf(productId),
-			"memberId", String.valueOf(memberId)
+			"productId", String.valueOf(productId)
 		))) {
-			log.info("getReviews 상품 리뷰 등록 요청");
+			log.info("상품 리뷰 등록 요청");
 
 			// 회원 정보가져오기
 			Member member = findAuthenticatedUser(memberId);
@@ -162,7 +159,6 @@ public class ReviewServiceImpl implements ReviewService {
 			productSummaryService.setReviewCount(requestDto.getAvgReviewScore(), productId);
 			log.debug("상품 리뷰 카운트 업데이트 완료 - productId={}", productId);
 
-			log.info("getReviews 상품 리뷰 등록 요청 완료");
 			return new ReviewResponseDto(saved);
 		}
 	}
@@ -176,10 +172,10 @@ public class ReviewServiceImpl implements ReviewService {
 		ReviewRequestDto requestDto, long memberId) {
 
 		try (var ignored = MdcLogging.withContexts(Map.of(
-			"reviewId", String.valueOf(reviewId),
-			"memberId", String.valueOf(memberId)
+			"productId", String.valueOf(productId),
+			"reviewId", String.valueOf(reviewId)
 		))) {
-			log.info("getReviews 상품 리뷰 수정 요청");
+			log.info("상품 리뷰 수정 요청");
 
 			// 유저 정보 검증
 			Member member = findAuthenticatedUser(memberId);
@@ -198,7 +194,6 @@ public class ReviewServiceImpl implements ReviewService {
 			//** (추가) 수정시 상품 리뷰 갯수 업데이트
 			productSummaryService.setReviewCountEdit(requestDto.getAvgReviewScore(), productId);
 
-			log.info("getReviews 상품 리뷰 수정 요청 완료");
 			return new ReviewResponseDto(review);
 		}
 	}
@@ -212,31 +207,37 @@ public class ReviewServiceImpl implements ReviewService {
 
 		try (var ignored = MdcLogging.withContexts(Map.of(
 			"productId", String.valueOf(productId),
-			"reviewId", String.valueOf(reviewId),
-			"memberId", String.valueOf(memberId)
+			"reviewId", String.valueOf(reviewId)
 		))) {
-			log.info("getReviews 상품 부모리뷰 삭제 요청");
+			log.info("상품 부모리뷰 삭제 요청");
+
+			System.out.println("!111");
 
 			// 유저 정보 검증
 			Member member = findAuthenticatedUser(memberId);
 
+			System.out.println("!222");
+
 			// 상품상세내용, 리뷰 및 리뷰에 대한 유저 권한 검증
 			Review review = validateReviewOwnership(productId, reviewId, member);
 
+			System.out.println("!333");
+
 			// 대리뷰이 있는 부모 리뷰인 경우, 내용만 "삭제된 리뷰입니다"로 변경
 			if (!review.getChildReviews().isEmpty()) {
+				System.out.println("!444");
 				review.markAsDeleted();
 				log.debug("부모 리뷰 삭제 처리(자식 존재) - reviewId={}", reviewId);
 
 			} else {
 
+				System.out.println("!555");
 				//** (추가) 삭제시 상품 리뷰 갯수 업데이트
 				productSummaryService.setReviewCountDelete(productId);
 
+				System.out.println("!666");
 				// 자식 리뷰이 없는 경우(단독 리뷰이거나 모든 자식 리뷰이 이미 삭제된 상태), 리뷰을 실제로 삭제
 				reviewRepository.delete(review);
-
-				log.info("getReviews 상품 부모리뷰 삭제 요청 완료");
 			}
 		}
 	}
@@ -255,7 +256,7 @@ public class ReviewServiceImpl implements ReviewService {
 			"childReviewId", String.valueOf(childReviewId),
 			"memberId", String.valueOf(memberId)
 		))) {
-			log.info("getReviews 상품 자식리뷰 삭제 요청");
+			log.info("상품 자식리뷰 삭제 요청");
 
 			// 유저 정보 검증
 			Member member = findAuthenticatedUser(memberId);
@@ -289,7 +290,6 @@ public class ReviewServiceImpl implements ReviewService {
 					reviewRepository.delete(parentReview);
 				}
 			}
-			log.info("getReviews 상품 자식리뷰 삭제 요청 완료");
 
 		}
 	}
@@ -317,20 +317,21 @@ public class ReviewServiceImpl implements ReviewService {
 	 * 리뷰 및 리뷰에 대한 유저 권한 검증 메서드
 	 **/
 	public Review validateReviewOwnership(Long productId, Long reviewId, Member member) {
+
 		log.info("리뷰 사용권한 검증 요청 - productId={}, reviewId={},memberId={}",
 			productId, reviewId, member.getId());
 
 		/* 상품 검증*/
-		log.debug("상품 검증 요청 검증 요청 - productId={}", productId);
+		log.info("상품 검증 요청 검증 요청 - productId={}", productId);
 		Product product = validateProduct(productId);
 
 		/* 리뷰 검증*/
-		log.debug("리뷰 검증 요청 - productId={}, reviewId={}", productId, reviewId);
+		log.info("리뷰 검증 요청 - productId={}, reviewId={}", productId, reviewId);
 		Review review = reviewRepository.findByProductAndId(product, reviewId)
-			.orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND));
+			.orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND, "등록된 상품이나 리뷰가 없습니다."));
 
 		/* 리뷰에 대한 유저 권한 검증*/
-		log.debug("리뷰 사용권한 요청 - productId={}, reviewId={}", productId, reviewId);
+		log.info("리뷰 사용권한 요청 - productId={}, reviewId={}", productId, reviewId);
 		if (!review.getMember().getId().equals(member.getId())) {
 			throw new BusinessException(ErrorCode.ACCESS_DENIED);
 		}
@@ -342,8 +343,7 @@ public class ReviewServiceImpl implements ReviewService {
 	 **/
 	public Pageable validateAndCreatePageable(int page, boolean isAsc) {
 
-		log.info("페이지, 정렬순서 설정 - page={}, isAsc={}", page, isAsc);
-
+		log.debug("페이지, 정렬순서 설정 - page={}, isAsc={}", page, isAsc);
 		if (page < 0) {
 			throw new CustomValidationException(ErrorCode.INVALID_INPUT);
 		}
@@ -352,7 +352,6 @@ public class ReviewServiceImpl implements ReviewService {
 		int pageSize = 10;
 
 		log.debug("Pageable 생성 - page={}, pageSize={}, isAsc={}", page, pageSize, isAsc);
-
 		return PageRequest.of(page, pageSize, Sort.by(direction, "createdAt"));
 	}
 

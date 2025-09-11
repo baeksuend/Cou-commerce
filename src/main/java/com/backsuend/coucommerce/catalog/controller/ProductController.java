@@ -41,14 +41,13 @@ public class ProductController {
 	@GetMapping("/products/main_best")
 	public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> getMainBestProducts() {
 
-		log.info("[API] GET /api/v1/products/main_best 호출하기 ");  // 요청 들어옴 기록
+		log.info("[상품] 메인 베스트상품 호출 ");
 
 		int page = 10;
 		Page<ProductResponse> pageList = productService.getProductsMain(ProductMainDisplay.MAIN_BEST, page);
 		PageResponse<ProductResponse> productResponse = new PageResponse<>(pageList, page);
 
-		log.debug("[API] 메인인기상품 main_best 결과 데이터: {}", productResponse.getTotalElements()); // 상세 데이터 (개발용)
-
+		log.info("[상품] 메인 베스트상품 호출 완료");
 		return ResponseEntity.ok().body(ApiResponse.ok(productResponse));
 	}
 
@@ -60,14 +59,13 @@ public class ProductController {
 	@GetMapping("/products/good_review")
 	public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> getMainGoodReviewProducts() {
 
-		log.info("[API] GET /api/v1/products/good_review 호출");  // 요청 들어옴 기록
+		log.info("[상품] 메인 리뷰 많은순 상품 호출");  // 요청 들어옴 기록
 
 		int page = 10;
 		Page<ProductResponse> pageList = productService.getProductsMain(ProductMainDisplay.MAIN_GOOD_REVIEW, page);
 		PageResponse<ProductResponse> productResponse = new PageResponse<>(pageList, page);
 
-		log.debug("[API] 메인 리뷰많은순 good_view 결과 데이터: {}", productResponse.getTotalElements()); // 상세 데이터 (개발용)
-
+		log.info("[상품] 메인 리뷰 많은순 상품 호출완료");
 		return ResponseEntity.ok().body(ApiResponse.ok(productResponse));
 	}
 
@@ -79,15 +77,14 @@ public class ProductController {
 	public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> getProductsCategory(
 		@ModelAttribute ProductItemSearchRequest req, @PathVariable Category category) {
 
-		log.info("[API] GET /api/v1/products/category/{}?page={}&pageSize={}&sort={}&keyword={} 호출",
+		log.info("[상품] 카테고리별 상품목록 호출 /api/v1/products/category/{}?page={}&pageSize={}&sort={}&keyword={} 호출",
 			category, req.getPage(), req.getPageSize(), req.getSort(), req.getKeyword());
 
 		Member member = Member.builder().id(0L).build();
 		Page<ProductResponse> pageList = productService.getProductsUser(req, member, category);
 		PageResponse<ProductResponse> productResponse = new PageResponse<>(pageList, req.getPageSize());
 
-		log.debug("[API] category 내용 결과 데이터: {}", productResponse.getTotalElements());
-
+		log.info("[상품] 카테고리별 상품목록 호출 완료");
 		return ResponseEntity.ok().body(ApiResponse.ok(productResponse));
 
 	}
@@ -100,12 +97,10 @@ public class ProductController {
 	public ResponseEntity<ApiResponse<ProductResponse>> getProductsRead(@PathVariable int productId,
 		@ModelAttribute ProductItemSearchRequest req) {
 
-		log.info("[API] GET /api/v1/products/{} 호출", productId);
-
+		log.info("[상품] 상품 상세내용 호출 /api/v1/products/{} 호출", productId);
 		ProductResponse productResponse = productService.getRead(ProductReadType.USER_READ, productId, 0L);
 
-		log.debug("[API] 상품상세내용 결과 데이터: {}", productResponse.getId());
-
+		log.info("[상품] 상품 상세내용 호출 완료");
 		return ResponseEntity.ok().body(ApiResponse.ok(productResponse));
 	}
 
