@@ -37,6 +37,8 @@ import com.backsuend.coucommerce.payment.entity.Payment;
 import com.backsuend.coucommerce.payment.entity.PaymentStatus;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import com.backsuend.coucommerce.order.logging.OrderLogContext;
 
 /**
  * @author rua
@@ -56,6 +58,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderService {
 	private final OrderRepository orderRepository;
 	private final MemberRepository memberRepository;
@@ -76,7 +79,7 @@ public class OrderService {
 	 * @throws BusinessException 회원이 없거나, 장바구니가 비어있거나, 상품 정보가 유효하지 않은 경우
 	 */
 	@Transactional(isolation = Isolation.REPEATABLE_READ)
-	public List<OrderResponse> createOrderFromCart(OrderCreateRequest request, Long memberId) {
+    public List<OrderResponse> createOrderFromCart(OrderCreateRequest request, Long memberId) {
 		int maxRetries = 3;
 		int attempt = 0;
 
@@ -107,10 +110,10 @@ public class OrderService {
 				List<OrderResponse> responses = new ArrayList<>();
 
 				// 5. 그룹별로 Order 생성/저장
-				for (Map.Entry<Long, List<CartItem>> entry : itemsBySeller.entrySet()) {
-					List<CartItem> sellerItems = entry.getValue();
-					Order order = Order.builder()
-						.member(buyer)
+                for (Map.Entry<Long, List<CartItem>> entry : itemsBySeller.entrySet()) {
+                    List<CartItem> sellerItems = entry.getValue();
+                    Order order = Order.builder()
+                        .member(buyer)
 						.consumerName(request.getConsumerName())
 						.consumerPhone(request.getConsumerPhone())
 						.receiverName(request.getReceiverName())
@@ -123,17 +126,28 @@ public class OrderService {
 					order = orderSnapshotService.toOrderProducts(order, sellerItems, productMap);
 
 					// 주문 저장 및 아이템 저장
-					Order savedOrder = orderRepository.save(order);
-					orderProductRepository.saveAll(savedOrder.getItems());
+                    Order savedOrder = orderRepository.save(order);
+                    orderProductRepository.saveAll(savedOrder.getItems());
 
-					responses.add(createOrderResponse(savedOrder));
-				}
+                    int totalAmount = savedOrder.getItems().stream()
+                        .mapToInt(op -> op.getPriceSnapshot() * op.getQuantity())
+                        .sum();
+                    try {
+                        OrderLogContext.setOrderContext(savedOrder.getId(), savedOrder.getStatus().name(), totalAmount);
+                        log.info("order.create.checkpoint: order persisted");
+                    } finally {
+                        OrderLogContext.clear();
+                    }
+
+                    responses.add(createOrderResponse(savedOrder));
+                }
 
 				// 6. 장바구니 초기화 (주문 완료 후)
 				cartService.clearCart(memberId);
 
-				// 7. 응답 반환 (셀러별 주문 리스트)
-				return responses;
+                // 7. 응답 반환 (셀러별 주문 리스트)
+                log.info("order.create: created_orders={}, seller_count={}", responses.size(), itemsBySeller.size());
+                return responses;
 			} catch (OptimisticLockException e) {
 				if (attempt >= maxRetries) {
 					throw new BusinessException(ErrorCode.CONFLICT, "동시 주문 충돌. 다시 시도해주세요.");
@@ -156,16 +170,24 @@ public class OrderService {
 	 * @throws BusinessException 주문이 없거나, 본인의 주문이 아닌 경우
 	 */
 	@Transactional(readOnly = true)
-	public OrderResponse getOrder(Long orderId, Long memberId) {
-		Order order = orderRepository.findById(orderId)
-			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문을 찾을 수 없습니다."));
+    public OrderResponse getOrder(Long orderId, Long memberId) {
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문을 찾을 수 없습니다."));
 
 		// 본인 주문인지 확인 (보안 검증)
 		if (!order.getMember().getId().equals(memberId)) {
 			throw new BusinessException(ErrorCode.ACCESS_DENIED, "본인의 주문만 조회할 수 있습니다.");
 		}
 
-		return createOrderResponse(order);
+        OrderResponse resp = createOrderResponse(order);
+        try {
+            OrderLogContext.setOrderContext(order.getId(), order.getStatus().name(),
+                order.getItems().stream().mapToInt(op -> op.getPriceSnapshot() * op.getQuantity()).sum());
+            log.info("order.get: result=found");
+        } finally {
+            OrderLogContext.clear();
+        }
+        return resp;
 	}
 
 	/**
@@ -176,9 +198,11 @@ public class OrderService {
 	 * @return 주문 목록 (페이징 적용)
 	 */
 	@Transactional(readOnly = true)
-	public Page<OrderResponse> getMyOrders(Long memberId, Pageable pageable) {
-		Page<Order> orders = orderRepository.findByMemberId(memberId, pageable);
-		return orders.map(this::createOrderResponse);
+    public Page<OrderResponse> getMyOrders(Long memberId, Pageable pageable) {
+        Page<Order> orders = orderRepository.findByMemberId(memberId, pageable);
+        Page<OrderResponse> page = orders.map(this::createOrderResponse);
+        log.info("order.list: result_count={}", page.getNumberOfElements());
+        return page;
 	}
 
 	/**
@@ -190,9 +214,9 @@ public class OrderService {
 	 * @throws BusinessException 주문이 없거나, 본인의 주문이 아니거나, 취소 불가능한 상태인 경우
 	 */
 	@Transactional
-	public OrderResponse cancelOrder(Long orderId, Long memberId) {
-		Order order = orderRepository.findById(orderId)
-			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문을 찾을 수 없습니다."));
+    public OrderResponse cancelOrder(Long orderId, Long memberId) {
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문을 찾을 수 없습니다."));
 
 		// 본인 주문인지 확인 (보안 검증)
 		if (!order.getMember().getId().equals(memberId)) {
@@ -211,10 +235,18 @@ public class OrderService {
 			product.setStock(product.getStock() + orderDetailProduct.getQuantity());
 		}
 
-		// 주문 상태 변경
-		order.setStatus(OrderStatus.CANCELED);
+        OrderStatus from = order.getStatus();
+        order.setStatus(OrderStatus.CANCELED);
 
-		return createOrderResponse(order);
+        int restocked = order.getItems().stream().mapToInt(OrderDetailProduct::getQuantity).sum();
+        try {
+            OrderLogContext.setOrderContext(order.getId(), order.getStatus().name(),
+                order.getItems().stream().mapToInt(op -> op.getPriceSnapshot() * op.getQuantity()).sum());
+            log.info("order.cancel: from_status={}, restocked_count={}", from, restocked);
+        } finally {
+            OrderLogContext.clear();
+        }
+        return createOrderResponse(order);
 	}
 
 	/**
@@ -248,9 +280,9 @@ public class OrderService {
 	}
 
 	@Transactional
-	public OrderResponse shipOrder(Long orderId, Long sellerId, ShipOrderRequest request) {
-		Order order = orderRepository.findById(orderId)
-			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문 없음"));
+    public OrderResponse shipOrder(Long orderId, Long sellerId, ShipOrderRequest request) {
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문 없음"));
 
 		// Seller 검증: 본인 상품 포함 여부 확인
 		boolean ownsProduct = order.getItems().stream()
@@ -271,17 +303,23 @@ public class OrderService {
 			.carrier(request.getCarrier())
 			.build();
 
-		// 상태 변경
-		order.setStatus(OrderStatus.SHIPPED);
-		order.setShipment(shipment); // 편의 메서드 추가 필요
+        order.setStatus(OrderStatus.SHIPPED);
+        order.setShipment(shipment); // 편의 메서드 추가 필요
 
-		return createOrderResponse(order);
+        try {
+            OrderLogContext.setOrderContext(order.getId(), order.getStatus().name(),
+                order.getItems().stream().mapToInt(op -> op.getPriceSnapshot() * op.getQuantity()).sum());
+            log.info("order.ship");
+        } finally {
+            OrderLogContext.clear();
+        }
+        return createOrderResponse(order);
 	}
 
 	@Transactional
-	public OrderResponse completeOrder(Long orderId, Long sellerId) {
-		Order order = orderRepository.findById(orderId)
-			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문 없음"));
+    public OrderResponse completeOrder(Long orderId, Long sellerId) {
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문 없음"));
 
 		// Seller 검증: 본인 상품 포함 여부 확인 (셀러 단위 주문이지만 방어적으로 확인)
 		boolean ownsProduct = order.getItems().stream()
@@ -295,31 +333,36 @@ public class OrderService {
 			throw new BusinessException(ErrorCode.CONFLICT, "배송완료 처리는 SHIPPED 상태에서만 가능");
 		}
 
-		// 상태 변경
-		order.setStatus(OrderStatus.COMPLETED);
+        order.setStatus(OrderStatus.COMPLETED);
 
-		// 각 상품에 대해 주문 카운트 증가 (배송완료 시점)
-		order.getItems().forEach(item ->
-			productSummaryService.setOrderCount(item.getProduct().getId(), item.getQuantity())
-		);
+        order.getItems().forEach(item ->
+            productSummaryService.setOrderCount(item.getProduct().getId(), item.getQuantity())
+        );
 
-		return createOrderResponse(order);
+        try {
+            OrderLogContext.setOrderContext(order.getId(), order.getStatus().name(),
+                order.getItems().stream().mapToInt(op -> op.getPriceSnapshot() * op.getQuantity()).sum());
+            log.info("order.complete");
+        } finally {
+            OrderLogContext.clear();
+        }
+        return createOrderResponse(order);
 	}
 
 	@Transactional(readOnly = true)
-	public List<OrderResponse> getSellerOrders(Long sellerId) {
-		List<Order> orders = orderRepository.findBySellerId(sellerId);
-		// 커스텀 쿼리 필요: OrderDetailProduct.product.member.id = :sellerId
-
-		return orders.stream()
-			.map(this::createOrderResponse)
-			.toList();
+    public List<OrderResponse> getSellerOrders(Long sellerId) {
+        List<Order> orders = orderRepository.findBySellerId(sellerId);
+        List<OrderResponse> res = orders.stream()
+            .map(this::createOrderResponse)
+            .toList();
+        log.info("order.list.seller: result_count={}", res.size());
+        return res;
 	}
 
 	@Transactional
-	public OrderResponse approveRefund(Long orderId, Long sellerId) {
-		Order order = orderRepository.findById(orderId)
-			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문 없음"));
+    public OrderResponse approveRefund(Long orderId, Long sellerId) {
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문 없음"));
 
 		boolean ownsProduct = order.getItems().stream()
 			.anyMatch(item -> item.getProduct().getMember().getId().equals(sellerId));
@@ -331,9 +374,8 @@ public class OrderService {
 			throw new BusinessException(ErrorCode.CONFLICT, "현재 상태에서 환불 승인 불가");
 		}
 
-		// 상태 전이
-		order.setStatus(OrderStatus.REFUNDED);
-		order.setRefundRequested(false);
+        order.setStatus(OrderStatus.REFUNDED);
+        order.setRefundRequested(false);
 
 		//PG사에서 취소에 대한 정보를 받는 로직이 있어야하지만 현재는 임의로 진행
 		Payment payment = order.getPayment();
@@ -347,21 +389,30 @@ public class OrderService {
 			Product product = orderDetailProduct.getProduct();
 			product.setStock(product.getStock() + orderDetailProduct.getQuantity());
 		}
-		return createOrderResponse(order);
+        try {
+            OrderLogContext.setOrderContext(order.getId(), order.getStatus().name(),
+                order.getItems().stream().mapToInt(op -> op.getPriceSnapshot() * op.getQuantity()).sum());
+            log.info("order.refund.approve");
+        } finally {
+            OrderLogContext.clear();
+        }
+        return createOrderResponse(order);
 	}
 
 	@Transactional(readOnly = true)
-	public List<OrderResponse> getAllOrders(Long buyerId, Long sellerId, OrderStatus status) {
-		return orderRepository.findAllByFilters(buyerId, sellerId, status).stream()
-			.map(this::createOrderResponse)
-			.toList();
+    public List<OrderResponse> getAllOrders(Long buyerId, Long sellerId, OrderStatus status) {
+        List<OrderResponse> list = orderRepository.findAllByFilters(buyerId, sellerId, status).stream()
+            .map(this::createOrderResponse)
+            .toList();
+        log.info("order.list.admin: buyerId={}, sellerId={}, status={}, result_count={}", buyerId, sellerId, status, list.size());
+        return list;
 	}
 
 	@Transactional
-	public OrderResponse forceCancel(Long orderId) {
-		Order order = orderRepository.findById(orderId)
-			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문 없음"));
-		order.setStatus(OrderStatus.CANCELED);
+    public OrderResponse forceCancel(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문 없음"));
+        order.setStatus(OrderStatus.CANCELED);
 		order.setRefundRequested(false);
 		Payment payment = order.getPayment();
 		if (payment != null) {
@@ -375,14 +426,21 @@ public class OrderService {
 			Product product = orderDetailProduct.getProduct();
 			product.setStock(product.getStock() + orderDetailProduct.getQuantity());
 		}
-		return createOrderResponse(order);
+        try {
+            OrderLogContext.setOrderContext(order.getId(), order.getStatus().name(),
+                order.getItems().stream().mapToInt(op -> op.getPriceSnapshot() * op.getQuantity()).sum());
+            log.info("order.force.cancel");
+        } finally {
+            OrderLogContext.clear();
+        }
+        return createOrderResponse(order);
 	}
 
 	@Transactional
-	public OrderResponse forceRefund(Long orderId) {
-		Order order = orderRepository.findById(orderId)
-			.orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문 없음"));
-		order.setStatus(OrderStatus.REFUNDED);
+    public OrderResponse forceRefund(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "주문 없음"));
+        order.setStatus(OrderStatus.REFUNDED);
 		order.setRefundRequested(false);
 		Payment payment = order.getPayment();
 		if (payment != null) {
@@ -396,6 +454,13 @@ public class OrderService {
 			Product product = orderDetailProduct.getProduct();
 			product.setStock(product.getStock() + orderDetailProduct.getQuantity());
 		}
-		return createOrderResponse(order);
-	}
+        try {
+            OrderLogContext.setOrderContext(order.getId(), order.getStatus().name(),
+                order.getItems().stream().mapToInt(op -> op.getPriceSnapshot() * op.getQuantity()).sum());
+            log.info("order.force.refund");
+        } finally {
+            OrderLogContext.clear();
+        }
+        return createOrderResponse(order);
+}
 }

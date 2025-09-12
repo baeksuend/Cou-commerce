@@ -31,7 +31,7 @@ import lombok.RequiredArgsConstructor;
 @Tag(name = "결제 API", description = "결제 관련 API 입니다.")
 @RestController
 @RequestMapping("/api/v1/payments")
-@PreAuthorize("hasRole('BUYER')") // 클래스 전체 BUYER 전용
+@PreAuthorize("hasRole('SELLER') or hasRole('BUYER')")
 @RequiredArgsConstructor
 public class PaymentController {
 
@@ -84,21 +84,21 @@ public class PaymentController {
 		return ApiResponse.ok(responses).toResponseEntity();
 	}
 
-    @PostMapping("/{paymentId}/refund-request")
-    @Operation(summary = "환불 요청", description = "Buyer가 결제 건에 대해 환불을 요청합니다. 주문이 PAID이고 결제가 APPROVED 상태여야 합니다.")
-    @ApiResponses({
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "환불 요청 접수"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요 또는 실패"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "접근이 거부되었습니다."),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "결제 없음"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "환불 요청 불가 상태")
-    })
-    public ResponseEntity<ApiResponse<PaymentResponse>> requestRefund(
-        @AuthenticationPrincipal UserDetailsImpl buyer,
-        @PathVariable Long paymentId,
-        @RequestBody RefundRequest request
-    ) {
-        PaymentResponse response = paymentService.requestRefund(buyer.getId(), paymentId, request.getReason());
-        return ApiResponse.ok(response).toResponseEntity();
-    }
+	@PostMapping("/{paymentId}/refund-request")
+	@Operation(summary = "환불 요청", description = "Buyer가 결제 건에 대해 환불을 요청합니다. 주문이 PAID이고 결제가 APPROVED 상태여야 합니다.")
+	@ApiResponses({
+		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "환불 요청 접수"),
+		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요 또는 실패"),
+		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "접근이 거부되었습니다."),
+		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "결제 없음"),
+		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "환불 요청 불가 상태")
+	})
+	public ResponseEntity<ApiResponse<PaymentResponse>> requestRefund(
+		@AuthenticationPrincipal UserDetailsImpl buyer,
+		@PathVariable Long paymentId,
+		@RequestBody RefundRequest request
+	) {
+		PaymentResponse response = paymentService.requestRefund(buyer.getId(), paymentId, request.getReason());
+		return ApiResponse.ok(response).toResponseEntity();
+	}
 }

@@ -158,14 +158,15 @@ public class GlobalExceptionHandler {
 	}
 
 	/* ======= Fallback ======= */
-	@ExceptionHandler(Exception.class)
-	public ResponseEntity<ApiResponse<ApiErrorPayload>> handleUnknown(
-		Exception ex, HttpServletRequest req) {
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<ApiErrorPayload>> handleUnknown(
+        Exception ex, HttpServletRequest req) {
 
-		System.out.println("Unhandled exception occurred: " + ex);
+        // 전체 스택을 ERROR로 기록하여 커밋 실패 등 근본 원인 파악
+        log.error("Unhandled exception occurred", ex);
 
-		return build(ErrorCode.INTERNAL_ERROR, "예상치 못한 오류가 발생했습니다.====", null, req);
-	}
+        return build(ErrorCode.INTERNAL_ERROR, "예상치 못한 오류가 발생했습니다.", null, req);
+    }
 
 	/* ======= 공통 빌더 ======= */
 
