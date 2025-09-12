@@ -31,8 +31,8 @@ public class CartItem {
 	@Min(0)
 	private int priceAtAdd;          // 담을 당시 가격 스냅샷
 
-	@Min(1)
-	private int quantity;       // 담은 수량 (1 이상)
+    @Min(1)
+    private int quantity;       // 담은 수량 (1 이상)
 
 	@Size(max = 255)
 	private String detail;      // 사용자가 선택한 옵션 (문자열)

@@ -30,9 +30,9 @@ public class OrderSnapshotService {
 
 	private final ProductSummaryRepository productSummaryRepository;
 
-	@Transactional(readOnly = true)
-	public Order toOrderProducts(Order order, List<CartItem> cartItems,
-		Map<Long, Product> productMap) {
+    @Transactional
+    public Order toOrderProducts(Order order, List<CartItem> cartItems,
+        Map<Long, Product> productMap) {
 		int totalPrice = 0;
 		// cartItemsf를 사용해 OrderDetaileProduct 를 채워야 한다.
 		for (CartItem item : cartItems) {

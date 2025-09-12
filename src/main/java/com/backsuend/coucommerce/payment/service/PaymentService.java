@@ -1,5 +1,6 @@
 package com.backsuend.coucommerce.payment.service;
 
+import org.slf4j.MDC;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -14,9 +15,11 @@ import com.backsuend.coucommerce.payment.dto.PaymentRequest;
 import com.backsuend.coucommerce.payment.dto.PaymentResponse;
 import com.backsuend.coucommerce.payment.entity.Payment;
 import com.backsuend.coucommerce.payment.entity.PaymentStatus;
+import com.backsuend.coucommerce.payment.logging.PaymentLogContext;
 import com.backsuend.coucommerce.payment.repository.PaymentRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 /**
  * @author rua
  */
@@ -31,6 +34,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentService {
 
 	private final PaymentRepository paymentRepository;
@@ -95,7 +99,18 @@ public class PaymentService {
 
 		Payment saved = paymentRepository.save(payment);
 
-		// 7. 응답 DTO 반환
+		try {
+			PaymentLogContext.setPaymentContext(saved.getId(), request.getCardBrand().toString(),
+				saved.getStatus().name());
+			MDC.put("orderId", String.valueOf(orderId));
+			MDC.put("amount", String.valueOf(saved.getAmount()));
+			log.info("payment.process: result={}", saved.getStatus());
+		} finally {
+			MDC.remove("orderId");
+			MDC.remove("amount");
+			PaymentLogContext.clear();
+		}
+
 		return PaymentResponse.from(saved);
 	}
 
@@ -124,6 +139,16 @@ public class PaymentService {
 			throw new BusinessException(ErrorCode.NOT_FOUND, "해당 주문의 결제 정보를 찾을 수 없습니다.");
 		}
 
+		try {
+			PaymentLogContext.setPaymentContext(payment.getId(), payment.getCardBrand().toString(),
+				payment.getStatus().name());
+			MDC.put("orderId", String.valueOf(orderId));
+			log.info("payment.get: result=found");
+		} finally {
+			MDC.remove("orderId");
+			PaymentLogContext.clear();
+		}
+
 		return PaymentResponse.from(payment);
 	}
 
@@ -137,7 +162,9 @@ public class PaymentService {
 	@Transactional(readOnly = true)
 	public Page<PaymentResponse> getMyPayments(Long memberId, Pageable pageable) {
 		Page<Payment> payments = paymentRepository.findByOrderMemberId(memberId, pageable);
-		return payments.map(PaymentResponse::from);
+		Page<PaymentResponse> page = payments.map(PaymentResponse::from);
+		log.info("payment.list: result_count={}", page.getNumberOfElements());
+		return page;
 	}
 
 	@Transactional
@@ -155,13 +182,21 @@ public class PaymentService {
 			payment.getOrder().getStatus() != OrderStatus.PAID) {
 			throw new BusinessException(ErrorCode.CONFLICT, "환불 요청이 불가능한 상태입니다.");
 		}
-		
+
 		// 상태 전이
 		payment.getOrder().setRefundRequested(true);
 		payment.setRefundRequested(true);
 		payment.setRefundReason(reason);
 
-		// TODO: PaymentLog 기록 (추후 5.2 작업에서 추가)
+		try {
+			PaymentLogContext.setPaymentContext(payment.getId(), payment.getCardBrand().toString(),
+				payment.getStatus().name());
+			MDC.put("orderId", String.valueOf(payment.getOrder().getId()));
+			log.info("payment.refund.request: result=requested");
+		} finally {
+			MDC.remove("orderId");
+			PaymentLogContext.clear();
+		}
 
 		return PaymentResponse.from(payment);
 	}
